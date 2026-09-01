@@ -247,5 +247,3 @@ Unknown keys are rejected. Removed features therefore fail fast instead of being
 ## Package boundary
 
 Consumers import `defineConfig`, `antvSite`, and configuration types from the package root. The `@antv/site/content` subpath exports the Astro Content Loader and schema. The shared QA entry is available from `@antv/site/qa-entry`; lower-level browser-side QA session and history helpers remain available from `@antv/site/qa`. Compiled Node modules live in dist, while Astro theme source is included for the consumer build. Astro remains the peer build engine; Vite, Pagefind, and the sitemap integration are implementation dependencies.
-
-See [VALIDATION.md](./VALIDATION.md) for verification details.
