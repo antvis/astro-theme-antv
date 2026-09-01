@@ -1,0 +1,17 @@
+---
+import { config } from '../lib/site';
+import { withBase } from '../lib/paths';
+const target = withBase(`/${config.site.defaultLocale}/`);
+---
+
+<!doctype html>
+<html lang={config.site.defaultLocale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="refresh" content={`0;url=${target}`} />
+    <link rel="canonical" href={new URL(target, config.site.origin)} />
+    <title>{config.site.title}</title>
+  </head>
+  <body><a href={target}>Continue to {config.site.title}</a></body>
+</html>

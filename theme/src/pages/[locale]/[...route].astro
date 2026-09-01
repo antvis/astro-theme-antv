@@ -1,0 +1,256 @@
+---
+import { render } from 'astro:content';
+import { localize } from '../../lib/compiler';
+import type { SitePage } from '../../lib/compiler';
+import { getDocsCollection } from '../../lib/docs';
+import { toDocumentPage } from '../../lib/documents';
+import type { DocumentPage } from '../../lib/documents';
+import { withBase } from '../../lib/paths';
+import DocsSidebar from '../../components/DocsSidebar.astro';
+import ExampleSidebar from '../../components/ExampleSidebar.astro';
+import QaResult from '../../components/QaResult.astro';
+import Toc from '../../components/Toc.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Demo from '../../components/Demo.astro';
+import {
+  categoriesBySlug,
+  config,
+  demosByKey,
+  groupsByKey,
+  registry,
+} from '../../lib/site';
+
+type RoutePage = SitePage | DocumentPage;
+
+interface Props {
+  page: RoutePage;
+}
+
+export async function getStaticPaths() {
+  const entries = await getDocsCollection();
+  const documentPages = entries
+    .map((entry) => toDocumentPage(entry, config))
+    .filter((page) => config.site.locales.includes(page.locale));
+  const generatedPages = registry.pages.filter((page) => page.type !== 'home');
+  const knownRoutes = new Set(
+    registry.pages
+      .filter((page) => page.type === 'home')
+      .map((page) => page.route),
+  );
+
+  for (const page of [...generatedPages, ...documentPages]) {
+    if (knownRoutes.has(page.route)) {
+      throw new Error(`Duplicate Astro route: ${page.route}`);
+    }
+    knownRoutes.add(page.route);
+  }
+
+  return [...generatedPages, ...documentPages]
+    .map((page) => ({
+      params: {
+        locale: page.locale,
+        route: page.route.replace(new RegExp(`^/${page.locale}/?`), '').replace(/\/$/, ''),
+      },
+      props: { page },
+    }));
+}
+
+const { page } = Astro.props;
+const locale = page.locale;
+const isZh = locale === 'zh';
+const documentSection = page.type === 'document' ? page.section : undefined;
+const documentEntries = page.type === 'document'
+  ? await getDocsCollection(false)
+  : [];
+const documentItems = documentEntries
+  .map((entry) => toDocumentPage(entry, config))
+  .filter((item) => item.locale === locale && item.section === documentSection)
+  .map((item) => ({
+    ...item,
+    title: item.entry.data.sidebar.label || item.title,
+  }))
+  .sort((a, b) => a.order - b.order || a.slug.localeCompare(b.slug));
+const renderedDocument = page.type === 'document' ? await render(page.entry) : undefined;
+const DocumentContent = renderedDocument?.Content;
+const category = page.type === 'example-category'
+  ? categoriesBySlug.get(page.categorySlug)
+  : undefined;
+const group = page.type === 'example-group'
+  ? groupsByKey.get(page.groupKey)
+  : undefined;
+const demo = page.type === 'demo' ? demosByKey.get(page.demoKey) : undefined;
+const editConfig = config.content.edit;
+const repositoryPath = (...parts: string[]) =>
+  parts
+    .flatMap((part) => part.split('/'))
+    .filter(Boolean)
+    .map(encodeURIComponent)
+    .join('/');
+const editHref = editConfig && page.type === 'document' && page.sourcePath
+  ? `${config.site.repository.replace(/\/$/, '')}/edit/${repositoryPath(
+      editConfig.branch,
+      editConfig.path,
+      page.sourcePath,
+    )}`
+  : undefined;
+const groupAnchor = (categorySlug: string, groupSlug: string) =>
+  `group-${categorySlug}-${groupSlug.replaceAll('/', '-')}`;
+
+let title = config.site.title;
+let description = localize(config.site.description, locale);
+if (page.type === 'document') {
+  title = page.title;
+  description = page.description;
+} else if (page.type === 'qa') {
+  title = isZh ? '查询结果' : 'Query results';
+  description = isZh
+    ? '承载当前 AntV 产品站可视化查询的结果页面。'
+    : 'The visualization query result page for this AntV product site.';
+} else if (page.type === 'examples') {
+  title = isZh ? '图表示例' : 'Examples';
+} else if (category) {
+  title = localize(category.title, locale);
+} else if (group) {
+  title = localize(group.title, locale);
+} else if (demo) {
+  title = localize(demo.title, locale, demo.slug);
+  description = isZh ? `${title} 的完整源码与可运行结果。` : `Complete source and live result for ${title}.`;
+}
+---
+
+<BaseLayout locale={locale} title={title} description={description} route={page.route} pageType={page.type === 'document' ? 'document' : page.type === 'qa' ? 'qa' : 'page'}>
+  {page.type === 'qa' && config.qa && (
+    <QaResult locale={locale} service={config.qa.service} />
+  )}
+
+  {page.type === 'document' && (
+    <div class="docs-shell">
+      <DocsSidebar items={documentItems} currentRoute={page.route} locale={locale} labels={config.content.sidebar} />
+      <article class="markdown-body">
+        <h1 class="document-title" data-pagefind-meta="title">{page.title}</h1>
+        <div class="document-meta">
+          <span>{page.slug}</span>
+          {editHref && (
+            <a href={editHref}>
+              {localize(editConfig?.label, locale, isZh ? '编辑此页' : 'Edit this page')}
+            </a>
+          )}
+        </div>
+        {DocumentContent && <DocumentContent />}
+      </article>
+      <Toc headings={renderedDocument?.headings || []} locale={locale} />
+    </div>
+  )}
+
+  {page.type === 'examples' && (
+    <div class="examples-shell example-catalog-shell">
+      <ExampleSidebar categories={registry.categories} locale={locale} currentRoute={page.route} />
+      <section class="listing-page example-catalog">
+        <header class="listing-header compact">
+          <h1>{title}</h1>
+          <p>{isZh ? `共 ${registry.counts.demos} 个示例。通过左侧分类快速定位，点击缩略图直接查看运行结果和完整源码。` : `${registry.counts.demos} examples. Use the categories to navigate, then select a thumbnail to open its live result and complete source.`}</p>
+        </header>
+        <div class="example-catalog-content">
+          {registry.categories.map((item) => {
+            const demoCount = item.groups.reduce((sum, entry) => sum + entry.demos.length, 0);
+            if (!demoCount) return null;
+            return (
+              <section class="catalog-category" id={`category-${item.slug}`} data-example-category={item.slug}>
+                <header class="catalog-category-header">
+                  <h2>{localize(item.title, locale)}</h2>
+                  <span>{demoCount} {isZh ? '个示例' : 'examples'}</span>
+                </header>
+                {item.groups.map((entry) => (
+                  <section class="catalog-group" id={groupAnchor(item.slug, entry.slug)} data-example-group={`${item.slug}/${entry.slug}`}>
+                    <header class="catalog-group-header">
+                      <h3>{localize(entry.title, locale)}</h3>
+                      <a href={withBase(`/${locale}/examples/${item.slug}/${entry.slug}/`)}>
+                        {entry.demos.length} {isZh ? '个示例' : 'examples'}
+                      </a>
+                    </header>
+                    <div class="demo-grid catalog-demo-grid">
+                      {entry.demos.map((demoItem) => {
+                        const demoTitle = localize(demoItem.title, locale, demoItem.slug);
+                        return (
+                          <a href={withBase(`/${locale}/examples/${demoItem.key}/`)} aria-label={demoTitle}>
+                            <div class="demo-image">
+                              {demoItem.screenshot && (
+                                <img src={withBase(demoItem.screenshot)} alt={`${demoTitle}${isZh ? '缩略图' : ' thumbnail'}`} loading="lazy" decoding="async" />
+                              )}
+                            </div>
+                            <strong>{demoTitle}</strong>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </section>
+                ))}
+              </section>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  )}
+
+  {page.type === 'example-category' && category && (
+    <div class="examples-shell">
+      <ExampleSidebar categories={registry.categories} locale={locale} currentRoute={page.route} />
+      <section class="listing-page">
+        <header class="listing-header compact">
+          <p class="eyebrow">examples / {category.slug}</p>
+          <h1>{localize(category.title, locale)}</h1>
+          <p>{category.groups.reduce((sum, item) => sum + item.demos.length, 0)} {isZh ? '个示例，按图表与能力分组。' : 'examples grouped by chart and capability.'}</p>
+        </header>
+        <div class="group-list">
+          {category.groups.map((item) => (
+            <a href={withBase(`/${locale}/examples/${category.slug}/${item.slug}/`)}>
+              <div><strong>{localize(item.title, locale)}</strong><small>{item.slug}</small></div>
+              <span>{item.demos.length}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  )}
+
+  {page.type === 'example-group' && group && (
+    <div class="examples-shell">
+      <ExampleSidebar categories={registry.categories} locale={locale} currentRoute={page.route} />
+      <section class="listing-page">
+        <header class="listing-header compact">
+          <p class="eyebrow">examples / {group.categorySlug} / {group.slug}</p>
+          <h1>{localize(group.title, locale)}</h1>
+          <p>{group.demos.length} {isZh ? '个可运行示例。' : 'runnable examples.'}</p>
+        </header>
+        <div class="demo-grid">
+          {group.demos.map((item) => (
+            <a href={withBase(`/${locale}/examples/${item.key}/`)}>
+              <div class="demo-image">
+                {item.screenshot && (
+                  <img src={withBase(item.screenshot)} alt={`${localize(item.title, locale, item.slug)}${isZh ? '缩略图' : ' thumbnail'}`} loading="lazy" decoding="async" />
+                )}
+              </div>
+              <strong>{localize(item.title, locale, item.slug)}</strong>
+              <code>{item.slug}</code>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  )}
+
+  {page.type === 'demo' && demo && (
+    <div class="examples-shell demo-shell">
+      <ExampleSidebar categories={registry.categories} locale={locale} currentRoute={page.route} />
+      <article class="demo-page">
+        <Demo
+          demo={demo}
+          locale={locale}
+          height={config.demo.height}
+        />
+      </article>
+    </div>
+  )}
+
+</BaseLayout>

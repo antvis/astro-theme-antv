@@ -1,0 +1,356 @@
+---
+import { alternateRoute, localize } from '../lib/compiler';
+import type { LocalizedLink, LocalizedText } from '../lib/compiler';
+import githubIcon from '@tabler/icons/outline/brand-github.svg?raw';
+import languageIcon from '@tabler/icons/outline/language.svg?raw';
+import SiteSearch from '../components/SiteSearch.astro';
+import { withBase } from '../lib/paths';
+import { getGeneratedRoutes } from '../lib/routes';
+import { config, registry } from '../lib/site';
+import '../styles/global.css';
+
+interface Props {
+  locale: 'zh' | 'en';
+  title: string;
+  description: string;
+  route: string;
+  pageType?: string;
+}
+
+const { locale, title, description, route, pageType = 'page' } = Astro.props;
+const canonical = new URL(withBase(route), config.site.origin);
+const generatedRoutes = await getGeneratedRoutes();
+const alternateLocales = config.site.locales
+  .map((candidateLocale: 'zh' | 'en') => ({
+    locale: candidateLocale,
+    route: alternateRoute(route, candidateLocale),
+  }))
+  .filter((entry: { locale: 'zh' | 'en'; route: string }) =>
+    generatedRoutes.has(entry.route),
+  );
+const localeSwitch = alternateLocales.find(
+  (entry: { locale: 'zh' | 'en'; route: string }) => entry.locale !== locale,
+);
+const defaultAlternate = alternateLocales.find(
+  (entry: { locale: 'zh' | 'en'; route: string }) =>
+    entry.locale === config.site.defaultLocale,
+);
+const localizedRoute = (href: string) => {
+  if (/^(?:https?:)?\/\//.test(href)) return href;
+  if (href.startsWith('#')) return href;
+  if (href.startsWith('/#')) return `/${locale}/${href.slice(1)}`;
+  if (href.startsWith(`/${locale}/`) || href === `/${locale}/`) return href;
+  return `/${locale}${href.startsWith('/') ? href : `/${href}`}`.replace(/\/$/, '') + '/';
+};
+const localHref = (href: string) => {
+  const localized = localizedRoute(href);
+  return /^(?:https?:)?\/\//.test(localized) ? localized : withBase(localized);
+};
+const navLabel = locale === 'zh' ? '主导航' : 'Primary navigation';
+const currentSection = route.replace(new RegExp(`^/${locale}/?`), '').split('/')[0];
+const navigation = config.navigation.map((item) => {
+  const href = localHref(item.href);
+  const section = item.href.replace(/^\//, '').split('/')[0];
+  return {
+    ...item,
+    href,
+    active: section ? currentSection === section : route === localizedRoute(item.href),
+  };
+});
+const versionEntries = Object.entries(config.versions || {}) as [string, string][];
+const currentVersion = versionEntries[0]?.[0];
+const isAntVHome = config.site.title.trim().toLocaleLowerCase() === 'antv';
+const searchEnabled = config.search.enabled;
+const repositoryUrl = config.site.repository.replace(/\.git$/, '').replace(/\/$/, '');
+const footerGroups: Array<{ title: LocalizedText; links: LocalizedLink[] }> =
+  config.footer.groups !== null
+  ? config.footer.groups.map((group) => ({
+      ...group,
+      links: group.links.map((link) => ({ ...link, href: localHref(link.href) })),
+    }))
+  : [
+      {
+        title: { zh: '核心产品', en: 'Core products' },
+        links: [
+          { text: { zh: 'G2', en: 'G2' }, href: 'https://g2.antv.antgroup.com/' },
+          { text: { zh: 'G6', en: 'G6' }, href: 'https://g6.antv.antgroup.com/' },
+          { text: { zh: 'X6', en: 'X6' }, href: 'https://x6.antv.antgroup.com/' },
+          { text: { zh: 'L7', en: 'L7' }, href: 'https://l7.antv.antgroup.com/' },
+        ],
+      },
+      {
+        title: { zh: '设计', en: 'Design' },
+        links: [
+          {
+            text: { zh: '设计价值观', en: 'Design values' },
+            href: `https://antv.antgroup.com/${locale}/specification/principles/basic/`,
+          },
+          {
+            text: { zh: '设计语言', en: 'Visual language' },
+            href: `https://antv.antgroup.com/${locale}/specification/language/basic/`,
+          },
+          {
+            text: { zh: '资源下载', en: 'Resources' },
+            href: `https://antv.antgroup.com/${locale}/specification/resources/`,
+          },
+        ],
+      },
+      {
+        title: { zh: '社区', en: 'Community' },
+        links: [
+          { text: { zh: 'GitHub', en: 'GitHub' }, href: 'https://github.com/antvis' },
+          { text: { zh: '问题反馈', en: 'Issues' }, href: `${repositoryUrl}/issues` },
+          { text: { zh: 'Ant Design', en: 'Ant Design' }, href: 'https://ant.design/' },
+        ],
+      },
+    ];
+const serializeTokens = (tokens: Record<string, string>) =>
+  Object.entries(tokens)
+    .map(([name, value]) => `${name}:${value}`)
+    .join(';');
+const serializedTokens = serializeTokens(config.theme.tokens);
+const themeOverrides = serializedTokens && `:root{${serializedTokens}}`;
+const footerName = isAntVHome ? 'AntV' : `AntV ${config.site.title}`;
+const copyright = localize(
+  config.footer.copyright,
+  locale,
+  `© ${new Date().getFullYear()} ${footerName}`,
+);
+const footerTagline = localize(
+  config.footer.tagline,
+  locale,
+  locale === 'zh' ? '让数据栩栩如生' : 'Make data come alive',
+);
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': pageType === 'document' ? 'TechArticle' : 'WebPage',
+  name: title,
+  description,
+  url: canonical.href,
+  inLanguage: locale === 'zh' ? 'zh-CN' : 'en',
+  isPartOf: {
+    '@type': 'WebSite',
+    name: config.site.title,
+    url: new URL(withBase('/'), config.site.origin).href,
+  },
+};
+---
+
+<!doctype html>
+<html lang={locale} data-site-title={config.site.title}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="generator" content="@antv/site" />
+    <meta name="color-scheme" content="light" />
+    <link rel="canonical" href={canonical} />
+    {alternateLocales.map((entry: { locale: 'zh' | 'en'; route: string }) => (
+      <link
+        rel="alternate"
+        hreflang={entry.locale === 'zh' ? 'zh-CN' : 'en'}
+        href={new URL(withBase(entry.route), config.site.origin)}
+      />
+    ))}
+    {defaultAlternate && (
+      <link rel="alternate" hreflang="x-default" href={new URL(withBase(defaultAlternate.route), config.site.origin)} />
+    )}
+    {config.site.favicon && <link rel="icon" href={withBase(config.site.favicon)} />}
+    <title>{title === config.site.title ? title : `${title} · ${config.site.title}`}</title>
+    {themeOverrides && <style is:inline set:html={themeOverrides} />}
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+  </head>
+  <body class={`page-${pageType}`}>
+    <a class="skip-link" href="#main-content">
+      {locale === 'zh' ? '跳到主要内容' : 'Skip to content'}
+    </a>
+    <div class="site-canvas">
+    <header class:list={['site-header', pageType === 'home' && 'home-header']} data-pagefind-ignore>
+      <div class="header-inner">
+        <a class="brand" href={withBase(`/${locale}/`)} aria-label={`${config.site.title} home`}>
+          {config.site.logo ? (
+            <img class="brand-logo" src={withBase(config.site.logo)} alt="AntV" />
+          ) : (
+            <span class="brand-wordmark" aria-hidden="true">AntV</span>
+          )}
+          {!isAntVHome && <span class="brand-divider" aria-hidden="true"></span>}
+          {!isAntVHome && <span class="brand-product">{config.site.title}</span>}
+        </a>
+        <button class="mobile-nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav">
+          {locale === 'zh' ? '菜单' : 'Menu'}
+        </button>
+        <nav id="primary-nav" class="primary-nav" aria-label={navLabel}>
+          {navigation.map((item) => (
+            <a href={item.href} aria-current={item.active ? 'page' : undefined}>{localize(item.text, locale)}</a>
+          ))}
+          {versionEntries.length > 0 && (
+            <details class="header-menu version-menu">
+              <summary>
+                <span>{currentVersion}</span>
+                <span class="nav-chevron" aria-hidden="true"></span>
+              </summary>
+              <div>
+                {versionEntries.map(([label, href]) => <a href={withBase(href)}>{label}</a>)}
+              </div>
+            </details>
+          )}
+          {searchEnabled && (
+            <button class="search-trigger" type="button" data-search-open aria-haspopup="dialog">
+              <span class="nav-search-icon" aria-hidden="true"></span>
+              <span>{locale === 'zh' ? '搜索文档' : 'Search docs'}</span>
+              <kbd>⌘ K</kbd>
+            </button>
+          )}
+          {localeSwitch && (
+            <a
+              class="nav-icon-action"
+              href={withBase(localeSwitch.route)}
+              hreflang={localeSwitch.locale}
+              aria-label={localeSwitch.locale === 'en' ? 'Switch to English' : '切换到中文'}
+              title={localeSwitch.locale === 'en' ? 'Switch to English' : '切换到中文'}
+            >
+              <span class="nav-action-icon" aria-hidden="true" set:html={languageIcon}></span>
+              <span class="nav-icon-label">{localeSwitch.locale === 'en' ? 'English' : '中文'}</span>
+            </a>
+          )}
+          <a
+            class="nav-icon-action"
+            href={config.site.repository}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={locale === 'zh' ? '在 GitHub 查看' : 'View on GitHub'}
+            title={locale === 'zh' ? '在 GitHub 查看' : 'View on GitHub'}
+          >
+            <span class="nav-action-icon" aria-hidden="true" set:html={githubIcon}></span>
+            <span class="nav-icon-label">GitHub</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+    <main id="main-content" data-pagefind-body>
+      <slot />
+    </main>
+    <footer class="site-footer" data-pagefind-ignore>
+      <div class="footer-intro">
+        <strong>{footerName}</strong>
+        <p>{localize(config.footer.description, locale, localize(config.site.description, locale))}</p>
+      </div>
+      {footerGroups.map((group) => (
+        <div class="footer-group">
+          <strong>{localize(group.title, locale)}</strong>
+          {group.links.map((link) => (
+            <a href={link.href}>{localize(link.text, locale)}</a>
+          ))}
+        </div>
+      ))}
+    </footer>
+    <div class="footer-meta" data-pagefind-ignore>
+      <span>{copyright}</span>
+      <span>{footerTagline}</span>
+    </div>
+    </div>
+    {searchEnabled && (
+      <SiteSearch
+        locale={locale}
+        siteTitle={config.site.title}
+        aliases={config.search.aliases}
+        pathBoosts={config.search.pathBoosts}
+      />
+    )}
+    <script is:inline>
+      (() => {
+        const navButton = document.querySelector('.mobile-nav-toggle');
+        const nav = document.querySelector('#primary-nav');
+        navButton?.addEventListener('click', () => {
+          const open = navButton.getAttribute('aria-expanded') === 'true';
+          navButton.setAttribute('aria-expanded', String(!open));
+          nav?.toggleAttribute('data-open', !open);
+        });
+
+        const copyText = async (value) => {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(value);
+            return;
+          }
+          const textarea = document.createElement('textarea');
+          textarea.value = value;
+          textarea.setAttribute('readonly', '');
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          textarea.style.pointerEvents = 'none';
+          document.body.append(textarea);
+          textarea.select();
+          const legacyCopy = Reflect.get(document, 'execCommand');
+          const copied = typeof legacyCopy === 'function' && Reflect.apply(legacyCopy, document, ['copy']);
+          textarea.remove();
+          if (!copied) throw new Error('Copy command was rejected.');
+        };
+
+        const copyLabels = document.documentElement.lang === 'zh'
+          ? { idle: '复制代码', success: '已复制', error: '复制失败' }
+          : { idle: 'Copy code', success: 'Copied', error: 'Copy failed' };
+        document.querySelectorAll('.markdown-body pre').forEach((pre) => {
+          const code = pre.querySelector(':scope > code');
+          if (!code || pre.closest('.markdown-code-block')) return;
+          const wrapper = document.createElement('div');
+          wrapper.className = 'markdown-code-block';
+          pre.before(wrapper);
+          wrapper.append(pre);
+
+          const button = document.createElement('button');
+          button.className = 'markdown-code-copy';
+          button.type = 'button';
+          button.dataset.codeCopy = '';
+          button.setAttribute('aria-label', copyLabels.idle);
+          button.title = copyLabels.idle;
+          const svgNamespace = 'http://www.w3.org/2000/svg';
+          const copyIcon = document.createElementNS(svgNamespace, 'svg');
+          copyIcon.classList.add('markdown-code-copy-icon', 'is-copy');
+          copyIcon.setAttribute('viewBox', '0 0 24 24');
+          copyIcon.setAttribute('aria-hidden', 'true');
+          const copyRect = document.createElementNS(svgNamespace, 'rect');
+          copyRect.setAttribute('x', '8');
+          copyRect.setAttribute('y', '8');
+          copyRect.setAttribute('width', '14');
+          copyRect.setAttribute('height', '14');
+          copyRect.setAttribute('rx', '2');
+          const copyPath = document.createElementNS(svgNamespace, 'path');
+          copyPath.setAttribute('d', 'M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2');
+          copyIcon.append(copyRect, copyPath);
+
+          const successIcon = document.createElementNS(svgNamespace, 'svg');
+          successIcon.classList.add('markdown-code-copy-icon', 'is-success');
+          successIcon.setAttribute('viewBox', '0 0 24 24');
+          successIcon.setAttribute('aria-hidden', 'true');
+          const successPath = document.createElementNS(svgNamespace, 'path');
+          successPath.setAttribute('d', 'm5 12 4 4L19 6');
+          successIcon.append(successPath);
+          button.append(copyIcon, successIcon);
+          wrapper.append(button);
+
+          let resetTimer;
+          button.addEventListener('click', async () => {
+            clearTimeout(resetTimer);
+            try {
+              await copyText(code.textContent || '');
+              button.dataset.copyState = 'success';
+              button.setAttribute('aria-label', copyLabels.success);
+              button.title = copyLabels.success;
+            } catch (error) {
+              console.error('Failed to copy code block.', error);
+              button.dataset.copyState = 'error';
+              button.setAttribute('aria-label', copyLabels.error);
+              button.title = copyLabels.error;
+            }
+            resetTimer = setTimeout(() => {
+              delete button.dataset.copyState;
+              button.setAttribute('aria-label', copyLabels.idle);
+              button.title = copyLabels.idle;
+            }, 1800);
+          });
+        });
+
+      })();
+    </script>
+  </body>
+</html>

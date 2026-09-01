@@ -1,0 +1,667 @@
+---
+import arrowUpIcon from '@tabler/icons/outline/arrow-up.svg?raw';
+import chartBarIcon from '@tabler/icons/outline/chart-bar.svg?raw';
+import chevronDownIcon from '@tabler/icons/outline/chevron-down.svg?raw';
+import deviceMobileIcon from '@tabler/icons/outline/device-mobile.svg?raw';
+import hierarchyIcon from '@tabler/icons/outline/hierarchy-3.svg?raw';
+import mapIcon from '@tabler/icons/outline/map.svg?raw';
+import tableIcon from '@tabler/icons/outline/table.svg?raw';
+import vectorBezierIcon from '@tabler/icons/outline/vector-bezier.svg?raw';
+import type { QaProduct } from '../../../dist/qa';
+import { withBase } from '../lib/paths';
+import { config } from '../lib/site';
+
+interface Props {
+  locale: 'zh' | 'en';
+}
+
+const { locale } = Astro.props;
+const qa = config.qa;
+const isZh = locale === 'zh';
+const text = {
+  action: isZh ? '开始创作' : 'Create with AI',
+  blocked: isZh
+    ? '浏览器阻止了登录窗口，请允许弹窗后重试。'
+    : 'The sign-in window was blocked. Allow pop-ups and try again.',
+  closed: isZh ? '登录窗口已关闭，请重试。' : 'The sign-in window was closed. Please try again.',
+  prompt: isZh ? '今天，你想可视化什么？' : 'What would you like to visualize today?',
+  request: isZh ? '暂时无法发送请求，请重试。' : 'Unable to send the request. Please try again.',
+  stack: isZh ? '选择技术栈' : 'Choose a technology stack',
+  timeout: isZh ? '登录等待超时，请重试。' : 'Sign-in timed out. Please try again.',
+};
+const stackOptions: Array<{
+  description: string;
+  icon: string;
+  label: string;
+  value: QaProduct;
+}> = [
+  {
+    value: 'g2',
+    label: 'G2',
+    description: isZh ? '可视化语法' : 'Visualization grammar',
+    icon: chartBarIcon,
+  },
+  {
+    value: 's2',
+    label: 'S2',
+    description: isZh ? '表可视化分析引擎' : 'Table visualization engine',
+    icon: tableIcon,
+  },
+  {
+    value: 'g6',
+    label: 'G6',
+    description: isZh ? '图可视化引擎' : 'Graph visualization engine',
+    icon: hierarchyIcon,
+  },
+  {
+    value: 'f2',
+    label: 'F2',
+    description: isZh ? '移动可视化方案' : 'Mobile visualization solution',
+    icon: deviceMobileIcon,
+  },
+  {
+    value: 'x6',
+    label: 'X6',
+    description: isZh ? '图编辑引擎' : 'Diagramming engine',
+    icon: vectorBezierIcon,
+  },
+  {
+    value: 'l7',
+    label: 'L7',
+    description: isZh ? '地理空间可视化引擎' : 'Geospatial visualization engine',
+    icon: mapIcon,
+  },
+];
+const defaultStack = stackOptions.find((item) => item.value === qa?.defaultStack) ?? stackOptions[0];
+const serviceBaseUrl = qa
+  ? import.meta.env.DEV
+    ? qa.service.development
+    : qa.service.production
+  : '';
+const resultUrl = qa
+  ? withBase(`/${locale}/${qa.path}/`.replace(/\/+/g, '/'))
+  : '';
+---
+
+{qa && (
+  <form
+    class="antv-qa-entry"
+    role="search"
+    data-antv-qa-entry
+    data-default-stack={defaultStack.value}
+    data-qa-service-base={serviceBaseUrl}
+    data-result-url={resultUrl}
+    data-popup-blocked={text.blocked}
+    data-popup-closed={text.closed}
+    data-request-error={text.request}
+    data-popup-timeout={text.timeout}
+  >
+    <label class="antv-qa-visually-hidden" for={`antv-qa-query-${locale}`}>{text.prompt}</label>
+    <textarea
+      id={`antv-qa-query-${locale}`}
+      class="antv-qa-prompt"
+      rows="2"
+      placeholder={text.prompt}
+      autocomplete="off"
+      required
+      data-qa-prompt
+    ></textarea>
+    <div class="antv-qa-meta">
+      <div class="antv-qa-stack" data-qa-stack>
+        <input type="hidden" name="stack" value={defaultStack.value} data-stack-input />
+        <button
+          class="antv-qa-product"
+          type="button"
+          aria-haspopup="listbox"
+          aria-expanded="false"
+          aria-controls={`antv-qa-stack-menu-${locale}`}
+          data-stack-trigger
+        >
+          <span class="antv-qa-product-icon" aria-hidden="true" data-stack-icon set:html={defaultStack.icon}></span>
+          <span data-stack-label>{defaultStack.label}</span>
+          <span class="antv-qa-product-chevron" aria-hidden="true" set:html={chevronDownIcon}></span>
+        </button>
+        <div
+          id={`antv-qa-stack-menu-${locale}`}
+          class="antv-qa-stack-menu"
+          role="listbox"
+          aria-label={text.stack}
+          data-stack-menu
+          popover="manual"
+          hidden
+        >
+          {stackOptions.map((item) => (
+            <button
+              class="antv-qa-stack-option"
+              type="button"
+              role="option"
+              aria-selected={item.value === defaultStack.value ? 'true' : 'false'}
+              data-stack-label-value={item.label}
+              data-stack-value={item.value}
+            >
+              <span class="antv-qa-stack-option-icon" aria-hidden="true" set:html={item.icon}></span>
+              <span class="antv-qa-stack-option-copy">
+                <strong>{item.label}</strong>
+                <small>{item.description}</small>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <button class="antv-qa-action" type="submit" aria-label={text.action} disabled>
+        <span aria-hidden="true" set:html={arrowUpIcon}></span>
+      </button>
+    </div>
+    <p class="antv-qa-error" data-qa-error hidden></p>
+  </form>
+)}
+
+<script>
+  import { requestQaSession, saveQaHistory, toQaProduct } from '../features/qa';
+
+  document.querySelectorAll('[data-antv-qa-entry]').forEach((entry) => {
+    if (!(entry instanceof HTMLFormElement) || entry.dataset.qaReady === 'true') return;
+    entry.dataset.qaReady = 'true';
+
+    const prompt = entry.querySelector('[data-qa-prompt]');
+    const action = entry.querySelector('.antv-qa-action');
+    const stack = entry.querySelector('[data-qa-stack]');
+    const errorTarget = entry.querySelector('[data-qa-error]');
+    if (
+      !(prompt instanceof HTMLTextAreaElement) ||
+      !(action instanceof HTMLButtonElement) ||
+      !(errorTarget instanceof HTMLElement)
+    ) return;
+
+    const syncAction = () => {
+      action.disabled = !prompt.value.trim();
+    };
+
+    entry.addEventListener('click', (event) => {
+      if (event.target instanceof Element && event.target.closest('button, [data-qa-stack]')) return;
+      prompt.focus({ preventScroll: true });
+    });
+    prompt.addEventListener('input', syncAction);
+    prompt.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
+      event.preventDefault();
+      if (prompt.value.trim()) entry.requestSubmit();
+    });
+    syncAction();
+
+    if (stack instanceof HTMLElement) {
+      const trigger = stack.querySelector('[data-stack-trigger]');
+      const menu = stack.querySelector('[data-stack-menu]');
+      const input = stack.querySelector('[data-stack-input]');
+      const label = stack.querySelector('[data-stack-label]');
+      const displayIcon = stack.querySelector('[data-stack-icon]');
+      const options = menu
+        ? [...menu.querySelectorAll('[data-stack-value]')].filter(
+            (option): option is HTMLButtonElement => option instanceof HTMLButtonElement,
+          )
+        : [];
+
+      if (
+        trigger instanceof HTMLButtonElement &&
+        menu instanceof HTMLElement &&
+        input instanceof HTMLInputElement &&
+        label instanceof HTMLElement &&
+        displayIcon instanceof HTMLElement &&
+        options.length
+      ) {
+        const supportsPopover = typeof menu.showPopover === 'function';
+        const isMenuOpen = () => (supportsPopover ? menu.matches(':popover-open') : !menu.hidden);
+        const selectedIndex = () =>
+          Math.max(0, options.findIndex((option) => option.getAttribute('aria-selected') === 'true'));
+        const positionMenu = () => {
+          const rect = trigger.getBoundingClientRect();
+          const width = Math.min(310, window.innerWidth - 48);
+          const left = Math.min(Math.max(24, rect.left), window.innerWidth - width - 24);
+          let top = rect.bottom + 12;
+          if (top + menu.offsetHeight > window.innerHeight - 24) {
+            top = Math.max(24, rect.top - menu.offsetHeight - 12);
+          }
+          menu.style.width = `${width}px`;
+          menu.style.left = `${left}px`;
+          menu.style.top = `${top}px`;
+        };
+        const closeMenu = (restoreFocus = false) => {
+          if (supportsPopover && menu.matches(':popover-open')) menu.hidePopover();
+          menu.hidden = true;
+          trigger.setAttribute('aria-expanded', 'false');
+          if (restoreFocus) trigger.focus();
+        };
+        const openMenu = (focusIndex?: number) => {
+          menu.hidden = false;
+          menu.style.visibility = 'hidden';
+          if (supportsPopover && !menu.matches(':popover-open')) menu.showPopover();
+          positionMenu();
+          menu.style.removeProperty('visibility');
+          trigger.setAttribute('aria-expanded', 'true');
+          if (typeof focusIndex === 'number') {
+            window.requestAnimationFrame(() => options[focusIndex]?.focus());
+          }
+        };
+        const selectOption = (option: HTMLButtonElement) => {
+          const value = option.dataset.stackValue;
+          const optionLabel = option.dataset.stackLabelValue;
+          const icon = option.querySelector('.antv-qa-stack-option-icon');
+          if (!value || !optionLabel || !(icon instanceof HTMLElement)) return;
+          input.value = value;
+          label.textContent = optionLabel;
+          displayIcon.innerHTML = icon.innerHTML;
+          options.forEach((item) => item.setAttribute('aria-selected', String(item === option)));
+          closeMenu(true);
+        };
+
+        trigger.addEventListener('click', () => (isMenuOpen() ? closeMenu() : openMenu()));
+        trigger.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape' && isMenuOpen()) {
+            event.preventDefault();
+            closeMenu();
+            return;
+          }
+          if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+          event.preventDefault();
+          openMenu(event.key === 'ArrowDown' ? selectedIndex() : options.length - 1);
+        });
+        options.forEach((option) => option.addEventListener('click', () => selectOption(option)));
+        menu.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            closeMenu(true);
+            return;
+          }
+          if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+          event.preventDefault();
+          const current = Math.max(0, options.indexOf(document.activeElement as HTMLButtonElement));
+          const next =
+            event.key === 'Home'
+              ? 0
+              : event.key === 'End'
+                ? options.length - 1
+                : (current + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
+          options[next]?.focus();
+        });
+        stack.addEventListener('focusout', () => {
+          window.setTimeout(() => {
+            if (!stack.contains(document.activeElement)) closeMenu();
+          });
+        });
+        document.addEventListener('pointerdown', (event) => {
+          if (event.target instanceof Node && !stack.contains(event.target)) closeMenu();
+        });
+      }
+    }
+
+    entry.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const query = prompt.value.trim();
+      if (!query) {
+        prompt.focus();
+        return;
+      }
+
+      const serviceBaseUrl = entry.dataset.qaServiceBase;
+      const resultUrl = entry.dataset.resultUrl;
+      const stackInput = entry.querySelector('[data-stack-input]');
+      const stackValue = stackInput instanceof HTMLInputElement ? stackInput.value.trim() : '';
+      const selectedStack = entry.querySelector(
+        `[data-stack-value="${CSS.escape(stackValue)}"]`,
+      );
+      const stackLabel =
+        selectedStack instanceof HTMLButtonElement
+          ? selectedStack.dataset.stackLabelValue ?? stackValue.toUpperCase()
+          : stackValue.toUpperCase();
+      const product = toQaProduct(stackValue);
+      if (!serviceBaseUrl || !resultUrl || !product) return;
+
+      action.disabled = true;
+      action.setAttribute('aria-busy', 'true');
+      errorTarget.hidden = true;
+
+      try {
+        const session = await requestQaSession({
+          context: {
+            locale: document.documentElement.lang.startsWith('en') ? 'en-US' : 'zh-CN',
+            product,
+          },
+          errors: {
+            blocked: entry.dataset.popupBlocked ?? '',
+            closed: entry.dataset.popupClosed ?? '',
+            request: entry.dataset.requestError ?? '',
+            timeout: entry.dataset.popupTimeout ?? '',
+          },
+          message: query,
+          serviceBaseUrl,
+        });
+        const target = new URL(resultUrl, window.location.origin);
+        target.searchParams.set('q', query);
+        target.searchParams.set('stack', stackLabel);
+        target.searchParams.set('session', session);
+        saveQaHistory({ session, stack: stackLabel, title: query });
+        window.location.assign(target);
+      } catch (error) {
+        errorTarget.textContent = error instanceof Error ? error.message : String(error);
+        errorTarget.hidden = false;
+        action.disabled = false;
+        action.removeAttribute('aria-busy');
+      }
+    });
+  });
+</script>
+
+<style>
+  .antv-qa-entry {
+    display: flex;
+    width: min(750px, 100%);
+    min-height: 168px;
+    align-items: stretch;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-top: 26px;
+    padding: 24px 24px 18px;
+    border: 1px solid rgb(111 55 215 / 12%);
+    border-radius: 16px;
+    background: rgb(255 255 255 / 88%);
+    box-shadow: 0 20px 56px rgb(77 37 143 / 13%);
+    color: #211b2b;
+    cursor: text;
+    text-align: left;
+    backdrop-filter: blur(16px);
+    transition: border-color .25s, box-shadow .25s, transform .25s;
+  }
+
+  .antv-qa-entry:hover {
+    border-color: rgb(105 30 255 / 32%);
+    box-shadow: 0 22px 56px rgb(77 37 143 / 20%);
+    transform: translateY(-3px);
+  }
+
+  .antv-qa-entry:active {
+    transform: translateY(-1px) scale(.995);
+  }
+
+  .antv-qa-entry:focus-within {
+    outline: 3px solid color-mix(in srgb, var(--brand) 50%, transparent);
+    outline-offset: 3px;
+  }
+
+  .antv-qa-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .antv-qa-prompt {
+    width: 100%;
+    min-width: 0;
+    min-height: 56px;
+    flex: 1 1 auto;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    appearance: none;
+    background: transparent;
+    color: #211b2b;
+    cursor: text;
+    font: inherit;
+    font-size: 15px;
+    line-height: 1.6;
+    overflow-y: auto;
+    resize: none;
+  }
+
+  .antv-qa-prompt::placeholder {
+    color: #736d7d;
+    opacity: 1;
+  }
+
+  .antv-qa-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .antv-qa-stack {
+    position: relative;
+    flex: 0 0 auto;
+  }
+
+  .antv-qa-product,
+  .antv-qa-action {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .antv-qa-product {
+    gap: 6px;
+    padding: 6px 10px 6px 8px;
+    border: 0;
+    border-radius: 8px;
+    appearance: none;
+    background: rgb(111 55 215 / 5%);
+    color: #41394c;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    transition: background .2s, color .2s;
+  }
+
+  .antv-qa-product:hover,
+  .antv-qa-product[aria-expanded='true'] {
+    background: rgb(111 55 215 / 10%);
+    color: #2f2839;
+  }
+
+  .antv-qa-product:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--brand) 48%, transparent);
+    outline-offset: 2px;
+  }
+
+  .antv-qa-product-icon,
+  .antv-qa-product-chevron {
+    display: inline-grid;
+    color: var(--brand);
+    place-items: center;
+  }
+
+  .antv-qa-product-icon :global(svg),
+  .antv-qa-stack-option-icon :global(svg) {
+    width: 19px;
+    height: 19px;
+    stroke-width: 1.8;
+  }
+
+  .antv-qa-product-chevron {
+    margin-left: 2px;
+    color: #8c8498;
+    transition: transform .2s;
+  }
+
+  .antv-qa-product-chevron :global(svg) {
+    width: 13px;
+    height: 13px;
+    stroke-width: 2;
+  }
+
+  .antv-qa-product[aria-expanded='true'] .antv-qa-product-chevron {
+    transform: rotate(180deg);
+  }
+
+  .antv-qa-stack-menu {
+    position: fixed;
+    inset: auto;
+    z-index: 80;
+    display: grid;
+    width: min(310px, calc(100vw - 48px));
+    gap: 4px;
+    padding: 8px;
+    margin: 0;
+    border: 1px solid rgb(111 55 215 / 14%);
+    border-radius: 14px;
+    background: rgb(255 255 255 / 98%);
+    box-shadow: 0 18px 46px rgb(66 35 115 / 19%);
+    cursor: default;
+  }
+
+  .antv-qa-stack-menu[hidden] {
+    display: none;
+  }
+
+  .antv-qa-stack-option {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 32px minmax(0, 1fr) 18px;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 11px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #302939;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    transition: background .18s, color .18s;
+  }
+
+  .antv-qa-stack-option:hover,
+  .antv-qa-stack-option:focus-visible,
+  .antv-qa-stack-option[aria-selected='true'] {
+    background: rgb(111 55 215 / 7%);
+    color: #4e2bb7;
+    outline: 0;
+  }
+
+  .antv-qa-stack-option[aria-selected='true']::after {
+    color: var(--brand);
+    content: '✓';
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .antv-qa-stack-option-icon {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: rgb(111 55 215 / 8%);
+    color: var(--brand);
+    place-items: center;
+  }
+
+  .antv-qa-stack-option-copy {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+  }
+
+  .antv-qa-stack-option-copy strong {
+    color: inherit;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .antv-qa-stack-option-copy small {
+    overflow: hidden;
+    color: #7b7485;
+    font-size: 11px;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .antv-qa-action {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 auto;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #946ffb, #505ef8);
+    box-shadow: 0 8px 18px rgb(91 80 235 / 28%);
+    color: white;
+    cursor: pointer;
+    transition: filter .2s, opacity .2s, transform .2s;
+  }
+
+  .antv-qa-action :global(svg) {
+    width: 21px;
+    height: 21px;
+    stroke-width: 2.2;
+  }
+
+  .antv-qa-action:not(:disabled):hover {
+    filter: saturate(1.08) brightness(1.04);
+    transform: scale(1.04);
+  }
+
+  .antv-qa-action:not(:disabled):active {
+    transform: scale(.96);
+  }
+
+  .antv-qa-action:disabled {
+    cursor: not-allowed;
+    filter: grayscale(1) saturate(0);
+    opacity: .34;
+  }
+
+  .antv-qa-action[aria-busy='true'] {
+    animation: antv-qa-submit-pulse .9s ease-in-out infinite alternate;
+    filter: none;
+  }
+
+  .antv-qa-action:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--brand) 50%, transparent);
+    outline-offset: 2px;
+  }
+
+  .antv-qa-error {
+    margin: 8px 0 -4px;
+    color: #b42318;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .antv-qa-error[hidden] {
+    display: none;
+  }
+
+  @keyframes antv-qa-submit-pulse {
+    from { opacity: .5; }
+    to { opacity: 1; }
+  }
+
+  @media (max-width: 767px) {
+    .antv-qa-entry {
+      min-height: 132px;
+      margin-top: 24px;
+      padding: 18px 17px 14px;
+    }
+
+    .antv-qa-product {
+      font-size: 12px;
+    }
+
+    .antv-qa-action {
+      width: 44px;
+      height: 44px;
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .antv-qa-entry {
+      background: #fff;
+      backdrop-filter: none;
+    }
+  }
+</style>

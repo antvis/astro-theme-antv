@@ -1,0 +1,64 @@
+---
+import type { DemoRecord } from '../../lib/compiler';
+import { registry } from '../../lib/site';
+
+interface Props {
+  demo: DemoRecord;
+}
+
+export function getStaticPaths() {
+  return registry.demos.map((demo) => ({
+    params: { key: demo.key },
+    props: { demo },
+  }));
+}
+
+const { demo } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{demo.key}</title>
+    <style>
+      :root { color-scheme: light; }
+      * { box-sizing: border-box; }
+      html, body { min-height: 100%; margin: 0; }
+      body { padding: 16px; background: #fff; color: #1d2129; }
+      #container { width: 100%; min-height: 320px; }
+      #demo-error {
+        margin: 0;
+        padding: 16px;
+        border: 1px solid #ffccc7;
+        border-radius: 8px;
+        background: #fff2f0;
+        color: #a8071a;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body data-demo-key={demo.key}>
+    <div id="container"></div>
+    <pre id="demo-error" hidden></pre>
+    <script>
+      import { demos } from 'virtual:antv-site-demos';
+
+      const key = document.body.dataset.demoKey || '';
+      const errorTarget = document.querySelector('#demo-error');
+      const showError = (error: unknown) => {
+        if (!(errorTarget instanceof HTMLElement)) return;
+        errorTarget.hidden = false;
+        errorTarget.textContent = error instanceof Error ? error.stack || error.message : String(error);
+      };
+
+      addEventListener('error', (event) => showError(event.error || event.message));
+      addEventListener('unhandledrejection', (event) => showError(event.reason));
+
+      const load = demos[key];
+      if (!load) showError(new Error(`Unknown demo: ${key}`));
+      else load().catch(showError);
+    </script>
+  </body>
+</html>

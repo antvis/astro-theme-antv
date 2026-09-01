@@ -1,0 +1,13 @@
+{
+  "title": { "zh": "简单示例", "en": "Simple examples" },
+  "demos": [
+    {
+      "filename": "hello.ts",
+      "title": { "zh": "你好", "en": "Hello" }
+    },
+    {
+      "filename": "card.tsx",
+      "title": { "zh": "TSX 卡片", "en": "TSX card" }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+---
+import { resolveExampleCategoryIcon } from './exampleCategoryIcons';
+
+interface Props {
+  icon?: string;
+}
+
+const { icon = 'other' } = Astro.props;
+const isImage = /^(?:https?:)?\/\//.test(icon);
+const resolvedIcon = isImage ? undefined : resolveExampleCategoryIcon(icon);
+---
+
+{isImage ? (
+  <img class="example-category-icon" src={icon} alt="" aria-hidden="true" data-example-category-icon />
+) : (
+  <svg
+    class="example-category-icon"
+    viewBox={resolvedIcon!.definition.viewBox}
+    aria-hidden="true"
+    data-example-category-icon
+    data-icon={resolvedIcon!.name}
+  >
+    {resolvedIcon!.definition.paths.map((path) => <path d={path} />)}
+  </svg>
+)}

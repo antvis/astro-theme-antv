@@ -1,0 +1,60 @@
+---
+import { localize } from '../lib/compiler';
+import type { DemoRecord } from '../lib/compiler';
+import { withBase } from '../lib/paths';
+import reloadIcon from '@tabler/icons/outline/reload.svg?raw';
+
+interface Props {
+  demo: DemoRecord;
+  locale: 'zh' | 'en';
+  height: number;
+}
+
+const { demo, locale, height } = Astro.props;
+const title = localize(demo.title, locale, demo.slug);
+---
+
+<section class="demo-workbench" aria-labelledby="demo-title" data-static-demo>
+  <header class="demo-static-header">
+    <div>
+      <h1 id="demo-title">{title}</h1>
+      <span>examples / {demo.key}</span>
+    </div>
+    <button
+      class="demo-secondary-action demo-icon-action"
+      type="button"
+      data-demo-reload
+      aria-label={locale === 'zh' ? '重新加载预览' : 'Reload preview'}
+      title={locale === 'zh' ? '重新加载预览' : 'Reload preview'}
+    >
+      <span class="demo-action-icon" aria-hidden="true" set:html={reloadIcon}></span>
+    </button>
+  </header>
+  <iframe
+    title={`${title} ${locale === 'zh' ? '运行结果' : 'result'}`}
+    src={withBase(`/demos/${demo.key}/`)}
+    style={`height:${height}px`}
+    loading="eager"
+    data-demo-frame
+  ></iframe>
+  <details class="demo-source" open>
+    <summary>{locale === 'zh' ? '源码' : 'Source'}</summary>
+    <pre><code class="language-ts">{demo.source}</code></pre>
+  </details>
+</section>
+
+<script>
+  document
+    .querySelectorAll<HTMLElement>('[data-static-demo]:not([data-initialized])')
+    .forEach((root) => {
+      root.dataset.initialized = '';
+      const frame = root.querySelector<HTMLIFrameElement>('[data-demo-frame]');
+      const reload = root.querySelector<HTMLButtonElement>('[data-demo-reload]');
+      reload?.addEventListener('click', () => {
+        if (!frame) return;
+        const url = new URL(frame.src, location.href);
+        url.searchParams.set('reload', String(Date.now()));
+        frame.src = url.href;
+      });
+    });
+</script>

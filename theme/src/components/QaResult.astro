@@ -1,0 +1,1734 @@
+---
+import arrowLeftIcon from '@tabler/icons/outline/arrow-left.svg?raw';
+import sendIcon from '@tabler/icons/outline/send.svg?raw';
+import { withBase } from '../lib/paths';
+
+interface Props {
+  locale: 'zh' | 'en';
+  service: {
+    development: string;
+    production: string;
+  };
+}
+
+const { locale, service } = Astro.props;
+const isZh = locale === 'zh';
+const qaServiceBaseUrl = import.meta.env.DEV
+  ? service.development
+  : service.production;
+const text = {
+  title: isZh ? '问答结果' : 'Conversation',
+  loading: isZh ? '正在准备回答' : 'Preparing the answer',
+  streaming: isZh ? '正在生成' : 'Generating',
+  finished: isZh ? '回答完成' : 'Answer complete',
+  aborted: isZh ? '回答已停止' : 'Answer stopped',
+  errorStatus: isZh ? '生成失败，可以继续提问' : 'Generation failed. You can ask again.',
+  errorTitle: isZh ? '无法载入本次问答' : 'Unable to load this conversation',
+  missingDescription: isZh
+    ? '结果地址缺少有效的会话信息，请返回首页重新提交。'
+    : 'The result URL does not contain a valid session. Please submit again.',
+  loadErrorDescription: isZh
+    ? '结果暂时无法读取，请稍后重试。'
+    : 'The result is temporarily unavailable. Please try again later.',
+  emptyDescription: isZh
+    ? '本次回答没有可展示的文本内容。'
+    : 'This answer has no displayable text.',
+  retrying: isZh ? '连接中断，正在重试' : 'Connection interrupted. Retrying.',
+  back: isZh ? '返回首页' : 'Back to home',
+  historyTitle: isZh ? '对话历史' : 'Conversation history',
+  historyEmpty: isZh ? '暂无本地对话' : 'No local conversations yet',
+  historyExpand: isZh ? '展开' : 'Show',
+  historyCollapse: isZh ? '收起' : 'Hide',
+  userRole: isZh ? '你' : 'You',
+  assistantRole: isZh ? 'AntV AI' : 'AntV AI',
+  followupLabel: isZh ? '继续提问' : 'Ask a follow-up',
+  followupPlaceholder: isZh
+    ? '继续追问配置、用法或实现细节'
+    : 'Ask about configuration, usage, or implementation details',
+  send: isZh ? '发送' : 'Send',
+  submitting: isZh ? '正在检查登录状态' : 'Checking sign-in status',
+  followupError: isZh ? '暂时无法发送，请重试。' : 'Unable to send. Please try again.',
+  notice: isZh ? '内容由 AI 生成，请仔细甄别。' : 'AI-generated content may contain errors.',
+  popupBlocked: isZh
+    ? '浏览器阻止了登录窗口，请允许弹窗后重试。'
+    : 'The sign-in window was blocked. Allow pop-ups and try again.',
+  popupClosed: isZh
+    ? '登录窗口已关闭，请重试。'
+    : 'The sign-in window was closed. Please try again.',
+  popupTimeout: isZh
+    ? '登录等待超时，请重试。'
+    : 'Sign-in timed out. Please try again.',
+  previewTitle: isZh ? '可视化预览' : 'Visualization preview',
+  previewView: isZh ? '查看效果' : 'View result',
+  previewLoading: isZh ? '渲染中' : 'Rendering',
+  previewRerender: isZh ? '重新渲染' : 'Render again',
+  previewError: isZh
+    ? '预览配置无效或渲染失败，页面不会执行其中的代码。'
+    : 'The preview configuration is invalid or could not be rendered. No code was executed.',
+  codeCopy: isZh ? '复制代码' : 'Copy code',
+  codeCopied: isZh ? '已复制' : 'Copied',
+  codeCopyError: isZh ? '复制失败' : 'Copy failed',
+};
+---
+
+<section
+  class="antv-result-page"
+  aria-label={text.title}
+  data-antv-result
+  data-qa-service-base={qaServiceBaseUrl}
+  data-text-aborted={text.aborted}
+  data-text-assistant-role={text.assistantRole}
+  data-text-code-copied={text.codeCopied}
+  data-text-code-copy={text.codeCopy}
+  data-text-code-copy-error={text.codeCopyError}
+  data-text-empty={text.emptyDescription}
+  data-text-error-status={text.errorStatus}
+  data-text-finished={text.finished}
+  data-text-followup-error={text.followupError}
+  data-text-history-collapse={text.historyCollapse}
+  data-text-history-empty={text.historyEmpty}
+  data-text-history-expand={text.historyExpand}
+  data-text-load-error={text.loadErrorDescription}
+  data-text-loading={text.loading}
+  data-text-missing={text.missingDescription}
+  data-text-popup-blocked={text.popupBlocked}
+  data-text-popup-closed={text.popupClosed}
+  data-text-popup-timeout={text.popupTimeout}
+  data-text-preview-error={text.previewError}
+  data-text-preview-loading={text.previewLoading}
+  data-text-preview-rerender={text.previewRerender}
+  data-text-preview-title={text.previewTitle}
+  data-text-preview-view={text.previewView}
+  data-text-retrying={text.retrying}
+  data-text-streaming={text.streaming}
+  data-text-submitting={text.submitting}
+  data-text-user-role={text.userRole}
+  data-pagefind-ignore
+>
+  <div class="antv-result-inner">
+    <aside class="antv-history" data-history data-open="false">
+      <div class="antv-history-header">
+        <h2>{text.historyTitle}</h2>
+        <button
+          type="button"
+          aria-controls={`antv-history-list-${locale}`}
+          aria-expanded="false"
+          data-history-toggle
+        >
+          {text.historyExpand}
+        </button>
+      </div>
+      <nav
+        id={`antv-history-list-${locale}`}
+        class="antv-history-list"
+        aria-label={text.historyTitle}
+        data-history-list
+      >
+        <p class="antv-history-empty">{text.historyEmpty}</p>
+      </nav>
+    </aside>
+
+    <main class="antv-conversation-shell">
+      <p class="antv-result-status" data-result-status role="status" aria-live="polite">
+        {text.loading}
+      </p>
+
+      <div class="antv-conversation" data-result-messages aria-live="polite">
+        <div class="antv-result-loading" data-result-loading>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+
+      <div class="antv-result-error" data-result-error hidden>
+        <h2>{text.errorTitle}</h2>
+        <p data-result-error-description>{text.missingDescription}</p>
+        <a class="antv-result-back" href={withBase(`/${locale}/`)}>
+          <span aria-hidden="true" set:html={arrowLeftIcon}></span>
+          {text.back}
+        </a>
+      </div>
+
+      <form class="antv-followup" data-result-composer>
+        <label for={`antv-followup-${locale}`}>{text.followupLabel}</label>
+        <div class="antv-followup-control">
+          <textarea
+            id={`antv-followup-${locale}`}
+            rows="1"
+            maxlength="4000"
+            placeholder={text.followupPlaceholder}
+            data-followup-input
+          ></textarea>
+          <button type="submit" data-followup-submit aria-label={text.send} disabled>
+            <span aria-hidden="true" set:html={sendIcon}></span>
+          </button>
+        </div>
+        <p class="antv-followup-error" data-followup-error hidden></p>
+      </form>
+
+      <p class="antv-result-notice">{text.notice}</p>
+    </main>
+  </div>
+</section>
+
+<script>
+  import checkIcon from '@tabler/icons/outline/check.svg?raw';
+  import copyIcon from '@tabler/icons/outline/copy.svg?raw';
+  import DOMPurify from 'dompurify';
+  import { marked } from 'marked';
+  import { highlightCodeBlocks } from '../features/qa/code-highlight';
+  import { requestQaSession } from '../features/qa/client';
+  import { readQaHistory, saveQaHistory, type QaHistoryEntry } from '../features/qa/history';
+  import { destroyQaPreviews, renderQaPreviews } from '../features/qa/preview';
+
+  type SharedMessage =
+    | { content: string; id: string; role: 'user' }
+    | {
+        content: string;
+        errorMessage: string | null;
+        id: string;
+        previews: unknown[];
+        role: 'assistant';
+        status: 'streaming' | 'finished' | 'aborted' | 'error';
+      };
+
+  (() => {
+    const root = document.querySelector('[data-antv-result]');
+    if (!(root instanceof HTMLElement)) return;
+
+    const params = new URLSearchParams(window.location.search);
+    let sessionId = params.get('session')?.trim() ?? '';
+    let initialQuery = params.get('q')?.trim() ?? '';
+    let stack = params.get('stack')?.trim() ?? '';
+    const serviceBaseUrl = root.dataset.qaServiceBase ?? '';
+    const statusTarget = root.querySelector('[data-result-status]');
+    const messagesTarget = root.querySelector('[data-result-messages]');
+    const loadingTarget = root.querySelector('[data-result-loading]');
+    const errorTarget = root.querySelector('[data-result-error]');
+    const errorDescriptionTarget = root.querySelector('[data-result-error-description]');
+    const composer = root.querySelector('[data-result-composer]');
+    const followupInput = root.querySelector('[data-followup-input]');
+    const followupSubmit = root.querySelector('[data-followup-submit]');
+    const followupError = root.querySelector('[data-followup-error]');
+    const historyTarget = root.querySelector('[data-history]');
+    const historyList = root.querySelector('[data-history-list]');
+    const historyToggle = root.querySelector('[data-history-toggle]');
+    const messageNodes = new Map<string, HTMLElement>();
+    let pollTimer = 0;
+    let streamRenderTimer = 0;
+    let streamRenderFrame = 0;
+    let streamController: AbortController | null = null;
+    let streamConnecting = false;
+    let streamRenderContent = '';
+    let stopped = false;
+    let requestPending = false;
+    let generationActive = true;
+    let consecutiveFailures = 0;
+    let forceFollow = false;
+    let sessionRevision = 0;
+    let sessionSwitchPending = false;
+
+    const copy = {
+      aborted: root.dataset.textAborted ?? '',
+      assistantRole: root.dataset.textAssistantRole ?? '',
+      codeCopied: root.dataset.textCodeCopied ?? '',
+      codeCopy: root.dataset.textCodeCopy ?? '',
+      codeCopyError: root.dataset.textCodeCopyError ?? '',
+      empty: root.dataset.textEmpty ?? '',
+      errorStatus: root.dataset.textErrorStatus ?? '',
+      finished: root.dataset.textFinished ?? '',
+      followupError: root.dataset.textFollowupError ?? '',
+      historyCollapse: root.dataset.textHistoryCollapse ?? '',
+      historyEmpty: root.dataset.textHistoryEmpty ?? '',
+      historyExpand: root.dataset.textHistoryExpand ?? '',
+      loadError: root.dataset.textLoadError ?? '',
+      loading: root.dataset.textLoading ?? '',
+      missing: root.dataset.textMissing ?? '',
+      popupBlocked: root.dataset.textPopupBlocked ?? '',
+      popupClosed: root.dataset.textPopupClosed ?? '',
+      popupTimeout: root.dataset.textPopupTimeout ?? '',
+      retrying: root.dataset.textRetrying ?? '',
+      streaming: root.dataset.textStreaming ?? '',
+      submitting: root.dataset.textSubmitting ?? '',
+      userRole: root.dataset.textUserRole ?? '',
+    };
+    const previewCopy = {
+      error: root.dataset.textPreviewError ?? '',
+      loading: root.dataset.textPreviewLoading ?? '',
+      rerender: root.dataset.textPreviewRerender ?? '',
+      title: root.dataset.textPreviewTitle ?? '',
+      view: root.dataset.textPreviewView ?? '',
+    };
+
+    const historyDateFormatter = new Intl.DateTimeFormat(
+      document.documentElement.lang === 'en' ? 'en' : 'zh-CN',
+      { day: 'numeric', month: 'short' },
+    );
+
+    const renderHistory = (history: QaHistoryEntry[] = readQaHistory()) => {
+      if (!(historyList instanceof HTMLElement)) return;
+      historyList.replaceChildren();
+
+      if (!history.length) {
+        const empty = document.createElement('p');
+        empty.className = 'antv-history-empty';
+        empty.textContent = copy.historyEmpty;
+        historyList.append(empty);
+        return;
+      }
+
+      history.forEach((entry) => {
+        const link = document.createElement('a');
+        link.className = 'antv-history-item';
+        const target = new URL(window.location.href);
+        target.search = '';
+        target.searchParams.set('q', entry.title);
+        if (entry.stack) target.searchParams.set('stack', entry.stack);
+        target.searchParams.set('session', entry.session);
+        link.href = `${target.pathname}${target.search}`;
+        if (entry.session === sessionId) link.setAttribute('aria-current', 'page');
+
+        const title = document.createElement('span');
+        title.className = 'antv-history-item-title';
+        const stackPrefix = entry.stack ? `[${entry.stack}] ` : '';
+        title.textContent = entry.title.startsWith(stackPrefix)
+          ? entry.title.slice(stackPrefix.length) || entry.title
+          : entry.title;
+
+        const updatedAt = document.createElement('time');
+        updatedAt.className = 'antv-history-item-date';
+        updatedAt.dateTime = new Date(entry.updatedAt).toISOString();
+        updatedAt.textContent = historyDateFormatter.format(entry.updatedAt);
+
+        link.append(title, updatedAt);
+        historyList.append(link);
+      });
+    };
+
+    if (
+      historyTarget instanceof HTMLElement &&
+      historyToggle instanceof HTMLButtonElement
+    ) {
+      historyToggle.addEventListener('click', () => {
+        const isOpen = historyTarget.dataset.open === 'true';
+        historyTarget.dataset.open = String(!isOpen);
+        historyToggle.setAttribute('aria-expanded', String(!isOpen));
+        historyToggle.textContent = isOpen ? copy.historyExpand : copy.historyCollapse;
+      });
+    }
+
+    renderHistory(
+      sessionId
+        ? saveQaHistory({ session: sessionId, stack, title: initialQuery })
+        : readQaHistory(),
+    );
+
+    const setStatus = (value: string) => {
+      if (!(statusTarget instanceof HTMLElement)) return;
+      statusTarget.textContent = value;
+      statusTarget.hidden = false;
+    };
+
+    const setComposerState = () => {
+      const disabled = generationActive || requestPending || !sessionId;
+      const hasInput =
+        followupInput instanceof HTMLTextAreaElement && Boolean(followupInput.value.trim());
+      if (followupInput instanceof HTMLTextAreaElement) followupInput.disabled = disabled;
+      if (followupSubmit instanceof HTMLButtonElement) {
+        followupSubmit.disabled = disabled || !hasInput;
+        followupSubmit.toggleAttribute('aria-busy', requestPending);
+      }
+    };
+
+    const showPageError = (description: string) => {
+      stopped = true;
+      window.clearTimeout(pollTimer);
+      window.clearTimeout(streamRenderTimer);
+      window.cancelAnimationFrame(streamRenderFrame);
+      streamController?.abort();
+      if (loadingTarget instanceof HTMLElement) loadingTarget.hidden = true;
+      if (messagesTarget instanceof HTMLElement) messagesTarget.hidden = true;
+      if (composer instanceof HTMLFormElement) composer.hidden = true;
+      if (statusTarget instanceof HTMLElement) statusTarget.hidden = true;
+      if (errorDescriptionTarget instanceof HTMLElement) errorDescriptionTarget.textContent = description;
+      if (errorTarget instanceof HTMLElement) errorTarget.hidden = false;
+    };
+
+    const parseMarkdown = (content: string) => {
+      const rendered = marked.parse(content, { breaks: true, gfm: true });
+      return DOMPurify.sanitize(typeof rendered === 'string' ? rendered : content);
+    };
+
+    const renderMarkdown = (target: HTMLElement, content: string) => {
+      destroyQaPreviews(target);
+      target.innerHTML = parseMarkdown(content);
+    };
+
+    const enhanceCodeBlocks = (target: HTMLElement) => {
+      highlightCodeBlocks(target);
+      target.querySelectorAll('pre > code').forEach((code) => {
+        const pre = code.parentElement;
+        if (!(pre instanceof HTMLPreElement) || pre.dataset.copyEnhanced === 'true') return;
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'antv-code-copy';
+        button.setAttribute('aria-label', copy.codeCopy);
+
+        const icon = document.createElement('span');
+        icon.setAttribute('aria-hidden', 'true');
+        icon.innerHTML = copyIcon;
+        const label = document.createElement('span');
+        label.textContent = copy.codeCopy;
+        button.append(icon, label);
+
+        button.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(code.textContent ?? '');
+            icon.innerHTML = checkIcon;
+            label.textContent = copy.codeCopied;
+            button.setAttribute('aria-label', copy.codeCopied);
+            button.dataset.state = 'copied';
+          } catch {
+            label.textContent = copy.codeCopyError;
+            button.setAttribute('aria-label', copy.codeCopyError);
+            button.dataset.state = 'error';
+          }
+
+          window.setTimeout(() => {
+            if (!button.isConnected) return;
+            icon.innerHTML = copyIcon;
+            label.textContent = copy.codeCopy;
+            button.setAttribute('aria-label', copy.codeCopy);
+            delete button.dataset.state;
+          }, 1800);
+        });
+
+        pre.dataset.copyEnhanced = 'true';
+        pre.append(button);
+      });
+    };
+
+    const renderStreamingMarkdown = (target: HTMLElement, content: string) => {
+      const template = document.createElement('template');
+      template.innerHTML = parseMarkdown(content);
+      const currentNodes = Array.from(target.childNodes);
+      const nextNodes = Array.from(template.content.childNodes);
+      let stableNodeCount = 0;
+
+      while (
+        stableNodeCount < currentNodes.length &&
+        stableNodeCount < nextNodes.length &&
+        currentNodes[stableNodeCount].isEqualNode(nextNodes[stableNodeCount])
+      ) {
+        stableNodeCount += 1;
+      }
+
+      while (target.childNodes.length > stableNodeCount) target.lastChild?.remove();
+      target.append(...nextNodes.slice(stableNodeCount));
+    };
+
+    const isNearMessagesEnd = () =>
+      messagesTarget instanceof HTMLElement &&
+      messagesTarget.scrollTop + messagesTarget.clientHeight >= messagesTarget.scrollHeight - 96;
+
+    const followMessages = (shouldFollow: boolean) => {
+      if (!shouldFollow || !(messagesTarget instanceof HTMLElement)) return;
+      requestAnimationFrame(() => {
+        messagesTarget.scrollTop = messagesTarget.scrollHeight;
+        forceFollow = false;
+      });
+    };
+
+    const createMessageNode = (message: SharedMessage) => {
+      if (!(messagesTarget instanceof HTMLElement)) return null;
+
+      const article = document.createElement('article');
+      article.className = `antv-chat-message antv-chat-message-${message.role}`;
+      article.dataset.messageId = message.id;
+
+      const role = document.createElement('div');
+      role.className = 'antv-chat-role';
+      role.textContent = message.role === 'user' ? copy.userRole : copy.assistantRole;
+
+      const body = document.createElement('div');
+      body.className = 'antv-chat-body';
+
+      article.append(role, body);
+      messagesTarget.append(article);
+      messageNodes.set(message.id, article);
+      return article;
+    };
+
+    const renderMessages = (messages: SharedMessage[], status: string) => {
+      if (!(messagesTarget instanceof HTMLElement)) return;
+      if (sessionSwitchPending) {
+        destroyQaPreviews(messagesTarget);
+        messageNodes.clear();
+        if (loadingTarget instanceof HTMLElement) {
+          loadingTarget.hidden = true;
+          messagesTarget.replaceChildren(loadingTarget);
+        } else {
+          messagesTarget.replaceChildren();
+        }
+        sessionSwitchPending = false;
+      }
+      const shouldFollow = forceFollow || isNearMessagesEnd();
+      let changed = false;
+
+      messages.forEach((message, index) => {
+        const article = messageNodes.get(message.id) ?? createMessageNode(message);
+        const body = article?.querySelector('.antv-chat-body');
+        if (!(article instanceof HTMLElement) || !(body instanceof HTMLElement)) return;
+
+        const isLast = index === messages.length - 1;
+        const isWaiting =
+          message.role === 'assistant' && isLast && status === 'streaming' && !message.content;
+        const content =
+          message.role === 'assistant' && !message.content
+            ? isWaiting
+              ? copy.loading
+              : message.errorMessage || copy.empty
+            : message.content;
+        if (body.dataset.content !== content) {
+          if (message.role === 'assistant') renderMarkdown(body, content);
+          else body.textContent = content;
+          body.dataset.content = content;
+          changed = true;
+        }
+        if (message.role === 'assistant' && message.status === 'finished') {
+          enhanceCodeBlocks(body);
+          renderQaPreviews(
+            body,
+            message.previews ?? [],
+            previewCopy,
+            isLast,
+          );
+        } else if (message.role === 'assistant') {
+          destroyQaPreviews(body);
+        }
+        article.classList.toggle(
+          'antv-chat-message-streaming',
+          message.role === 'assistant' && isLast && status === 'streaming',
+        );
+        article.classList.toggle('antv-chat-message-waiting', isWaiting);
+        article.classList.toggle(
+          'antv-chat-message-error',
+          message.role === 'assistant' && message.status === 'error',
+        );
+      });
+
+      if (loadingTarget instanceof HTMLElement) loadingTarget.hidden = messages.length > 0;
+      if (changed) followMessages(shouldFollow);
+    };
+
+    const renderStreamingContent = (content: string) => {
+      if (!(messagesTarget instanceof HTMLElement)) return;
+      const articles = messagesTarget.querySelectorAll('.antv-chat-message-assistant');
+      const article = articles.item(articles.length - 1);
+      const body = article?.querySelector('.antv-chat-body');
+      if (!(article instanceof HTMLElement) || !(body instanceof HTMLElement)) return;
+
+      const shouldFollow = forceFollow || isNearMessagesEnd();
+      renderStreamingMarkdown(body, content);
+      body.dataset.content = content;
+      article.classList.remove('antv-chat-message-waiting');
+      followMessages(shouldFollow);
+    };
+
+    const queueStreamRender = (content: string) => {
+      streamRenderContent = content;
+      if (streamRenderTimer || streamRenderFrame) return;
+      streamRenderTimer = window.setTimeout(() => {
+        streamRenderTimer = 0;
+        streamRenderFrame = requestAnimationFrame(() => {
+          streamRenderFrame = 0;
+          renderStreamingContent(streamRenderContent);
+        });
+      }, 48);
+    };
+
+    const connectSharedStream = async (initialContent: string) => {
+      if (stopped || streamConnecting) return;
+
+      const revision = sessionRevision;
+      const streamSessionId = sessionId;
+      const controller = new AbortController();
+      streamConnecting = true;
+      streamRenderContent = initialContent;
+      streamController = controller;
+
+      try {
+        const response = await fetch(
+          `${serviceBaseUrl}/integrations/qa/session/stream?id=${encodeURIComponent(streamSessionId)}`,
+          {
+            credentials: 'omit',
+            headers: { Accept: 'text/event-stream' },
+            signal: controller.signal,
+          },
+        );
+        if (revision !== sessionRevision) return;
+        if (response.status === 204) {
+          streamConnecting = false;
+          if (streamController === controller) streamController = null;
+          schedulePoll();
+          return;
+        }
+        if (!response.ok || !response.body) {
+          throw new Error('Stream unavailable');
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let content = initialContent;
+
+        const processEvents = () => {
+          if (revision !== sessionRevision) return;
+          let boundary = buffer.indexOf('\n\n');
+          while (boundary >= 0) {
+            const event = buffer.slice(0, boundary);
+            buffer = buffer.slice(boundary + 2);
+            boundary = buffer.indexOf('\n\n');
+
+            const data = event
+              .split('\n')
+              .filter((line) => line.startsWith('data:'))
+              .map((line) => line.slice('data:'.length).trimStart())
+              .join('\n');
+            if (!data) continue;
+
+            const payload = JSON.parse(data) as {
+              delta?: unknown;
+              message?: unknown;
+              type?: unknown;
+            };
+            if (payload.type === 'text-delta' && typeof payload.delta === 'string') {
+              content += payload.delta;
+              queueStreamRender(content);
+            } else if (payload.type === 'error') {
+              throw new Error(
+                typeof payload.message === 'string' ? payload.message : copy.followupError,
+              );
+            }
+          }
+        };
+
+        while (!stopped && revision === sessionRevision) {
+          const chunk = await reader.read();
+          if (chunk.done) {
+            buffer += decoder.decode();
+            processEvents();
+            break;
+          }
+          buffer += decoder.decode(chunk.value, { stream: true });
+          processEvents();
+        }
+
+        if (revision !== sessionRevision) return;
+        streamConnecting = false;
+        if (streamController === controller) streamController = null;
+        window.clearTimeout(streamRenderTimer);
+        window.cancelAnimationFrame(streamRenderFrame);
+        streamRenderTimer = 0;
+        streamRenderFrame = 0;
+        renderStreamingContent(streamRenderContent);
+        if (!stopped && revision === sessionRevision) void loadResult();
+      } catch (error) {
+        if (revision !== sessionRevision) return;
+        streamConnecting = false;
+        if (streamController === controller) streamController = null;
+        if (stopped || (error instanceof DOMException && error.name === 'AbortError')) return;
+        setStatus(copy.retrying);
+        schedulePoll(900);
+      }
+    };
+
+    const schedulePoll = (delay = 250) => {
+      window.clearTimeout(pollTimer);
+      pollTimer = window.setTimeout(() => void loadResult(), delay);
+    };
+
+    const loadResult = async () => {
+      if (stopped) return;
+
+      const revision = sessionRevision;
+      const requestedSessionId = sessionId;
+      try {
+        const response = await fetch(
+          `${serviceBaseUrl}/integrations/qa/session?id=${encodeURIComponent(requestedSessionId)}`,
+          {
+            credentials: 'omit',
+            headers: { Accept: 'application/json' },
+          },
+        );
+        if (revision !== sessionRevision) return;
+        if (!response.ok) {
+          showPageError(response.status === 404 ? copy.missing : copy.loadError);
+          return;
+        }
+
+        const payload = await response.json();
+        if (revision !== sessionRevision) return;
+        const result = payload?.data;
+        if (!result || !Array.isArray(result.messages) || typeof result.status !== 'string') {
+          throw new Error('Invalid response');
+        }
+
+        consecutiveFailures = 0;
+        const messages = result.messages as SharedMessage[];
+        renderMessages(messages, result.status);
+        generationActive = result.status === 'pending' || result.status === 'streaming';
+        setStatus(
+          result.status === 'finished'
+            ? copy.finished
+            : result.status === 'aborted'
+              ? copy.aborted
+              : result.status === 'error'
+                ? result.errorMessage || copy.errorStatus
+                : result.status === 'streaming'
+                  ? copy.streaming
+                  : copy.loading,
+        );
+        setComposerState();
+
+        if (generationActive) {
+          const latestAssistant = messages.findLast((message) => message.role === 'assistant');
+          if (result.status === 'streaming' && latestAssistant?.role === 'assistant') {
+            void connectSharedStream(latestAssistant.content);
+          } else {
+            schedulePoll();
+          }
+        }
+      } catch {
+        if (revision !== sessionRevision) return;
+        consecutiveFailures += 1;
+        if (consecutiveFailures >= 3) {
+          showPageError(copy.loadError);
+          return;
+        }
+        setStatus(copy.retrying);
+        schedulePoll(900);
+      }
+    };
+
+    const activateSession = (
+      next: { session: string; stack: string; title: string },
+      pushHistory: boolean,
+    ) => {
+      const nextSessionId = next.session.trim();
+      if (!nextSessionId || nextSessionId === sessionId) return;
+
+      sessionRevision += 1;
+      sessionId = nextSessionId;
+      initialQuery = next.title.trim();
+      stack = next.stack.trim();
+
+      if (pushHistory) {
+        const target = new URL(window.location.href);
+        target.search = '';
+        if (initialQuery) target.searchParams.set('q', initialQuery);
+        if (stack) target.searchParams.set('stack', stack);
+        target.searchParams.set('session', sessionId);
+        window.history.pushState(null, '', `${target.pathname}${target.search}`);
+      }
+
+      window.clearTimeout(pollTimer);
+      window.clearTimeout(streamRenderTimer);
+      window.cancelAnimationFrame(streamRenderFrame);
+      pollTimer = 0;
+      streamRenderTimer = 0;
+      streamRenderFrame = 0;
+      streamController?.abort();
+      streamController = null;
+      streamConnecting = false;
+      streamRenderContent = '';
+      stopped = false;
+      requestPending = false;
+      generationActive = true;
+      consecutiveFailures = 0;
+      forceFollow = true;
+      sessionSwitchPending = true;
+      messageNodes.clear();
+
+      if (messagesTarget instanceof HTMLElement) {
+        messagesTarget.hidden = false;
+      }
+      if (errorTarget instanceof HTMLElement) errorTarget.hidden = true;
+      if (composer instanceof HTMLFormElement) composer.hidden = false;
+      if (followupInput instanceof HTMLTextAreaElement) {
+        followupInput.value = '';
+        followupInput.style.height = 'auto';
+      }
+      if (followupError instanceof HTMLElement) followupError.hidden = true;
+
+      renderHistory(readQaHistory());
+      setStatus(copy.loading);
+      setComposerState();
+      void loadResult();
+    };
+
+    const handleHistoryClick = (event: MouseEvent) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+      const target = event.target;
+      const link = target instanceof Element ? target.closest<HTMLAnchorElement>('a') : null;
+      if (!(link instanceof HTMLAnchorElement) || !link.classList.contains('antv-history-item')) {
+        return;
+      }
+
+      event.preventDefault();
+      const url = new URL(link.href);
+      activateSession(
+        {
+          session: url.searchParams.get('session')?.trim() ?? '',
+          stack: url.searchParams.get('stack')?.trim() ?? '',
+          title: url.searchParams.get('q')?.trim() ?? '',
+        },
+        true,
+      );
+    };
+
+    const handlePopState = () => {
+      const nextParams = new URLSearchParams(window.location.search);
+      const nextSessionId = nextParams.get('session')?.trim() ?? '';
+      if (!nextSessionId) {
+        showPageError(copy.missing);
+        return;
+      }
+      activateSession(
+        {
+          session: nextSessionId,
+          stack: nextParams.get('stack')?.trim() ?? '',
+          title: nextParams.get('q')?.trim() ?? '',
+        },
+        false,
+      );
+    };
+
+    if (historyList instanceof HTMLElement) {
+      historyList.addEventListener('click', handleHistoryClick);
+    }
+    window.addEventListener('popstate', handlePopState);
+
+    if (!sessionId || !serviceBaseUrl) {
+      showPageError(copy.missing);
+      return;
+    }
+
+    if (
+      composer instanceof HTMLFormElement &&
+      followupInput instanceof HTMLTextAreaElement &&
+      followupSubmit instanceof HTMLButtonElement &&
+      followupError instanceof HTMLElement
+    ) {
+      followupInput.addEventListener('input', () => {
+        followupInput.style.height = 'auto';
+        followupInput.style.height = `${Math.min(followupInput.scrollHeight, 160)}px`;
+        followupSubmit.disabled = generationActive || requestPending || !followupInput.value.trim();
+        followupError.hidden = true;
+      });
+      followupInput.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
+        event.preventDefault();
+        composer.requestSubmit();
+      });
+      composer.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const message = followupInput.value.trim();
+        if (!message || generationActive || requestPending) return;
+        const submittedRevision = sessionRevision;
+        const submittedSessionId = sessionId;
+        const submittedTitle = initialQuery;
+        const submittedStack = stack;
+
+        requestPending = true;
+        setStatus(copy.submitting);
+        setComposerState();
+        followupError.hidden = true;
+
+        try {
+          await requestQaSession({
+            errors: {
+              blocked: copy.popupBlocked,
+              closed: copy.popupClosed,
+              request: copy.followupError,
+              timeout: copy.popupTimeout,
+            },
+            message,
+            serviceBaseUrl,
+            sessionId: submittedSessionId,
+          });
+          const history = saveQaHistory({
+            session: submittedSessionId,
+            stack: submittedStack,
+            title: submittedTitle,
+          });
+          renderHistory(history);
+          if (submittedRevision !== sessionRevision) return;
+          followupInput.value = '';
+          followupInput.style.height = 'auto';
+          generationActive = true;
+          requestPending = false;
+          forceFollow = true;
+          setStatus(copy.loading);
+          setComposerState();
+          void loadResult();
+        } catch (error) {
+          if (submittedRevision !== sessionRevision) return;
+          requestPending = false;
+          setComposerState();
+          followupError.textContent = error instanceof Error ? error.message : copy.followupError;
+          followupError.hidden = false;
+        }
+      });
+    }
+
+    setComposerState();
+    void loadResult();
+    window.addEventListener(
+      'pagehide',
+      () => {
+        stopped = true;
+        window.clearTimeout(pollTimer);
+        window.clearTimeout(streamRenderTimer);
+        window.cancelAnimationFrame(streamRenderFrame);
+        streamController?.abort();
+        destroyQaPreviews(root);
+        if (historyList instanceof HTMLElement) {
+          historyList.removeEventListener('click', handleHistoryClick);
+        }
+        window.removeEventListener('popstate', handlePopState);
+      },
+      { once: true },
+    );
+  })();
+</script>
+
+<style>
+  :global(body.page-qa) {
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+
+  :global(body.page-qa .site-footer),
+  :global(body.page-qa .footer-meta) {
+    display: none;
+  }
+
+  :global(body.page-qa #main-content) {
+    height: calc(100dvh - var(--header-height));
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .antv-result-page {
+    height: 100%;
+    min-height: 0;
+    padding: 0 28px max(12px, env(safe-area-inset-bottom));
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .antv-result-inner {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    grid-template-columns: 232px minmax(0, 1fr);
+    gap: 20px;
+    margin: 0 auto;
+  }
+
+  .antv-history {
+    display: grid;
+    min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr);
+    margin: 24px 0;
+    overflow: hidden;
+    border: 1px solid var(--border-soft);
+    border-radius: 18px;
+    background: var(--surface-raised);
+  }
+
+  .antv-history-header {
+    display: flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .antv-history-header h2 {
+    margin: 0;
+    color: var(--text-strong);
+    font-size: 14px;
+    font-weight: 650;
+  }
+
+  .antv-history-header button {
+    display: none;
+    padding: 5px 8px;
+    border: 0;
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--brand) 8%, var(--surface));
+    color: var(--brand-strong);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  .antv-history-list {
+    display: grid;
+    min-height: 0;
+    align-content: start;
+    gap: 4px;
+    padding: 8px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  :global(.antv-history-item) {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 8px;
+    padding: 8px 9px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: var(--text);
+    transition: background .2s, border-color .2s, color .2s;
+  }
+
+  :global(.antv-history-item:hover) {
+    border-color: var(--border-soft);
+    background: var(--surface);
+    color: var(--text-strong);
+  }
+
+  :global(.antv-history-item[aria-current='page']) {
+    border-color: color-mix(in srgb, var(--brand) 32%, var(--border));
+    background: color-mix(in srgb, var(--brand) 12%, var(--surface));
+    box-shadow: inset 3px 0 0 var(--brand);
+    color: var(--brand-strong);
+  }
+
+  :global(.antv-history-item-title) {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  :global(.antv-history-item-date) {
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.9;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .16s;
+    white-space: nowrap;
+  }
+
+  :global(.antv-history-item:hover .antv-history-item-date),
+  :global(.antv-history-item:focus-visible .antv-history-item-date) {
+    opacity: 1;
+  }
+
+  :global(.antv-history-empty) {
+    margin: 0;
+    padding: 16px 10px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .antv-result-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .antv-result-back {
+    display: inline-flex;
+    min-height: 42px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 15px;
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    background: var(--surface-raised);
+    color: var(--text-strong);
+    font-size: 14px;
+    font-weight: 650;
+    text-decoration: none;
+    transition: border-color .2s, transform .2s;
+  }
+
+  .antv-result-back:hover {
+    border-color: color-mix(in srgb, var(--brand) 34%, var(--border-strong));
+    transform: translateY(-1px);
+  }
+
+  .antv-result-back:active {
+    transform: scale(.98);
+  }
+
+  .antv-result-back:focus-visible,
+  .antv-followup textarea:focus-visible,
+  .antv-followup button:focus-visible,
+  :global(.antv-code-copy:focus-visible),
+  :global(.antv-code-preview button:focus-visible) {
+    outline: 3px solid color-mix(in srgb, var(--brand) 38%, transparent);
+    outline-offset: 3px;
+  }
+
+  .antv-result-back :global(svg) {
+    width: 17px;
+    height: 17px;
+    stroke-width: 1.8;
+  }
+
+  .antv-conversation-shell {
+    position: relative;
+    display: grid;
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
+    grid-template-rows: minmax(0, 1fr) auto auto;
+  }
+
+  .antv-conversation {
+    display: grid;
+    min-height: 0;
+    min-width: 0;
+    grid-row: 1;
+    grid-auto-rows: max-content;
+    align-content: start;
+    gap: 34px;
+    margin: 24px 0;
+    padding: 16px 18px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: 1px solid var(--border-soft);
+    border-radius: 18px;
+    clip-path: inset(0 round 18px);
+    background: var(--surface-raised);
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .antv-result-loading {
+    display: grid;
+    width: min(620px, 82%);
+    gap: 12px;
+    padding-top: 28px;
+  }
+
+  .antv-result-loading span {
+    height: 13px;
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--brand) 8%, var(--border));
+    animation: antv-result-loading 1.1s ease-in-out infinite alternate;
+  }
+
+  .antv-result-loading span:nth-child(2) {
+    width: 88%;
+    animation-delay: .14s;
+  }
+
+  .antv-result-loading span:nth-child(3) {
+    width: 64%;
+    animation-delay: .28s;
+  }
+
+  .antv-result-loading[hidden],
+  .antv-result-error[hidden],
+  .antv-followup[hidden],
+  .antv-followup-error[hidden] {
+    display: none;
+  }
+
+  :global(.antv-chat-message) {
+    display: grid;
+    min-width: 0;
+    gap: 10px;
+    animation: antv-message-enter .28s cubic-bezier(.16, 1, .3, 1) both;
+  }
+
+  :global(.antv-chat-role) {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  :global(.antv-chat-message-user) {
+    justify-items: end;
+  }
+
+  :global(.antv-chat-message-user .antv-chat-body) {
+    max-width: min(660px, 88%);
+    min-width: 0;
+    padding: 13px 17px;
+    border-radius: 14px 14px 4px 14px;
+    background: color-mix(in srgb, var(--brand) 9%, var(--surface-raised));
+    color: var(--text-strong);
+    font-size: 15px;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+
+  :global(.antv-chat-message-assistant .antv-chat-body) {
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--text-strong);
+    font-size: 16px;
+    line-height: 1.82;
+  }
+
+  :global(.antv-chat-message-assistant.antv-chat-message-streaming .antv-chat-body)::after {
+    display: inline-block;
+    width: 2px;
+    height: 1.05em;
+    margin-left: 4px;
+    border-radius: 2px;
+    background: var(--brand);
+    content: '';
+    vertical-align: -.15em;
+    animation: antv-stream-caret .75s steps(1) infinite;
+  }
+
+  :global(.antv-chat-message-assistant.antv-chat-message-waiting .antv-chat-body) {
+    color: var(--muted);
+    font-size: 14px;
+    animation: antv-waiting 1s ease-in-out infinite alternate;
+  }
+
+  :global(.antv-chat-message-error .antv-chat-body) {
+    color: #b42318;
+  }
+
+  :global(.antv-chat-body :first-child) {
+    margin-top: 0;
+  }
+
+  :global(.antv-chat-body :last-child) {
+    margin-bottom: 0;
+  }
+
+  :global(.antv-chat-body h2),
+  :global(.antv-chat-body h3) {
+    margin: 1.7em 0 .65em;
+    letter-spacing: -.02em;
+    line-height: 1.35;
+  }
+
+  :global(.antv-chat-body p),
+  :global(.antv-chat-body ul),
+  :global(.antv-chat-body ol),
+  :global(.antv-chat-body blockquote),
+  :global(.antv-chat-body pre) {
+    margin: 1em 0;
+  }
+
+  :global(.antv-chat-body ul),
+  :global(.antv-chat-body ol) {
+    padding-left: 1.5em;
+  }
+
+  :global(.antv-chat-body a) {
+    color: var(--brand-strong);
+    text-underline-offset: 3px;
+  }
+
+  :global(.antv-chat-body code) {
+    padding: .15em .38em;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--brand) 7%, var(--surface));
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: .9em;
+  }
+
+  :global(.antv-chat-body pre) {
+    --syntax-comment: #6e7781;
+    --syntax-keyword: #cf222e;
+    --syntax-number: #953800;
+    --syntax-string: #116329;
+    --syntax-title: #0550ae;
+    --syntax-variable: #8250df;
+    position: relative;
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--text-strong) 4%, var(--surface-raised));
+    line-height: 1.65;
+  }
+
+  :global(.antv-chat-body pre code) {
+    padding: 0;
+    background: transparent;
+  }
+
+  :global(.antv-chat-body pre code.hljs) {
+    color: var(--text-strong);
+  }
+
+  :global(.antv-chat-body .hljs-comment),
+  :global(.antv-chat-body .hljs-quote) {
+    color: var(--syntax-comment);
+    font-style: italic;
+  }
+
+  :global(.antv-chat-body .hljs-keyword),
+  :global(.antv-chat-body .hljs-selector-tag),
+  :global(.antv-chat-body .hljs-literal),
+  :global(.antv-chat-body .hljs-section),
+  :global(.antv-chat-body .hljs-link) {
+    color: var(--syntax-keyword);
+  }
+
+  :global(.antv-chat-body .hljs-string),
+  :global(.antv-chat-body .hljs-regexp),
+  :global(.antv-chat-body .hljs-addition),
+  :global(.antv-chat-body .hljs-attribute) {
+    color: var(--syntax-string);
+  }
+
+  :global(.antv-chat-body .hljs-title),
+  :global(.antv-chat-body .hljs-name),
+  :global(.antv-chat-body .hljs-type),
+  :global(.antv-chat-body .hljs-built_in),
+  :global(.antv-chat-body .hljs-builtin-name) {
+    color: var(--syntax-title);
+  }
+
+  :global(.antv-chat-body .hljs-number),
+  :global(.antv-chat-body .hljs-meta),
+  :global(.antv-chat-body .hljs-symbol),
+  :global(.antv-chat-body .hljs-bullet) {
+    color: var(--syntax-number);
+  }
+
+  :global(.antv-chat-body .hljs-variable),
+  :global(.antv-chat-body .hljs-template-variable),
+  :global(.antv-chat-body .hljs-attr),
+  :global(.antv-chat-body .hljs-property),
+  :global(.antv-chat-body .hljs-params) {
+    color: var(--syntax-variable);
+  }
+
+  :global(.antv-chat-body .hljs-deletion) {
+    color: var(--syntax-keyword);
+    background: color-mix(in srgb, var(--syntax-keyword) 10%, transparent);
+  }
+
+  :global(.antv-chat-body .hljs-emphasis) {
+    font-style: italic;
+  }
+
+  :global(.antv-chat-body .hljs-strong) {
+    font-weight: 700;
+  }
+
+  :global(.antv-code-copy) {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1;
+    display: inline-flex;
+    min-height: 30px;
+    align-items: center;
+    gap: 6px;
+    padding: 0 9px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
+    color: var(--muted);
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    backdrop-filter: blur(8px);
+    transition: border-color .18s, color .18s, background .18s;
+  }
+
+  :global(.antv-code-copy:hover) {
+    border-color: color-mix(in srgb, var(--brand) 30%, var(--border));
+    background: color-mix(in srgb, var(--brand) 6%, var(--surface));
+    color: var(--text-strong);
+  }
+
+  :global(.antv-code-copy[data-state='copied']) {
+    border-color: color-mix(in srgb, #14804a 36%, var(--border));
+    color: #14804a;
+  }
+
+  :global(.antv-code-copy[data-state='error']) {
+    border-color: color-mix(in srgb, #b42318 36%, var(--border));
+    color: #b42318;
+  }
+
+  :global(.antv-code-copy svg) {
+    width: 14px;
+    height: 14px;
+    stroke-width: 1.8;
+  }
+
+  :global(.antv-code-preview) {
+    max-width: 100%;
+    margin: 1.2em 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface-raised);
+  }
+
+  :global(.antv-code-preview-header) {
+    display: flex;
+    min-height: 52px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  :global(.antv-code-preview-header strong) {
+    color: var(--text-strong);
+    font-size: 13px;
+  }
+
+  :global(.antv-code-preview-header button) {
+    min-height: 34px;
+    flex: 0 0 auto;
+    padding: 0 12px;
+    border: 1px solid color-mix(in srgb, var(--brand) 28%, var(--border));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--brand) 8%, var(--surface));
+    color: var(--brand-strong);
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  :global(.antv-code-preview-header button:disabled) {
+    cursor: wait;
+    opacity: .58;
+  }
+
+  :global(.antv-code-preview-stage) {
+    position: relative;
+    min-width: 0;
+    background: #fff;
+  }
+
+  :global(.antv-code-preview-layer) {
+    min-width: 0;
+  }
+
+  :global(.antv-code-preview-canvas) {
+    width: 100%;
+    min-height: 360px;
+    overflow: auto;
+    padding: 12px;
+    background: #fff;
+  }
+
+  :global(.antv-code-preview-layer[data-state='staging']) {
+    position: absolute;
+    inset: 0;
+    visibility: hidden;
+  }
+
+  :global(.antv-code-preview-stage[hidden]),
+  :global(.antv-code-preview-layer[hidden]),
+  :global(.antv-code-preview-canvas[hidden]),
+  :global(.antv-code-preview-error[hidden]) {
+    display: none;
+  }
+
+  :global(.antv-code-preview-error) {
+    margin: 0;
+    padding: 13px 14px;
+    color: #b42318;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  :global(.antv-code-preview-invalid .antv-code-preview-header) {
+    border-bottom: 0;
+  }
+
+  :global(.antv-chat-body blockquote) {
+    padding-left: 1em;
+    border-left: 3px solid color-mix(in srgb, var(--brand) 50%, var(--border));
+    color: var(--muted);
+  }
+
+  :global(.antv-chat-body table) {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+  }
+
+  :global(.antv-chat-body th),
+  :global(.antv-chat-body td) {
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+
+  .antv-result-error {
+    display: grid;
+    min-height: 0;
+    grid-row: 1;
+    align-content: center;
+    justify-items: start;
+    gap: 14px;
+    padding: 44px 0;
+  }
+
+  .antv-result-error h2 {
+    margin: 0;
+    color: var(--text-strong);
+    font-size: 24px;
+  }
+
+  .antv-result-error p {
+    max-width: 520px;
+    margin: 0 0 8px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .antv-followup {
+    display: grid;
+    grid-row: 2;
+    gap: 10px;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--brand) 16%, var(--border));
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--surface-raised) 94%, transparent);
+    box-shadow: 0 18px 50px color-mix(in srgb, var(--brand) 8%, transparent);
+    backdrop-filter: blur(14px);
+  }
+
+  .antv-followup > label {
+    color: var(--text-strong);
+    font-size: 13px;
+    font-weight: 650;
+  }
+
+  .antv-followup-control {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    align-items: end;
+    gap: 10px;
+  }
+
+  .antv-followup textarea {
+    width: 100%;
+    min-height: 46px;
+    max-height: 160px;
+    padding: 11px 13px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    outline: 0;
+    background: var(--surface);
+    color: var(--text-strong);
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.55;
+    resize: none;
+  }
+
+  .antv-followup textarea::placeholder {
+    color: var(--muted);
+    opacity: .9;
+  }
+
+  .antv-followup textarea:disabled {
+    cursor: not-allowed;
+    opacity: .62;
+  }
+
+  .antv-followup button {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: var(--brand-button);
+    color: #fff;
+    cursor: pointer;
+    place-items: center;
+    transition: opacity .2s, transform .2s;
+  }
+
+  .antv-followup button:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+
+  .antv-followup button:active:not(:disabled) {
+    transform: scale(.96);
+  }
+
+  .antv-followup button:disabled {
+    cursor: not-allowed;
+    opacity: .38;
+  }
+
+  .antv-followup button[aria-busy='true'] {
+    animation: antv-submit-pulse .8s ease-in-out infinite alternate;
+  }
+
+  .antv-followup button :global(svg) {
+    width: 19px;
+    height: 19px;
+    stroke-width: 1.8;
+  }
+
+  .antv-followup-error {
+    margin: 0;
+    color: #b42318;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .antv-result-notice {
+    grid-row: 3;
+    margin: 9px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+  }
+
+  @keyframes antv-result-loading {
+    from { opacity: .35; }
+    to { opacity: .9; }
+  }
+
+  @keyframes antv-message-enter {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes antv-stream-caret {
+    0%, 48% { opacity: 1; }
+    49%, 100% { opacity: 0; }
+  }
+
+  @keyframes antv-waiting {
+    from { opacity: .5; }
+    to { opacity: 1; }
+  }
+
+  @keyframes antv-submit-pulse {
+    from { opacity: .45; }
+    to { opacity: .85; }
+  }
+
+  @media (max-width: 767px) {
+    .antv-result-page {
+      padding: 0 18px max(10px, env(safe-area-inset-bottom));
+    }
+
+    .antv-result-inner {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 0;
+    }
+
+    .antv-history {
+      margin: 10px 0 0;
+      border-radius: 14px;
+    }
+
+    .antv-history-header {
+      min-height: 44px;
+      border-bottom: 0;
+    }
+
+    .antv-history-header button {
+      display: inline-flex;
+    }
+
+    .antv-history-list {
+      display: none;
+      max-height: 220px;
+      padding-top: 0;
+    }
+
+    .antv-history[data-open='true'] .antv-history-header {
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .antv-history[data-open='true'] .antv-history-list {
+      display: grid;
+    }
+
+    .antv-conversation {
+      gap: 28px;
+      margin: 18px 0;
+      padding: 12px 14px;
+    }
+
+    :global(.antv-chat-message-user .antv-chat-body) {
+      max-width: 94%;
+    }
+
+    :global(.antv-chat-message-assistant .antv-chat-body) {
+      font-size: 15px;
+      line-height: 1.76;
+    }
+
+    .antv-followup { padding: 13px; }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .antv-followup {
+      background: var(--surface-raised);
+      backdrop-filter: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .antv-result-back,
+    .antv-followup button,
+    :global(.antv-chat-message) {
+      transition: none;
+      animation: none;
+    }
+
+    .antv-result-loading span,
+    :global(.antv-chat-message-waiting .antv-chat-body),
+    :global(.antv-chat-message-streaming .antv-chat-body)::after,
+    .antv-followup button[aria-busy='true'] {
+      animation: none;
+    }
+  }
+
+</style>

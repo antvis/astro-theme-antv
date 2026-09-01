@@ -1,0 +1,91 @@
+---
+import ExampleCategoryIcon from './ExampleCategoryIcon.astro';
+
+export interface SidebarMenuNode {
+  key: string;
+  label: string;
+  href?: string;
+  icon?: string;
+  current?: boolean;
+  open?: boolean;
+  children?: SidebarMenuNode[];
+}
+
+interface Props {
+  nodes: SidebarMenuNode[];
+  variant?: 'docs' | 'examples';
+  depth?: number;
+  indent?: number;
+}
+
+const {
+  nodes,
+  variant = 'docs',
+  depth = 0,
+  indent = variant === 'examples' ? 24 : 16,
+} = Astro.props;
+const offset = 24 + depth * indent;
+const containsCurrent = (node: SidebarMenuNode): boolean =>
+  Boolean(node.current || node.children?.some(containsCurrent));
+---
+
+<ul class:list={['sidebar-menu', `sidebar-menu--${variant}`]}>
+  {nodes.map((node) => {
+    const children = node.children || [];
+    const hasChildren = children.length > 0;
+    const isOpen = node.open ?? containsCurrent(node);
+    return (
+      <li
+        class="sidebar-menu__item"
+        data-sidebar-key={node.key}
+        style={`--sidebar-menu-offset: ${offset}px;`}
+      >
+        {hasChildren ? (
+          <details class="sidebar-menu__details" open={isOpen}>
+            <summary
+              class:list={[
+                'sidebar-menu__summary',
+                { 'is-current': node.current },
+              ]}
+            >
+              <span class="sidebar-menu__label">
+                {node.icon && <ExampleCategoryIcon icon={node.icon} />}
+                {node.href ? (
+                  <a
+                    class="sidebar-menu__summary-link"
+                    href={node.href}
+                    aria-current={node.current ? 'page' : undefined}
+                    title={node.label}
+                  >
+                    {node.label}
+                  </a>
+                ) : (
+                  <span class="sidebar-menu__text" title={node.label}>
+                    {node.label}
+                  </span>
+                )}
+              </span>
+              <span class="sidebar-menu__chevron" aria-hidden="true" />
+            </summary>
+            <Astro.self
+              nodes={children}
+              variant={variant}
+              depth={depth + 1}
+              indent={indent}
+            />
+          </details>
+        ) : node.href ? (
+          <a
+            class="sidebar-menu__link"
+            href={node.href}
+            aria-current={node.current ? 'page' : undefined}
+            title={node.label}
+          >
+            {node.icon && <ExampleCategoryIcon icon={node.icon} />}
+            <span class="sidebar-menu__text">{node.label}</span>
+          </a>
+        ) : null}
+      </li>
+    );
+  })}
+</ul>
