@@ -1,8 +1,6 @@
 import { access, cp, mkdir, rm } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import mdx from "@astrojs/mdx";
-import sitemap from "@astrojs/sitemap";
 import type { AstroIntegration } from "astro";
 import type { AntVSiteConfig, ResolvedSiteConfig } from "./compiler/config";
 import { resolveConfig } from "./compiler/config";
@@ -75,7 +73,7 @@ async function validateHomeSlots(config: ResolvedSiteConfig): Promise<void> {
   );
 }
 
-export function antvSite(input: AntVSiteConfig): AstroIntegration[] {
+export function antvSite(input: AntVSiteConfig): AstroIntegration {
   let config: ResolvedSiteConfig;
   let registry: SiteRegistry;
   let publicDirectory: string;
@@ -189,5 +187,5 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration[] {
     },
   };
 
-  return [core, mdx(), sitemap()];
+  return core;
 }

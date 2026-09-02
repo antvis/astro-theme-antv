@@ -1,3 +1,5 @@
+import mdx from "@astrojs/mdx";
+import sitemap from "@astrojs/sitemap";
 import { defineConfig as defineAstroConfig } from "astro/config";
 import type { AntVSiteConfig } from "./compiler/config";
 import { antvSite } from "./integration";
@@ -8,7 +10,7 @@ export const defineConfig = <const Config extends AntVSiteConfig>(
   config: Config,
 ) =>
   defineAstroConfig({
-    integrations: antvSite(config),
+    integrations: [antvSite(config), mdx(), sitemap()],
   });
 
 export type {

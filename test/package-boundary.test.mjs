@@ -56,7 +56,7 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
 
   const publicApi = await import("../dist/index.js");
   const { defineConfig } = publicApi;
-  const publicConfig = defineConfig({
+  const siteConfig = {
     site: {
       title: "Fixture",
       origin: "https://fixture.example.com",
@@ -68,12 +68,14 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
       title: { zh: "标题", en: "Title" },
       description: { zh: "描述", en: "Description" },
     },
-  });
+  };
+  const publicConfig = defineConfig(siteConfig);
   assert.equal(typeof defineConfig, "function");
   assert.equal(publicApi.default, defineConfig);
   assert.deepEqual(publicApi.qaProducts, ["g2", "s2", "g6", "f2", "x6", "l7"]);
   assert.deepEqual(publicApi.qaPreviewProducts, ["g2", "s2", "g6"]);
   assert.equal(typeof publicApi.antvSite, "function");
+  assert.equal(publicApi.antvSite(siteConfig).name, "@antv/site");
   assert.equal(publicConfig.integrations?.length, 3);
   assert.equal(publicConfig.integrations?.[0]?.name, "@antv/site");
   assert.equal(publicConfig.integrations?.[1]?.name, "@astrojs/mdx");

@@ -117,16 +117,18 @@ The public `defineConfig` facade installs the integration and configures the bun
 Advanced Astro configurations can compose the same integration directly:
 
 ```js
+import mdx from "@astrojs/mdx";
+import sitemap from "@astrojs/sitemap";
 import { defineConfig } from "astro/config";
 import { antvSite } from "@antv/site";
 
 export default defineConfig({
   base: "/my-library/",
-  integrations: antvSite(siteConfig),
+  integrations: [antvSite(siteConfig), mdx(), sitemap()],
 });
 ```
 
-Use this standard Astro composition whenever the site needs Astro-level options such as `base`, adapters, redirects, or additional integrations. Internal theme links, canonical URLs, Demo iframes, QA navigation, static assets, and search assets all honor Astro's `base` value.
+Use this standard Astro composition whenever the site needs Astro-level options such as `base`, adapters, redirects, or additional integrations. `antvSite()` returns only the package-owned core integration; advanced consumers explicitly install and enable `@astrojs/mdx` and `@astrojs/sitemap` when needed. The package `defineConfig` facade enables both by default. Internal theme links, canonical URLs, Demo iframes, QA navigation, static assets, and search assets all honor Astro's `base` value.
 
 When qa is configured, each locale receives a Result route at /{locale}/result/ by default and the shared home page renders the package-owned QA entry. `qa.defaultStack` selects the initial G2, S2, G6, F2, X6, or L7 stack. Change `qa.path` to use another route. The platform owns the shared Sive service endpoints and protocol. The QA entry owns stack selection, authentication, session creation, history, and Result navigation; the Result page owns streaming responses, follow-up questions, Markdown rendering, code highlighting, and optional visualization previews.
 
