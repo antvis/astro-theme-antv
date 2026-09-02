@@ -14,19 +14,15 @@
       "import": "./dist/content.js"
     },
     "./qa": {
-      "types": "./theme/src/features/qa/index.ts",
-      "import": "./theme/src/features/qa/index.ts"
+      "types": "./dist/theme/features/qa/index.ts",
+      "import": "./dist/theme/features/qa/index.ts"
     },
     "./qa-entry": {
-      "types": "./theme/src/components/QaEntry.astro",
-      "import": "./theme/src/components/QaEntry.astro"
+      "types": "./dist/theme/components/QaEntry.astro",
+      "import": "./dist/theme/components/QaEntry.astro"
     }
   },
-  "files": [
-    "dist",
-    "theme/src",
-    "theme/tsconfig.json"
-  ],
+  "files": ["dist"],
   "publishConfig": {
     "access": "public"
   },
@@ -35,7 +31,7 @@
   },
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
-    "build": "pnpm run clean && tsc -p tsconfig.json && node scripts/rewrite-imports.mjs",
+    "build": "pnpm run clean && tsc -p tsconfig.build.json && node scripts/rewrite-imports.mjs && node scripts/copy-theme.mjs",
     "test": "pnpm run build && node --test test/*.test.mjs",
     "check": "pnpm run test",
     "prepack": "pnpm run build"

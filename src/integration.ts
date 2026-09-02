@@ -15,7 +15,7 @@ import { createQaPlugin } from "./vite/qa-plugin";
 import { createSlotsPlugin } from "./vite/slots-plugin";
 
 const packageRoot = fileURLToPath(new URL("../", import.meta.url));
-const themeRoot = resolve(packageRoot, "theme");
+const themeRoot = resolve(packageRoot, "dist/theme");
 
 const isWithin = (parent: string, child: string) => {
   const path = relative(parent, child);
@@ -105,10 +105,10 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration[] {
         }
 
         for (const [pattern, entrypoint] of [
-          ["/", "src/pages/index.astro"],
-          ["/[locale]", "src/pages/[locale]/index.astro"],
-          ["/[locale]/[...route]", "src/pages/[locale]/[...route].astro"],
-          ["/demos/[...key]", "src/pages/demos/[...key].astro"],
+          ["/", "pages/index.astro"],
+          ["/[locale]", "pages/[locale]/index.astro"],
+          ["/[locale]/[...route]", "pages/[locale]/[...route].astro"],
+          ["/demos/[...key]", "pages/demos/[...key].astro"],
         ] as const) {
           injectRoute({
             pattern,
@@ -120,7 +120,7 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration[] {
           injectRoute({
             pattern: "/pagefind/dev-index.json",
             entrypoint: pathToFileURL(
-              resolve(themeRoot, "src/pages/pagefind/dev-index.ts"),
+              resolve(themeRoot, "pages/pagefind/dev-index.ts"),
             ),
             prerender: false,
           });

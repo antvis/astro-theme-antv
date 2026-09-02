@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import test from "node:test";
 import { build } from "astro";
 
-const root = resolve("test/fixtures/basic-site");
+const root = resolve("demos/basic-site");
 const output = resolve(root, "dist");
 const baseOutput = resolve(root, "dist-base");
 

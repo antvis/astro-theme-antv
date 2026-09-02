@@ -8,6 +8,12 @@ const packageRoot = fileURLToPath(new URL("../", import.meta.url));
 const packageJson = JSON.parse(
   await readFile(resolve(packageRoot, "package.json"), "utf8"),
 );
+const projectTsconfig = JSON.parse(
+  await readFile(resolve(packageRoot, "tsconfig.json"), "utf8"),
+);
+const buildTsconfig = JSON.parse(
+  await readFile(resolve(packageRoot, "tsconfig.build.json"), "utf8"),
+);
 
 test("publishes a site configuration facade without a parallel CLI", async () => {
   assert.equal(packageJson.name, "@antv/site");
@@ -18,6 +24,19 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
     "./qa",
     "./qa-entry",
   ]);
+  assert.deepEqual(packageJson.files, ["dist"]);
+  assert.equal(projectTsconfig.extends, "astro/tsconfigs/strict");
+  assert.equal(projectTsconfig.compilerOptions.types[0], "node");
+  assert.equal(buildTsconfig.compilerOptions.outDir, "dist");
+  assert.deepEqual(buildTsconfig.exclude, ["src/theme"]);
+  assert.deepEqual(packageJson.exports["./qa"], {
+    types: "./dist/theme/features/qa/index.ts",
+    import: "./dist/theme/features/qa/index.ts",
+  });
+  assert.deepEqual(packageJson.exports["./qa-entry"], {
+    types: "./dist/theme/components/QaEntry.astro",
+    import: "./dist/theme/components/QaEntry.astro",
+  });
   assert.equal(packageJson.peerDependencies.astro, ">=7.2.0 <8");
   assert.equal(packageJson.dependencies["@antv/g2"], undefined);
   assert.equal(packageJson.dependencies["@antv/g6"], undefined);
@@ -87,12 +106,18 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
   await access(resolve(packageRoot, "dist/vite/demo-plugin.js"));
   await access(resolve(packageRoot, "dist/vite/qa-plugin.js"));
   await access(resolve(packageRoot, "dist/vite/slots-plugin.js"));
-  await access(resolve(packageRoot, "theme/src/components/Demo.astro"));
-  await access(resolve(packageRoot, "theme/src/components/QaResult.astro"));
-  await access(resolve(packageRoot, "theme/src/components/QaEntry.astro"));
-  await access(resolve(packageRoot, "theme/src/components/SiteSearch.astro"));
-  await access(resolve(packageRoot, "theme/src/pages/demos/[...key].astro"));
+  await access(resolve(packageRoot, "dist/theme/components/Demo.astro"));
+  await access(resolve(packageRoot, "dist/theme/components/QaResult.astro"));
+  await access(resolve(packageRoot, "dist/theme/components/QaEntry.astro"));
+  await access(resolve(packageRoot, "dist/theme/components/SiteSearch.astro"));
+  await access(resolve(packageRoot, "dist/theme/pages/demos/[...key].astro"));
+  await access(resolve(packageRoot, "demos/basic-site/astro.config.mjs"));
   for (const removedPath of [
+    "dist/theme/tsconfig.json",
+    "src/theme/tsconfig.json",
+    "theme/src/components/Demo.astro",
+    "theme/tsconfig.json",
+    "test/fixtures/basic-site/astro.config.mjs",
     "src/cli.ts",
     "src/demo-runtime/index.ts",
     "dist/cli.js",

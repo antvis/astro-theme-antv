@@ -1,5 +1,8 @@
 import { getCollection } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
 import { config } from './site';
+
+type DocsCollectionEntry = CollectionEntry<'docs'>;
 
 /**
  * Fetch the consumer's docs Content Collection using the configured collection
@@ -10,8 +13,11 @@ import { config } from './site';
  * Entries marked as draft are always excluded; `includeHidden` keeps entries
  * hidden from the sidebar when building the docs navigation.
  */
-export async function getDocsCollection(includeHidden = true) {
-  return getCollection(config.content.collectionName, (entry) =>
+export async function getDocsCollection(
+  includeHidden = true,
+): Promise<DocsCollectionEntry[]> {
+  const entries = await getCollection(config.content.collectionName) as DocsCollectionEntry[];
+  return entries.filter((entry) =>
     !entry.data.draft && (includeHidden || !entry.data.sidebar.hidden),
   );
 }

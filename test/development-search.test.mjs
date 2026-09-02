@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import test from "node:test";
 import { dev } from "astro";
 
-const root = resolve("test/fixtures/basic-site");
+const root = resolve("demos/basic-site");
 
 test("serves live document and Demo search records during development", async (t) => {
   const server = await dev({
