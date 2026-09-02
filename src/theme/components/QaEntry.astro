@@ -7,7 +7,7 @@ import hierarchyIcon from '@tabler/icons/outline/hierarchy-3.svg?raw';
 import mapIcon from '@tabler/icons/outline/map.svg?raw';
 import tableIcon from '@tabler/icons/outline/table.svg?raw';
 import vectorBezierIcon from '@tabler/icons/outline/vector-bezier.svg?raw';
-import type { QaProduct } from '../../../dist/qa';
+import type { QaProduct } from '../../qa.js';
 import { withBase } from '../lib/paths';
 import { config } from '../lib/site';
 
@@ -101,6 +101,7 @@ const resultUrl = qa
       id={`antv-qa-query-${locale}`}
       class="antv-qa-prompt"
       rows="2"
+      maxlength="4000"
       placeholder={text.prompt}
       autocomplete="off"
       required
@@ -157,7 +158,7 @@ const resultUrl = qa
 )}
 
 <script>
-  import { requestQaSession, saveQaHistory, toQaProduct } from '../features/qa';
+  import { requestQaSession, saveQaHistory, toQaProduct } from '../../qa-browser.js';
 
   document.querySelectorAll('[data-antv-qa-entry]').forEach((entry) => {
     if (!(entry instanceof HTMLFormElement) || entry.dataset.qaReady === 'true') return;

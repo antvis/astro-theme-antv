@@ -1,0 +1,39 @@
+---
+import type { SitePage } from '../../lib/compiler';
+import { config, registry } from '../../lib/site';
+import QaResult from '../../components/QaResult.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+type QaPage = Extract<SitePage, { type: 'qa' }>;
+
+interface Props {
+  page: QaPage;
+}
+
+export function getStaticPaths() {
+  return registry.pages
+    .filter((page): page is QaPage => page.type === 'qa')
+    .map((page) => ({
+      params: { locale: page.locale },
+      props: { page },
+    }));
+}
+
+const { page } = Astro.props;
+const locale = page.locale;
+const isZh = locale === 'zh';
+const title = isZh ? '查询结果' : 'Query results';
+const description = isZh
+  ? '承载当前 AntV 产品站可视化查询的结果页面。'
+  : 'The visualization query result page for this AntV product site.';
+---
+
+<BaseLayout
+  locale={locale}
+  title={title}
+  description={description}
+  route={page.route}
+  pageType="qa"
+>
+  {config.qa && <QaResult locale={locale} service={config.qa.service} />}
+</BaseLayout>

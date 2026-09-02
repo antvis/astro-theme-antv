@@ -12,6 +12,7 @@ export const siteConfig = {
   navigation: [
     { text: { zh: "文档", en: "Docs" }, href: "/guide/" },
     { text: { zh: "示例", en: "Examples" }, href: "/examples/" },
+    { text: { zh: "邮件", en: "Email" }, href: "mailto:team@example.com" },
   ],
   search: {
     aliases: { esm: ["module"] },
@@ -29,6 +30,7 @@ export const siteConfig = {
     description: { zh: "使用 Astro 构建。", en: "Built with Astro." },
     actions: [
       { text: { zh: "查看示例", en: "View examples" }, href: "/examples/" },
+      { text: { zh: "电话联系", en: "Call us" }, href: "tel:+861012345678" },
     ],
   },
   slots: {

@@ -2,8 +2,8 @@ import { qaPreviewAdapters } from 'virtual:antv-site-qa-preview-adapters';
 import type {
   QaPreviewAdapter,
   QaPreviewInstance,
-} from '../../../../dist/qa';
-import { isSafeJson } from '../../../../dist/qa-adapters/shared';
+} from '../../../qa.js';
+import { isSafeJson } from '../../../qa-adapters/shared.js';
 
 type PreviewCopy = {
   error: string;

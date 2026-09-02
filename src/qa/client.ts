@@ -1,4 +1,4 @@
-import { qaProducts, type QaProduct } from '../../../../dist/qa';
+import { qaProducts, type QaProduct } from '../qa.js';
 
 interface QaSessionRequest {
   context?: QaContext;
@@ -34,6 +34,7 @@ interface StoredQaAccessToken {
 
 const QA_WINDOW_NAME = 'antv-qa-auth';
 const QA_WINDOW_TIMEOUT_MS = 5 * 60 * 1000;
+const QA_REQUEST_TIMEOUT_MS = 30 * 1000;
 const QA_TOKEN_STORAGE_PREFIX = 'sive.qa.access-token:';
 const qaAccessTokens = new Map<string, StoredQaAccessToken>();
 
@@ -136,6 +137,8 @@ function requestQaAccessToken({
         data?.type !== 'sive.qa.auth.ready' ||
         typeof data.accessToken !== 'string' ||
         typeof data.expiresIn !== 'number' ||
+        !Number.isFinite(data.expiresIn) ||
+        data.expiresIn <= 0 ||
         data.tokenType !== 'Bearer'
       )
         return;
@@ -220,7 +223,13 @@ async function submitQaSession({
   accessToken: string;
   serviceOrigin: string;
 }): Promise<string> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(
+    () => controller.abort(),
+    QA_REQUEST_TIMEOUT_MS,
+  );
   let response: Response;
+  let payload: QaSubmitResponse;
   try {
     response = await fetch(
       new URL('/integrations/qa/session', serviceBaseUrl),
@@ -236,17 +245,14 @@ async function submitQaSession({
           'Content-Type': 'application/json',
         },
         method: 'POST',
+        signal: controller.signal,
       },
     );
-  } catch {
-    throw new Error(errors.request);
-  }
-
-  let payload: QaSubmitResponse;
-  try {
     payload = (await response.json()) as QaSubmitResponse;
   } catch {
     throw new Error(errors.request);
+  } finally {
+    window.clearTimeout(timeoutId);
   }
 
   const nextSessionId = payload.data?.session;

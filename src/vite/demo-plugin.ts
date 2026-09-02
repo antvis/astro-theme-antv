@@ -1,6 +1,6 @@
 import { dirname, extname } from "node:path";
 import type { Plugin } from "vite";
-import type { SiteRegistry } from "../compiler/content";
+import type { SiteRegistry } from "../compiler/content.js";
 
 const publicModuleId = "virtual:antv-site-demos";
 const resolvedModuleId = `\0${publicModuleId}`;

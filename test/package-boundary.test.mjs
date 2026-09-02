@@ -28,16 +28,25 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
   assert.equal(projectTsconfig.extends, "astro/tsconfigs/strict");
   assert.equal(projectTsconfig.compilerOptions.types[0], "node");
   assert.equal(buildTsconfig.compilerOptions.outDir, "dist");
+  assert.equal(buildTsconfig.compilerOptions.module, "NodeNext");
+  assert.equal(buildTsconfig.compilerOptions.moduleResolution, "NodeNext");
   assert.deepEqual(buildTsconfig.exclude, ["src/theme"]);
   assert.deepEqual(packageJson.exports["./qa"], {
-    types: "./dist/theme/features/qa/index.ts",
-    import: "./dist/theme/features/qa/index.ts",
+    types: "./dist/qa-browser.d.ts",
+    import: "./dist/qa-browser.js",
   });
   assert.deepEqual(packageJson.exports["./qa-entry"], {
     types: "./dist/theme/components/QaEntry.astro",
     import: "./dist/theme/components/QaEntry.astro",
   });
   assert.equal(packageJson.peerDependencies.astro, ">=7.2.0 <8");
+  assert.equal(packageJson.license, "MIT");
+  assert.deepEqual(packageJson.repository, {
+    type: "git",
+    url: "https://github.com/antvis/site.git",
+  });
+  assert.equal(packageJson.homepage, "https://github.com/antvis/site#readme");
+  assert.equal(packageJson.bugs.url, "https://github.com/antvis/site/issues");
   assert.equal(packageJson.dependencies["@antv/g2"], undefined);
   assert.equal(packageJson.dependencies["@antv/g6"], undefined);
   assert.equal(packageJson.dependencies["@antv/s2"], undefined);
@@ -99,9 +108,17 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
     route: "/zh/guide/",
   });
 
+  const qaApi = await import("@antv/site/qa");
+  assert.equal(typeof qaApi.requestQaSession, "function");
+  assert.equal(typeof qaApi.readQaHistory, "function");
+  assert.equal(typeof qaApi.saveQaHistory, "function");
+  assert.equal(typeof qaApi.toQaProduct, "function");
+
   await access(resolve(packageRoot, "dist/integration.js"));
   await access(resolve(packageRoot, "dist/content.js"));
   await access(resolve(packageRoot, "dist/qa.js"));
+  await access(resolve(packageRoot, "dist/qa-browser.js"));
+  await access(resolve(packageRoot, "LICENSE"));
   await access(resolve(packageRoot, "dist/qa-adapters/index.js"));
   await access(resolve(packageRoot, "dist/search.js"));
   await access(resolve(packageRoot, "dist/slots.js"));
@@ -111,6 +128,7 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
   await access(resolve(packageRoot, "dist/theme/components/Demo.astro"));
   await access(resolve(packageRoot, "dist/theme/components/QaResult.astro"));
   await access(resolve(packageRoot, "dist/theme/components/QaEntry.astro"));
+  await access(resolve(packageRoot, "dist/theme/features/qa/result.ts"));
   await access(resolve(packageRoot, "dist/theme/components/SiteSearch.astro"));
   await access(resolve(packageRoot, "dist/theme/pages/demos/[...key].astro"));
   await access(resolve(packageRoot, "demos/basic-site/astro.config.mjs"));
@@ -127,6 +145,10 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
     "dist/demo-runtime/index.js",
     "dist/runtime/build.js",
     "dist/verify.js",
+    "dist/theme/features/qa/client.ts",
+    "dist/theme/features/qa/history.ts",
+    "dist/theme/features/qa/index.ts",
+    "scripts/rewrite-imports.mjs",
   ]) {
     await assert.rejects(access(resolve(packageRoot, removedPath)));
   }

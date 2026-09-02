@@ -16,20 +16,18 @@ export interface AntvDocIdentity {
   route: string;
 }
 
-export const antvDocsSchema = z
-  .object({
-    title: z.string().min(1),
-    description: z.string().optional(),
-    order: z.number().default(0),
-    sidebar: z
-      .object({
-        label: z.string().optional(),
-        hidden: z.boolean().default(false),
-      })
-      .default({ hidden: false }),
-    draft: z.boolean().default(false),
-  })
-  .passthrough();
+export const antvDocsSchema = z.looseObject({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  order: z.number().default(0),
+  sidebar: z
+    .object({
+      label: z.string().optional(),
+      hidden: z.boolean().default(false),
+    })
+    .default({ hidden: false }),
+  draft: z.boolean().default(false),
+});
 
 const localizedDocumentPattern = /^(.*)\.(zh|en)\.(?:md|mdx)$/;
 

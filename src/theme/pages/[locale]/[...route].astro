@@ -8,7 +8,6 @@ import type { DocumentPage } from '../../lib/documents';
 import { withBase } from '../../lib/paths';
 import DocsSidebar from '../../components/DocsSidebar.astro';
 import ExampleSidebar from '../../components/ExampleSidebar.astro';
-import QaResult from '../../components/QaResult.astro';
 import Toc from '../../components/Toc.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Demo from '../../components/Demo.astro';
@@ -20,7 +19,7 @@ import {
   registry,
 } from '../../lib/site';
 
-type RoutePage = SitePage | DocumentPage;
+type RoutePage = Exclude<SitePage, { type: 'home' | 'qa' }> | DocumentPage;
 
 interface Props {
   page: RoutePage;
@@ -31,10 +30,13 @@ export async function getStaticPaths() {
   const documentPages = entries
     .map((entry) => toDocumentPage(entry, config))
     .filter((page) => config.site.locales.includes(page.locale));
-  const generatedPages = registry.pages.filter((page) => page.type !== 'home');
+  const generatedPages = registry.pages.filter(
+    (page): page is Exclude<SitePage, { type: 'home' | 'qa' }> =>
+      page.type !== 'home' && page.type !== 'qa',
+  );
   const knownRoutes = new Set(
     registry.pages
-      .filter((page) => page.type === 'home')
+      .filter((page) => page.type === 'home' || page.type === 'qa')
       .map((page) => page.route),
   );
 
@@ -101,11 +103,6 @@ let description = localize(config.site.description, locale);
 if (page.type === 'document') {
   title = page.title;
   description = page.description;
-} else if (page.type === 'qa') {
-  title = isZh ? '查询结果' : 'Query results';
-  description = isZh
-    ? '承载当前 AntV 产品站可视化查询的结果页面。'
-    : 'The visualization query result page for this AntV product site.';
 } else if (page.type === 'examples') {
   title = isZh ? '图表示例' : 'Examples';
 } else if (category) {
@@ -118,11 +115,7 @@ if (page.type === 'document') {
 }
 ---
 
-<BaseLayout locale={locale} title={title} description={description} route={page.route} pageType={page.type === 'document' ? 'document' : page.type === 'qa' ? 'qa' : 'page'}>
-  {page.type === 'qa' && config.qa && (
-    <QaResult locale={locale} service={config.qa.service} />
-  )}
-
+<BaseLayout locale={locale} title={title} description={description} route={page.route} pageType={page.type === 'document' ? 'document' : 'page'}>
   {page.type === 'document' && (
     <div class="docs-shell">
       <DocsSidebar items={documentItems} currentRoute={page.route} locale={locale} labels={config.content.sidebar} />

@@ -1,3 +1,4 @@
+/** Persisted browser-side QA session metadata. */
 export interface QaHistoryEntry {
   session: string;
   stack: string;

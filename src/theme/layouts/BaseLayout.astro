@@ -6,7 +6,7 @@ import languageIcon from '@tabler/icons/outline/language.svg?raw';
 import SiteSearch from '../components/SiteSearch.astro';
 import { withBase } from '../lib/paths';
 import { getGeneratedRoutes } from '../lib/routes';
-import { config, registry } from '../lib/site';
+import { config } from '../lib/site';
 import '../styles/global.css';
 
 interface Props {
@@ -35,8 +35,9 @@ const defaultAlternate = alternateLocales.find(
   (entry: { locale: 'zh' | 'en'; route: string }) =>
     entry.locale === config.site.defaultLocale,
 );
+const hasScheme = (href: string) => /^[a-z][a-z\d+.-]*:/i.test(href);
 const localizedRoute = (href: string) => {
-  if (/^(?:https?:)?\/\//.test(href)) return href;
+  if (href.startsWith('//') || hasScheme(href)) return href;
   if (href.startsWith('#')) return href;
   if (href.startsWith('/#')) return `/${locale}/${href.slice(1)}`;
   if (href.startsWith(`/${locale}/`) || href === `/${locale}/`) return href;
@@ -44,7 +45,9 @@ const localizedRoute = (href: string) => {
 };
 const localHref = (href: string) => {
   const localized = localizedRoute(href);
-  return /^(?:https?:)?\/\//.test(localized) ? localized : withBase(localized);
+  return localized.startsWith('//') || hasScheme(localized)
+    ? localized
+    : withBase(localized);
 };
 const navLabel = locale === 'zh' ? '主导航' : 'Primary navigation';
 const currentSection = route.replace(new RegExp(`^/${locale}/?`), '').split('/')[0];

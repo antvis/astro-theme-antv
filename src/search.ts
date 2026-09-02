@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import type { ResolvedSiteConfig } from "./compiler/config";
+import type { ResolvedSiteConfig } from "./compiler/config.js";
 
 const assertPagefindResult = <Result extends { errors: string[] }>(
   result: Result,

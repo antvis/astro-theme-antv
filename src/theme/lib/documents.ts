@@ -1,7 +1,7 @@
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import type { CollectionEntry } from 'astro:content';
-import type { ResolvedSiteConfig } from '../../../dist/compiler/config';
-import { getAntvDocIdentity } from '../../../dist/content';
+import type { ResolvedSiteConfig } from '../../compiler/config.js';
+import { getAntvDocIdentity } from '../../content.js';
 
 export interface DocumentPage {
   type: 'document';

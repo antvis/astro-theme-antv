@@ -1,4 +1,4 @@
-import type { QaPreviewInstance } from '../qa';
+import type { QaPreviewInstance } from '../qa.js';
 
 const blockedKeys = new Set(['__proto__', 'constructor', 'prototype']);
 const blockedOptionKeys = new Set([

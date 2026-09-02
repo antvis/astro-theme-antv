@@ -1,12 +1,12 @@
-export { alternateRoute, localize } from '../../../dist/compiler/localization';
-export { getAntvDocIdentity } from '../../../dist/content';
+export { alternateRoute, localize } from '../../compiler/localization.js';
+export { getAntvDocIdentity } from '../../content.js';
 export type {
   LocalizedLink,
   LocalizedText,
-} from '../../../dist/compiler/config';
+} from '../../compiler/config.js';
 export type {
   DemoRecord,
   ExampleCategory,
   SitePage,
   SiteRegistry,
-} from '../../../dist/compiler/content';
+} from '../../compiler/content.js';

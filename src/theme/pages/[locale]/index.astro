@@ -21,7 +21,11 @@ const documents = (await getDocsCollection())
 const home = config.home;
 const route = `/${locale}/`;
 const localHref = (href: string) => {
-  if (/^(?:https?:)?\/\//.test(href) || href.startsWith('#')) return href;
+  if (
+    href.startsWith('//') ||
+    /^[a-z][a-z\d+.-]*:/i.test(href) ||
+    href.startsWith('#')
+  ) return href;
   if (href.startsWith(`/${locale}/`) || href === `/${locale}/`) return withBase(href);
   return withBase(
     `/${locale}${href.startsWith('/') ? href : `/${href}`}`.replace(/\/$/, '') + '/',

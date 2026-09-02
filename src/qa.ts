@@ -1,4 +1,4 @@
-import type { LocalizedText } from './compiler/config';
+import type { LocalizedText } from './compiler/config.js';
 
 export const qaProducts = ['g2', 's2', 'g6', 'f2', 'x6', 'l7'] as const;
 

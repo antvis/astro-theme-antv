@@ -2,7 +2,7 @@ import { normalizePath, type Plugin } from "vite";
 import {
   homeSlotNames,
   type ResolvedSiteConfig,
-} from "../compiler/config";
+} from "../compiler/config.js";
 
 const publicModuleId = "virtual:antv-site-home-slots";
 const resolvedModuleId = `\0${publicModuleId}`;

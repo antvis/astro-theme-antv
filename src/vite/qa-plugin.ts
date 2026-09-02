@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { normalizePath, type Plugin } from "vite";
-import type { ResolvedSiteConfig } from "../compiler/config";
-import type { QaPreviewProduct } from "../qa";
+import type { ResolvedSiteConfig } from "../compiler/config.js";
+import type { QaPreviewProduct } from "../qa.js";
 
 const publicModuleId = "virtual:antv-site-qa-preview-adapters";
 const resolvedModuleId = `\0${publicModuleId}`;

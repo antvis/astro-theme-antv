@@ -2,10 +2,10 @@ export {
   requestQaSession,
   toQaProduct,
   type QaContext,
-} from './client';
-export type { QaProduct } from '../../../../dist/qa';
+} from './qa/client.js';
 export {
   readQaHistory,
   saveQaHistory,
   type QaHistoryEntry,
-} from './history';
+} from './qa/history.js';
+export type { QaProduct } from './qa.js';

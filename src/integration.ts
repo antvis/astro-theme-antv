@@ -1,16 +1,16 @@
-import { access, cp, mkdir, rm } from "node:fs/promises";
+import { access } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type { AstroIntegration } from "astro";
-import type { AntVSiteConfig, ResolvedSiteConfig } from "./compiler/config";
-import { resolveConfig } from "./compiler/config";
-import type { SiteRegistry } from "./compiler/content";
-import { scanSite } from "./compiler/content";
-import { createLegacyContentMarkdownProcessor } from "./markdown";
-import { buildProductionSearch } from "./search";
-import { createDemoPlugin } from "./vite/demo-plugin";
-import { createQaPlugin } from "./vite/qa-plugin";
-import { createSlotsPlugin } from "./vite/slots-plugin";
+import type { AntVSiteConfig, ResolvedSiteConfig } from "./compiler/config.js";
+import { resolveConfig } from "./compiler/config.js";
+import type { SiteRegistry } from "./compiler/content.js";
+import { scanSite } from "./compiler/content.js";
+import { createLegacyContentMarkdownProcessor } from "./markdown.js";
+import { buildProductionSearch } from "./search.js";
+import { createDemoPlugin } from "./vite/demo-plugin.js";
+import { createQaPlugin } from "./vite/qa-plugin.js";
+import { createSlotsPlugin } from "./vite/slots-plugin.js";
 
 const packageRoot = fileURLToPath(new URL("../", import.meta.url));
 const themeRoot = resolve(packageRoot, "dist/theme");
@@ -22,21 +22,6 @@ const isWithin = (parent: string, child: string) => {
     (path !== ".." && !path.startsWith(`..${sep}`) && !isAbsolute(path))
   );
 };
-
-async function preparePublicDirectory(
-  config: ResolvedSiteConfig,
-): Promise<string> {
-  const stage = resolve(config.root, ".antv-site/public");
-  await rm(stage, { recursive: true, force: true });
-  await mkdir(stage, { recursive: true });
-  await cp(resolve(config.root, "public"), stage, {
-    recursive: true,
-    force: true,
-  }).catch((error: NodeJS.ErrnoException) => {
-    if (error.code !== "ENOENT") throw error;
-  });
-  return stage;
-}
 
 async function validateQaPreviewAdapters(
   config: ResolvedSiteConfig,
@@ -76,7 +61,6 @@ async function validateHomeSlots(config: ResolvedSiteConfig): Promise<void> {
 export function antvSite(input: AntVSiteConfig): AstroIntegration {
   let config: ResolvedSiteConfig;
   let registry: SiteRegistry;
-  let publicDirectory: string;
 
   const core: AstroIntegration = {
     name: "@antv/site",
@@ -89,17 +73,31 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration {
         updateConfig,
       }) {
         const consumerRoot = fileURLToPath(astroConfig.root);
+        if (astroConfig.output !== "static") {
+          throw new Error(
+            "@antv/site supports Astro static output only. Remove the server output or adapter configuration.",
+          );
+        }
         config = await resolveConfig(input, consumerRoot);
         await validateQaPreviewAdapters(config);
         await validateHomeSlots(config);
         registry = await scanSite(config);
-        publicDirectory = await preparePublicDirectory(config);
         if (config.content.examples) addWatchFile(config.content.examples);
         for (const path of Object.values(config.qa?.previewAdapters ?? {})) {
           addWatchFile(path);
         }
         for (const paths of Object.values(config.slots.home)) {
           for (const path of paths) addWatchFile(path);
+        }
+
+        if (config.qa) {
+          injectRoute({
+            pattern: `/[locale]/${config.qa.path}`,
+            entrypoint: pathToFileURL(
+              resolve(themeRoot, "pages/[locale]/qa.astro"),
+            ),
+            prerender: true,
+          });
         }
 
         for (const [pattern, entrypoint] of [
@@ -125,10 +123,8 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration {
         }
 
         updateConfig({
-          publicDir: pathToFileURL(`${publicDirectory}${sep}`),
           outDir: pathToFileURL(`${config.output}${sep}`),
           site: config.site.origin,
-          output: "static",
           trailingSlash: "always",
           build: { format: "directory", assets: "_assets" },
           markdown: {
@@ -172,9 +168,9 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration {
       "astro:server:setup"({ server }) {
         const roots = [
           ...(config.content.examples ? [config.content.examples] : []),
-          resolve(config.root, "public"),
           ...Object.values(config.slots.home).flat(),
         ];
+        if (!roots.length) return;
         server.watcher.add(roots);
         server.watcher.on("all", (_event, path) => {
           if (!roots.some((root) => isWithin(root, path))) return;

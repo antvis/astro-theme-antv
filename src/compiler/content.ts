@@ -1,13 +1,14 @@
 import { readFile, readdir } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, relative, resolve, sep } from "node:path";
-import { assertWithin, pathKey } from "../util";
-import { localize as localized } from "./localization";
+import { z } from "zod";
+import { assertWithin, pathKey } from "../util.js";
+import { localize as localized } from "./localization.js";
 import type {
   LocalizedText,
   ResolvedSiteConfig,
   SiteLocale,
-} from "./config";
+} from "./config.js";
 
 const require = createRequire(import.meta.url);
 const matter = require("gray-matter") as typeof import("gray-matter");
@@ -96,6 +97,31 @@ export interface SiteRegistry {
 }
 
 const demoExtensionPattern = /\.(?:[cm]?[jt]sx?)$/i;
+const routePathPattern = /^[a-z0-9]+(?:[/-][a-z0-9]+)*$/;
+
+const metadataLocalizedTextSchema = z.strictObject({
+  zh: z.string().min(1),
+  en: z.string().min(1),
+});
+const metadataTitleSchema = z.union([
+  z.string().min(1),
+  metadataLocalizedTextSchema,
+]);
+const exampleMetadataSchema = z.strictObject({
+  title: metadataTitleSchema.optional(),
+  demos: z
+    .array(
+      z.strictObject({
+        filename: z
+          .string()
+          .min(1)
+          .regex(demoExtensionPattern, "Demo files must be JavaScript or TypeScript modules."),
+        title: metadataTitleSchema,
+        screenshot: z.string().min(1).optional(),
+      }),
+    )
+    .default([]),
+});
 
 const titleFromSlug = (value: string) =>
   value
@@ -120,41 +146,6 @@ async function walk(
   return files;
 }
 
-function repairUnclosedFrontmatter(source: string): string | undefined {
-  const lines = source.split(/\r?\n/);
-  if (lines[0]?.trim() !== "---") return undefined;
-  if (lines.slice(1).some((line) => line.trim() === "---")) return undefined;
-
-  let sawField = false;
-  let contentIndex = -1;
-  for (let index = 1; index < lines.length; index += 1) {
-    const line = lines[index];
-    if (!line.trim()) {
-      if (sawField) {
-        contentIndex = index + 1;
-        break;
-      }
-      continue;
-    }
-    if (/^[A-Za-z0-9_-]+\s*:/.test(line)) {
-      sawField = true;
-      continue;
-    }
-    if (sawField) {
-      contentIndex = index;
-      break;
-    }
-  }
-  if (!sawField || contentIndex < 0) return undefined;
-
-  return [
-    "---",
-    ...lines.slice(1, contentIndex).filter((line) => line.trim()),
-    "---",
-    ...lines.slice(contentIndex),
-  ].join("\n");
-}
-
 const errorCode = (error: unknown) =>
   error instanceof Error && "code" in error
     ? String((error as NodeJS.ErrnoException).code)
@@ -164,17 +155,25 @@ function parseMatter(source: string, path: string) {
   try {
     return matter(source);
   } catch (error) {
-    const repaired = repairUnclosedFrontmatter(source);
-    if (!repaired) {
-      throw new Error(`Invalid Markdown frontmatter: ${path}`, {
-        cause: error,
-      });
-    }
-    process.stderr.write(
-      `@antv/site: repaired an unclosed frontmatter block in ${path}\n`,
-    );
-    return matter(repaired);
+    throw new Error(`Invalid Markdown frontmatter: ${path}`, {
+      cause: error,
+    });
   }
+}
+
+function parseExampleMetadata(source: string, path: string) {
+  let value: unknown;
+  try {
+    value = JSON.parse(source);
+  } catch (error) {
+    throw new Error(`Invalid Demo metadata JSON: ${path}`, { cause: error });
+  }
+
+  const parsed = exampleMetadataSchema.safeParse(value);
+  if (!parsed.success) {
+    throw new Error(`Invalid Demo metadata: ${path}: ${z.prettifyError(parsed.error)}`);
+  }
+  return parsed.data;
 }
 
 const exampleLocales = ["zh", "en"] as const satisfies readonly SiteLocale[];
@@ -223,6 +222,7 @@ export async function scanSite(
     : [];
   const groups: ExampleGroup[] = [];
   const demos: DemoRecord[] = [];
+  const demoKeys = new Set<string>();
 
   for (const metaPath of metaFiles) {
     const groupDirectory = dirname(dirname(metaPath));
@@ -234,17 +234,20 @@ export async function scanSite(
       throw new Error(`Example group has no category: ${groupDirectory}`);
     }
     const groupSlug = groupParts.join("/").toLowerCase();
-    const meta = JSON.parse(await readFile(metaPath, "utf8")) as {
-      title?: LocalizedText;
-      demos?: Array<{
-        filename: string;
-        title: LocalizedText | string;
-        screenshot?: string;
-      }>;
-    };
+    if (!groupSlug) {
+      throw new Error(`Example group has no slug beneath its category: ${groupDirectory}`);
+    }
+    if (!routePathPattern.test(categorySlug) || !routePathPattern.test(groupSlug)) {
+      throw new Error(
+        `Example category and group paths must use lowercase route segments: ${relativeGroup}`,
+      );
+    }
+    const meta = parseExampleMetadata(await readFile(metaPath, "utf8"), metaPath);
     const demoDirectory = dirname(metaPath);
     const placeholderTitle =
-      meta.title?.zh === "中文分类" && meta.title?.en === "Category";
+      typeof meta.title === "object" &&
+      meta.title.zh === "中文分类" &&
+      meta.title.en === "Category";
     const groupMetadata = await readExampleGroupMetadata(
       groupDirectory,
       placeholderTitle ? undefined : meta.title,
@@ -257,14 +260,21 @@ export async function scanSite(
       demos: [],
     };
 
-    for (const item of meta.demos || []) {
+    for (const item of meta.demos) {
       const sourcePath = resolve(demoDirectory, item.filename);
-      assertWithin(examplesRoot, sourcePath);
+      assertWithin(demoDirectory, sourcePath);
       const source = await readFile(sourcePath, "utf8");
       const slug = item.filename
         .replace(demoExtensionPattern, "")
         .toLowerCase();
+      if (!routePathPattern.test(slug)) {
+        throw new Error(`Demo filename does not produce a safe route: ${item.filename}`);
+      }
       const key = [categorySlug, groupSlug, slug].filter(Boolean).join("/");
+      if (demoKeys.has(key)) {
+        throw new Error(`Duplicate Demo route key: ${key}`);
+      }
+      demoKeys.add(key);
       const record = {
         key,
         categorySlug,

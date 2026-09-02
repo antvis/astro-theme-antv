@@ -8,6 +8,20 @@ const root = resolve("demos/basic-site");
 const output = resolve(root, "dist");
 const baseOutput = resolve(root, "dist-base");
 
+const stylesheetHrefs = (html) =>
+  [...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/g)].map(
+    (match) => match[1],
+  );
+
+const readStylesheets = async (directory, html) =>
+  (
+    await Promise.all(
+      stylesheetHrefs(html).map((href) =>
+        readFile(resolve(directory, href.replace(/^\//, "")), "utf8"),
+      ),
+    )
+  ).join("\n");
+
 test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () => {
   await build({ root });
 
@@ -61,6 +75,7 @@ test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () 
   assert.match(home, /data-default-stack="s2"/);
   assert.match(home, /data-result-url="\/zh\/result\/"/);
   assert.match(home, /href="\/zh\/examples\/"/);
+  assert.match(home, /href="tel:\+861012345678"/);
   assert.match(home, /data-fixture-home-slot="beforeFooter"/);
 
   const document = await readFile(
@@ -87,6 +102,7 @@ test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () 
   assert.doesNotMatch(document, /advanced\.zh\.mdx/);
   assert.match(document, /data-code-src="\.\/snippet\.ts"/);
   assert.match(document, /Astro Content Collection/);
+  assert.match(document, /href="mailto:team@example\.com"/);
 
   const mdxDocument = await readFile(
     resolve(output, "zh/guide/advanced/index.html"),
@@ -119,6 +135,8 @@ test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () 
   assert.match(result, /data-antv-result/);
   assert.match(result, /data-qa-service-base="http:\/\/localhost:3000"/);
   assert.match(result, /href="\/zh\/"/);
+  assert.match(await readStylesheets(output, result), /antv-result-page/);
+  assert.doesNotMatch(await readStylesheets(output, document), /antv-result-page/);
 
   const runner = await readFile(
     resolve(output, "demos/basic/simple/hello/index.html"),

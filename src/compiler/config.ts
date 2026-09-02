@@ -14,7 +14,7 @@ import {
   qaServiceEndpoints,
   type QaPreviewProduct,
   type QaProduct,
-} from "../qa";
+} from "../qa.js";
 
 export type SiteLocale = "zh" | "en";
 
@@ -202,13 +202,54 @@ const localizedTextSchema = z.strictObject({
   en: z.string(),
 });
 
+const httpUrlSchema = z.url().refine(
+  (value) => {
+    const protocol = new URL(value).protocol;
+    return protocol === "http:" || protocol === "https:";
+  },
+  "URL must use HTTP or HTTPS.",
+);
+
+const siteOriginSchema = httpUrlSchema.refine(
+  (value) => {
+    const url = new URL(value);
+    return (
+      !url.username &&
+      !url.password &&
+      url.pathname === "/" &&
+      !url.search &&
+      !url.hash
+    );
+  },
+  "Site origin must not include credentials, a path, a query, or a hash.",
+);
+
+const supportedLinkProtocols = new Set(["http:", "https:", "mailto:", "tel:"]);
+const linkProtocolPattern = /^[a-z][a-z\d+.-]*:/i;
+const safeHrefSchema = z
+  .string()
+  .min(1)
+  .refine((value) => !/\s/.test(value), "Links must not contain whitespace.")
+  .refine(
+    (value) => !/[\u0000-\u001f\u007f]/.test(value),
+    "Links must not contain control characters.",
+  )
+  .refine((value) => {
+    if (!linkProtocolPattern.test(value)) return true;
+    try {
+      return supportedLinkProtocols.has(new URL(value).protocol);
+    } catch {
+      return false;
+    }
+  }, "Links must be relative or use HTTP, HTTPS, mailto, or tel.");
+
 const sidebarItemSchema = localizedTextSchema.extend({
   order: z.number().optional(),
 });
 
 const linkSchema = z.strictObject({
   text: localizedTextSchema,
-  href: z.string().min(1),
+  href: safeHrefSchema,
 });
 
 const footerGroupSchema = z.strictObject({
@@ -269,8 +310,8 @@ const configSchema = z
   .strictObject({
     site: z.strictObject({
       title: z.string().min(1),
-      origin: z.url(),
-      repository: z.url(),
+      origin: siteOriginSchema,
+      repository: httpUrlSchema,
       description: localizedTextSchema,
       defaultLocale: z.enum(["zh", "en"]).default("zh"),
       locales: z
@@ -302,7 +343,7 @@ const configSchema = z
       sidebar: z.record(z.string(), sidebarItemSchema).default({}),
     }),
     navigation: z.array(linkSchema).default([]),
-    versions: z.record(z.string(), z.string()).default({}),
+    versions: z.record(z.string(), safeHrefSchema).default({}),
     search: z
       .strictObject({
         enabled: z.boolean().default(true),

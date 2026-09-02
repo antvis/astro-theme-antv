@@ -6,8 +6,8 @@ import type {
   ContentComponent,
   ResolvedSiteConfig,
   SiteLocale,
-} from "./compiler/config";
-import { assertWithin, pathKey } from "./util";
+} from "./compiler/config.js";
+import { assertWithin, pathKey } from "./util.js";
 
 const escapeHtml = (value: unknown) =>
   String(value)

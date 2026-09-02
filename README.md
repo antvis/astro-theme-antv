@@ -99,6 +99,8 @@ export default defineConfig({
 
 `theme.tokens` is a single CSS custom-property map applied to `:root`. It keeps product branding and theme customization in the consuming repository without exposing Astro internals or adding a package-owned color-mode switch.
 
+`site.origin` must be a bare HTTP(S) origin without credentials, a path, query, or fragment. Navigation, footer, home-action, and version links accept relative URLs plus HTTP(S), `mailto:`, and `tel:` schemes; unsafe schemes and control characters are rejected during configuration.
+
 Use normal Astro commands:
 
 ```json
@@ -112,7 +114,7 @@ Use normal Astro commands:
 }
 ```
 
-The public `defineConfig` facade installs the integration and configures the bundled theme, static output, sitemap, public assets, Demo ESM entries, and Pagefind indexing. It no longer replaces Astro's `srcDir`: consumer pages, components, middleware, and content configuration remain in the standard Astro project tree.
+The public `defineConfig` facade installs the integration and configures the bundled theme, sitemap, Demo ESM entries, and Pagefind indexing. `@antv/site` supports Astro's static output only and fails during configuration when non-static output is requested. It does not replace Astro's `srcDir` or `publicDir`: consumer pages, components, middleware, content configuration, and static assets remain in the standard Astro project tree.
 
 Advanced Astro configurations can compose the same integration directly:
 
@@ -128,7 +130,7 @@ export default defineConfig({
 });
 ```
 
-Use this standard Astro composition whenever the site needs Astro-level options such as `base`, adapters, redirects, or additional integrations. `antvSite()` returns only the package-owned core integration; advanced consumers explicitly install and enable `@astrojs/mdx` and `@astrojs/sitemap` when needed. The package `defineConfig` facade enables both by default. Internal theme links, canonical URLs, Demo iframes, QA navigation, static assets, and search assets all honor Astro's `base` value.
+Use this standard Astro composition whenever the site needs Astro-level options such as `base`, redirects, or additional integrations. Server adapters are intentionally unsupported because generated content, Demo runners, QA routes, and Pagefind indexing are owned as a static-site pipeline. `antvSite()` returns only the package-owned core integration; advanced consumers explicitly install and enable `@astrojs/mdx` and `@astrojs/sitemap` when needed. The package `defineConfig` facade enables both by default. Internal theme links, canonical URLs, Demo iframes, QA navigation, static assets, and search assets all honor Astro's `base` value.
 
 When qa is configured, each locale receives a Result route at /{locale}/result/ by default and the shared home page renders the package-owned QA entry. `qa.defaultStack` selects the initial G2, S2, G6, F2, X6, or L7 stack. Change `qa.path` to use another route. The platform owns the shared Sive service endpoints and protocol. The QA entry owns stack selection, authentication, session creation, history, and Result navigation; the Result page owns streaming responses, follow-up questions, Markdown rendering, code highlighting, and optional visualization previews.
 
@@ -219,6 +221,8 @@ A minimal metadata file is:
 }
 ```
 
+`meta.json` is validated before routes are generated. Demo filenames must reference JavaScript or TypeScript modules inside their own `demo` directory, and duplicate route keys are rejected. Group Markdown frontmatter is parsed strictly; malformed or unclosed frontmatter fails the build with the source path instead of being repaired heuristically.
+
 Relative imports in Demo source resolve from the original source file. Vite emits standard ESM chunks and automatically shares common chunks where beneficial.
 
 ## Demo trust boundary
@@ -248,7 +252,7 @@ Unknown keys are rejected. Removed features therefore fail fast instead of being
 
 ## Package boundary
 
-Consumers import `defineConfig`, `antvSite`, and configuration types from the package root. The `@antv/site/content` subpath exports the Astro Content Loader and schema. The shared QA entry is available from `@antv/site/qa-entry`; lower-level browser-side QA session and history helpers remain available from `@antv/site/qa`. The package build copies the consumer-compiled Astro theme source into `dist/theme`, and npm publishes only `dist`; `src/theme` is a repository source directory, not a separate package path. Astro remains the peer build engine; Vite, Pagefind, and the sitemap integration are implementation dependencies.
+Consumers import `defineConfig`, `antvSite`, and configuration types from the package root. The `@antv/site/content` subpath exports the Astro Content Loader and schema. The shared QA entry is available from `@antv/site/qa-entry`; lower-level browser-side QA session and history helpers are compiled to JavaScript and published from `@antv/site/qa`. The package build emits NodeNext-compatible ESM directly, without a regex-based post-build import rewrite, then copies the consumer-compiled Astro theme source into `dist/theme`. npm publishes only `dist`; `src/theme` is a repository source directory, not a separate package path. Astro remains the peer build engine; Vite, Pagefind, and the sitemap integration are implementation dependencies.
 
 ## Repository demo
 

@@ -1,4 +1,4 @@
-import { getAntvDocIdentity } from '../../../dist/content';
+import { getAntvDocIdentity } from '../../content.js';
 import { getDocsCollection } from './docs';
 import { config, registry } from './site';
 

@@ -2,8 +2,8 @@ import type {
   HomeSlotName,
   ResolvedSiteConfig,
   SiteLocale,
-} from "./compiler/config";
-import type { SiteRegistry } from "./compiler/content";
+} from "./compiler/config.js";
+import type { SiteRegistry } from "./compiler/content.js";
 
 export interface HomeSlotProps {
   locale: SiteLocale;

@@ -2,14 +2,14 @@ import type {
   QaPreviewAdapter,
   QaPreviewContainer,
   QaPreviewInstance,
-} from '../qa';
+} from '../qa.js';
 import {
   hasLibrary,
   isRecord,
   isSafeJson,
   renderPreviewInstance,
   sanitizeOptions,
-} from './shared';
+} from './shared.js';
 
 interface G6Preview {
   data: {

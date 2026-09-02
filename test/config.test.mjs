@@ -201,3 +201,77 @@ test("rejects output outside the consumer root", async () => {
     /dedicated directory inside the consumer root/,
   );
 });
+
+test("accepts safe links and preserves non-HTTP link schemes", async () => {
+  const root = await mkdtemp(resolve(tmpdir(), "antv-site-config-"));
+  const config = await resolveConfig(
+    {
+      ...baseConfig(),
+      navigation: [
+        { text: { zh: "邮件", en: "Email" }, href: "mailto:team@example.com" },
+      ],
+      versions: { support: "tel:+861012345678" },
+      home: {
+        ...baseConfig().home,
+        actions: [
+          { text: { zh: "联系", en: "Contact" }, href: "tel:+861012345678" },
+        ],
+      },
+    },
+    root,
+  );
+
+  assert.equal(config.navigation[0].href, "mailto:team@example.com");
+  assert.equal(config.versions.support, "tel:+861012345678");
+  assert.equal(config.home.actions[0].href, "tel:+861012345678");
+});
+
+test("rejects invalid origins and unsafe link schemes", async () => {
+  const root = await mkdtemp(resolve(tmpdir(), "antv-site-config-"));
+
+  await assert.rejects(
+    resolveConfig(
+      {
+        ...baseConfig(),
+        site: { ...baseConfig().site, origin: "ftp://fixture.example.com" },
+      },
+      root,
+    ),
+    /URL must use HTTP or HTTPS/,
+  );
+  await assert.rejects(
+    resolveConfig(
+      {
+        ...baseConfig(),
+        site: {
+          ...baseConfig().site,
+          origin: "https://fixture.example.com/docs?preview=true",
+        },
+      },
+      root,
+    ),
+    /must not include credentials, a path, a query, or a hash/,
+  );
+  await assert.rejects(
+    resolveConfig(
+      {
+        ...baseConfig(),
+        navigation: [
+          { text: { zh: "危险", en: "Unsafe" }, href: "javascript:alert(1)" },
+        ],
+      },
+      root,
+    ),
+    /Links must be relative or use HTTP, HTTPS, mailto, or tel/,
+  );
+  await assert.rejects(
+    resolveConfig(
+      {
+        ...baseConfig(),
+        versions: { invalid: "/guide preview/" },
+      },
+      root,
+    ),
+    /Links must not contain whitespace/,
+  );
+});

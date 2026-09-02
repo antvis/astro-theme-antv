@@ -10,14 +10,14 @@ declare module 'virtual:antv-site-registry' {
 }
 
 declare module 'virtual:antv-site-qa-preview-adapters' {
-  import type { QaPreviewAdapter } from '../../dist/qa';
+  import type { QaPreviewAdapter } from '../qa.js';
 
   export const qaPreviewAdapters: Map<string, QaPreviewAdapter>;
 }
 
 declare module 'virtual:antv-site-home-slots' {
   import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
-  import type { HomeSlotName } from '../../dist/compiler/config';
+  import type { HomeSlotName } from '../compiler/config.js';
 
   export const homeSlots: Record<HomeSlotName, AstroComponentFactory[]>;
 }
