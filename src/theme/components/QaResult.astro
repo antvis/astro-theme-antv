@@ -1,7 +1,9 @@
 ---
 import arrowLeftIcon from '@tabler/icons/outline/arrow-left.svg?raw';
+import messagePlusIcon from '@tabler/icons/outline/message-2-plus.svg?raw';
 import sendIcon from '@tabler/icons/outline/send.svg?raw';
 import { withBase } from '../lib/paths';
+import QaEntry from './QaEntry.astro';
 
 interface Props {
   locale: 'zh' | 'en';
@@ -39,6 +41,12 @@ const text = {
   historyEmpty: isZh ? '暂无本地对话' : 'No local conversations yet',
   historyExpand: isZh ? '展开' : 'Show',
   historyCollapse: isZh ? '收起' : 'Hide',
+  newConversation: isZh ? '新建对话' : 'New conversation',
+  newConversationShort: isZh ? '新建' : 'New',
+  newConversationTitle: isZh ? '开始新对话' : 'Start a new conversation',
+  newConversationDescription: isZh
+    ? '描述你的可视化需求，并选择合适的技术栈。'
+    : 'Describe what you want to visualize and choose the right technology stack.',
   userRole: isZh ? '你' : 'You',
   assistantRole: isZh ? 'AntV AI' : 'AntV AI',
   followupLabel: isZh ? '继续提问' : 'Ask a follow-up',
@@ -109,14 +117,27 @@ const text = {
     <aside class="antv-history" data-history data-open="false">
       <div class="antv-history-header">
         <h2>{text.historyTitle}</h2>
-        <button
-          type="button"
-          aria-controls={`antv-history-list-${locale}`}
-          aria-expanded="false"
-          data-history-toggle
-        >
-          {text.historyExpand}
-        </button>
+        <div class="antv-history-actions">
+          <button
+            class="antv-history-new"
+            type="button"
+            aria-label={text.newConversation}
+            title={text.newConversation}
+            data-new-conversation-trigger
+          >
+            <span aria-hidden="true" set:html={messagePlusIcon}></span>
+            <span>{text.newConversationShort}</span>
+          </button>
+          <button
+            class="antv-history-toggle"
+            type="button"
+            aria-controls={`antv-history-list-${locale}`}
+            aria-expanded="false"
+            data-history-toggle
+          >
+            {text.historyExpand}
+          </button>
+        </div>
       </div>
       <nav
         id={`antv-history-list-${locale}`}
@@ -139,6 +160,14 @@ const text = {
           <span></span>
           <span></span>
         </div>
+      </div>
+
+      <div class="antv-new-conversation" data-new-conversation hidden>
+        <div class="antv-new-conversation-copy">
+          <h2>{text.newConversationTitle}</h2>
+          <p>{text.newConversationDescription}</p>
+        </div>
+        <QaEntry locale={locale} />
       </div>
 
       <div class="antv-result-error" data-result-error hidden>
@@ -241,8 +270,19 @@ const text = {
     font-weight: 650;
   }
 
+  .antv-history-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 6px;
+  }
+
   .antv-history-header button {
-    display: none;
+    display: inline-flex;
+    min-height: 30px;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
     padding: 5px 8px;
     border: 0;
     border-radius: 7px;
@@ -251,6 +291,32 @@ const text = {
     cursor: pointer;
     font-size: 12px;
     font-weight: 650;
+    line-height: 1;
+    white-space: nowrap;
+    transition: background .18s, color .18s, transform .18s;
+  }
+
+  .antv-history-header button:hover {
+    background: color-mix(in srgb, var(--brand) 14%, var(--surface));
+  }
+
+  .antv-history-header button:active {
+    transform: scale(.97);
+  }
+
+  .antv-history-header button:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--brand) 42%, transparent);
+    outline-offset: 2px;
+  }
+
+  .antv-history-new :global(svg) {
+    width: 15px;
+    height: 15px;
+    stroke-width: 1.8;
+  }
+
+  .antv-history-toggle {
+    display: none !important;
   }
 
   .antv-history-list {
@@ -429,6 +495,8 @@ const text = {
   }
 
   .antv-result-loading[hidden],
+  .antv-conversation[hidden],
+  .antv-new-conversation[hidden],
   .antv-result-error[hidden],
   .antv-followup[hidden],
   .antv-followup-error[hidden] {
@@ -771,6 +839,48 @@ const text = {
     text-align: left;
   }
 
+  .antv-new-conversation {
+    display: grid;
+    min-height: 0;
+    min-width: 0;
+    grid-row: 1;
+    align-content: center;
+    justify-items: center;
+    margin: 24px 0;
+    padding: 44px clamp(18px, 5vw, 64px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    border: 1px solid var(--border-soft);
+    border-radius: 18px;
+    background: var(--surface-raised);
+  }
+
+  .antv-new-conversation-copy {
+    display: grid;
+    width: min(750px, 100%);
+    gap: 8px;
+  }
+
+  .antv-new-conversation h2 {
+    margin: 0;
+    color: var(--text-strong);
+    font-size: clamp(24px, 3vw, 32px);
+    letter-spacing: -.025em;
+    line-height: 1.2;
+  }
+
+  .antv-new-conversation p {
+    max-width: 620px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .antv-new-conversation :global(.antv-qa-entry) {
+    margin-top: 22px;
+  }
+
   .antv-result-error {
     display: grid;
     min-height: 0;
@@ -943,8 +1053,8 @@ const text = {
       border-bottom: 0;
     }
 
-    .antv-history-header button {
-      display: inline-flex;
+    .antv-history-toggle {
+      display: inline-flex !important;
     }
 
     .antv-history-list {
@@ -965,6 +1075,19 @@ const text = {
       gap: 28px;
       margin: 18px 0;
       padding: 12px 14px;
+    }
+
+    .antv-new-conversation {
+      margin: 18px 0;
+      padding: 28px 14px;
+    }
+
+    .antv-new-conversation h2 {
+      font-size: 24px;
+    }
+
+    .antv-new-conversation :global(.antv-qa-entry) {
+      margin-top: 18px;
     }
 
     :global(.antv-chat-message-user .antv-chat-body) {
@@ -988,6 +1111,7 @@ const text = {
 
   @media (prefers-reduced-motion: reduce) {
     .antv-result-back,
+    .antv-history-header button,
     .antv-followup button,
     :global(.antv-chat-message) {
       transition: none;

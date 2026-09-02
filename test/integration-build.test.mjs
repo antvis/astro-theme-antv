@@ -133,7 +133,11 @@ test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () 
     "utf8",
   );
   assert.match(result, /data-antv-result/);
-  assert.match(result, /data-qa-service-base="http:\/\/localhost:3000"/);
+  assert.match(result, /data-new-conversation-trigger/);
+  assert.match(result, /data-new-conversation/);
+  assert.match(result, /data-antv-qa-entry/);
+  assert.match(result, /data-result-url="\/zh\/result\/"/);
+  assert.match(result, /data-qa-service-base="https:\/\/sive\.antv\.antgroup\.com"/);
   assert.match(result, /href="\/zh\/"/);
   assert.match(await readStylesheets(output, result), /antv-result-page/);
   assert.doesNotMatch(await readStylesheets(output, document), /antv-result-page/);
@@ -225,6 +229,14 @@ test("prefixes generated URLs for an Astro base deployment", async () => {
 
   const home = await readFile(resolve(baseOutput, "zh/index.html"), "utf8");
   assert.match(home, /data-result-url="\/platform\/zh\/result\/"/);
+
+  const result = await readFile(
+    resolve(baseOutput, "zh/result/index.html"),
+    "utf8",
+  );
+  assert.match(result, /data-new-conversation-trigger/);
+  assert.match(result, /data-new-conversation/);
+  assert.match(result, /data-result-url="\/platform\/zh\/result\/"/);
 
   const rootRedirect = await readFile(
     resolve(baseOutput, "index.html"),

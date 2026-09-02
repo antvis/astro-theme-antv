@@ -45,6 +45,8 @@ export function mountQaResult(): void {
   const historyTarget = root.querySelector('[data-history]');
   const historyList = root.querySelector('[data-history-list]');
   const historyToggle = root.querySelector('[data-history-toggle]');
+  const newConversationTrigger = root.querySelector('[data-new-conversation-trigger]');
+  const newConversationTarget = root.querySelector('[data-new-conversation]');
   const messageNodes = new Map<string, HTMLElement>();
   let pollTimer = 0;
   let streamRenderTimer = 0;
@@ -180,6 +182,7 @@ export function mountQaResult(): void {
     streamController?.abort();
     if (loadingTarget instanceof HTMLElement) loadingTarget.hidden = true;
     if (messagesTarget instanceof HTMLElement) messagesTarget.hidden = true;
+    if (newConversationTarget instanceof HTMLElement) newConversationTarget.hidden = true;
     if (composer instanceof HTMLFormElement) composer.hidden = true;
     if (statusTarget instanceof HTMLElement) statusTarget.hidden = true;
     if (errorDescriptionTarget instanceof HTMLElement) errorDescriptionTarget.textContent = description;
@@ -574,6 +577,7 @@ export function mountQaResult(): void {
     if (messagesTarget instanceof HTMLElement) {
       messagesTarget.hidden = false;
     }
+    if (newConversationTarget instanceof HTMLElement) newConversationTarget.hidden = true;
     if (errorTarget instanceof HTMLElement) errorTarget.hidden = true;
     if (composer instanceof HTMLFormElement) composer.hidden = false;
     if (followupInput instanceof HTMLTextAreaElement) {
@@ -586,6 +590,61 @@ export function mountQaResult(): void {
     setStatus(copy.loading);
     setComposerState();
     void loadResult();
+  };
+
+  const showNewConversation = (pushHistory: boolean) => {
+    sessionRevision += 1;
+    sessionId = '';
+    initialQuery = '';
+    stack = '';
+
+    if (pushHistory && window.location.search) {
+      window.history.pushState(null, '', window.location.pathname);
+    }
+
+    stopped = true;
+    window.clearTimeout(pollTimer);
+    window.clearTimeout(streamRenderTimer);
+    window.cancelAnimationFrame(streamRenderFrame);
+    pollTimer = 0;
+    streamRenderTimer = 0;
+    streamRenderFrame = 0;
+    streamController?.abort();
+    streamController = null;
+    streamConnecting = false;
+    streamRenderContent = '';
+    requestPending = false;
+    generationActive = false;
+    consecutiveFailures = 0;
+    forceFollow = false;
+    sessionSwitchPending = false;
+
+    if (messagesTarget instanceof HTMLElement) {
+      destroyQaPreviews(messagesTarget);
+      messageNodes.clear();
+      if (loadingTarget instanceof HTMLElement) {
+        loadingTarget.hidden = false;
+        messagesTarget.replaceChildren(loadingTarget);
+      } else {
+        messagesTarget.replaceChildren();
+      }
+      messagesTarget.hidden = true;
+    }
+    if (newConversationTarget instanceof HTMLElement) newConversationTarget.hidden = false;
+    if (errorTarget instanceof HTMLElement) errorTarget.hidden = true;
+    if (composer instanceof HTMLFormElement) composer.hidden = true;
+    if (statusTarget instanceof HTMLElement) statusTarget.hidden = true;
+    if (followupInput instanceof HTMLTextAreaElement) {
+      followupInput.value = '';
+      followupInput.style.height = 'auto';
+    }
+    if (followupError instanceof HTMLElement) followupError.hidden = true;
+
+    renderHistory(readQaHistory());
+    requestAnimationFrame(() => {
+      const prompt = newConversationTarget?.querySelector('[data-qa-prompt]');
+      if (prompt instanceof HTMLTextAreaElement) prompt.focus({ preventScroll: true });
+    });
   };
 
   const handleHistoryClick = (event: MouseEvent) => {
@@ -614,9 +673,8 @@ export function mountQaResult(): void {
     const nextParams = new URLSearchParams(window.location.search);
     const nextSessionId = nextParams.get('session')?.trim() ?? '';
     if (!nextSessionId) {
-      sessionRevision += 1;
-      sessionId = '';
-      showPageError(copy.missing);
+      if (!serviceBaseUrl) showPageError(copy.loadError);
+      else showNewConversation(false);
       return;
     }
     activateSession(
@@ -631,6 +689,10 @@ export function mountQaResult(): void {
 
   if (historyList instanceof HTMLElement) {
     historyList.addEventListener('click', handleHistoryClick);
+  }
+  const handleNewConversation = () => showNewConversation(true);
+  if (newConversationTrigger instanceof HTMLButtonElement) {
+    newConversationTrigger.addEventListener('click', handleNewConversation);
   }
   window.addEventListener('popstate', handlePopState);
 
@@ -660,6 +722,9 @@ export function mountQaResult(): void {
     if (historyList instanceof HTMLElement) {
       historyList.removeEventListener('click', handleHistoryClick);
     }
+    if (newConversationTrigger instanceof HTMLButtonElement) {
+      newConversationTrigger.removeEventListener('click', handleNewConversation);
+    }
     window.removeEventListener('popstate', handlePopState);
   };
   bindPageLifecycle(window, {
@@ -667,11 +732,6 @@ export function mountQaResult(): void {
     pause: pausePage,
     resume: resumePage,
   });
-
-  if (!sessionId || !serviceBaseUrl) {
-    showPageError(copy.missing);
-    return;
-  }
 
   if (
     composer instanceof HTMLFormElement &&
@@ -739,6 +799,16 @@ export function mountQaResult(): void {
         followupError.hidden = false;
       }
     });
+  }
+
+  if (!serviceBaseUrl) {
+    showPageError(copy.loadError);
+    return;
+  }
+
+  if (!sessionId) {
+    showNewConversation(false);
+    return;
   }
 
   setComposerState();
