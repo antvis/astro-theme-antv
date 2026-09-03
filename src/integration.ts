@@ -102,6 +102,12 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration {
 
         for (const [pattern, entrypoint] of [
           ["/", "pages/index.astro"],
+          ["/llms.txt", "pages/llms.txt.ts"],
+          ["/llms-full.txt", "pages/llms-full.txt.ts"],
+          [
+            "/markdown/[locale]/[...route].md",
+            "pages/markdown/[locale]/[...route].md.ts",
+          ],
           ["/[locale]", "pages/[locale]/index.astro"],
           ["/[locale]/[...route]", "pages/[locale]/[...route].astro"],
           ["/demos/[...key]", "pages/demos/[...key].astro"],

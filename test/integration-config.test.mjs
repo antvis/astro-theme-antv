@@ -72,5 +72,8 @@ test("preserves Astro publicDir and injects QA as a dedicated route", async () =
   assert.equal(Object.hasOwn(update, "publicDir"), false);
   assert.equal(Object.hasOwn(update, "output"), false);
   assert.ok(injectedRoutes.includes("/[locale]/result"));
+  assert.ok(injectedRoutes.includes("/llms.txt"));
+  assert.ok(injectedRoutes.includes("/llms-full.txt"));
+  assert.ok(injectedRoutes.includes("/markdown/[locale]/[...route].md"));
   assert.ok(injectedRoutes.includes("/[locale]/[...route]"));
 });

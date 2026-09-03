@@ -65,7 +65,8 @@ const currentVersion = versionEntries[0]?.[0];
 const isAntVHome = config.site.title.trim().toLocaleLowerCase() === 'antv';
 const searchEnabled = config.search.enabled;
 const repositoryUrl = config.site.repository.replace(/\.git$/, '').replace(/\/$/, '');
-const footerGroups: Array<{ title: LocalizedText; links: LocalizedLink[] }> =
+type FooterLink = LocalizedLink & { download?: string };
+const footerGroups: Array<{ title: LocalizedText; links: FooterLink[] }> =
   config.footer.groups !== null
   ? config.footer.groups.map((group) => ({
       ...group,
@@ -104,6 +105,11 @@ const footerGroups: Array<{ title: LocalizedText; links: LocalizedLink[] }> =
           { text: { zh: 'GitHub', en: 'GitHub' }, href: 'https://github.com/antvis' },
           { text: { zh: '问题反馈', en: 'Issues' }, href: `${repositoryUrl}/issues` },
           { text: { zh: 'Ant Design', en: 'Ant Design' }, href: 'https://ant.design/' },
+          {
+            text: { zh: 'llms.txt', en: 'llms.txt' },
+            href: withBase('/llms.txt'),
+            download: 'llms.txt',
+          },
         ],
       },
     ];
@@ -242,7 +248,7 @@ const structuredData = {
         <div class="footer-group">
           <strong>{localize(group.title, locale)}</strong>
           {group.links.map((link) => (
-            <a href={link.href}>{localize(link.text, locale)}</a>
+            <a href={link.href} download={link.download}>{localize(link.text, locale)}</a>
           ))}
         </div>
       ))}

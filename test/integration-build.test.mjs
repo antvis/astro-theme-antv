@@ -37,6 +37,10 @@ test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () 
     access(resolve(output, "zh/result/index.html")),
     access(resolve(output, "en/result/index.html")),
     access(resolve(output, "pagefind/pagefind.js")),
+    access(resolve(output, "llms.txt")),
+    access(resolve(output, "llms-full.txt")),
+    access(resolve(output, "markdown/zh/guide.md")),
+    access(resolve(output, "markdown/en/guide/advanced.md")),
     access(resolve(output, "sitemap-index.xml")),
     access(resolve(output, "robots.txt")),
   ]);
@@ -76,7 +80,51 @@ test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () 
   assert.match(home, /data-result-url="\/zh\/result\/"/);
   assert.match(home, /href="\/zh\/examples\/"/);
   assert.match(home, /href="tel:\+861012345678"/);
+  assert.match(home, /href="\/llms\.txt" download="llms\.txt"/);
   assert.match(home, /data-fixture-home-slot="beforeFooter"/);
+
+  const llms = await readFile(resolve(output, "llms.txt"), "utf8");
+  assert.match(llms, /^# Fixture$/m);
+  assert.match(llms, /^## Agent resources$/m);
+  assert.match(llms, /^## 中文文档$/m);
+  assert.match(llms, /^## English documentation$/m);
+  assert.match(llms, /^## 中文示例$/m);
+  assert.match(
+    llms,
+    /\[快速开始\]\(https:\/\/fixture\.example\.com\/markdown\/zh\/guide\.md\): 中文快速开始/,
+  );
+  assert.match(
+    llms,
+    /\[MDX Guide\]\(https:\/\/fixture\.example\.com\/markdown\/en\/guide\/advanced\.md\): Verifies Astro MDX content collection rendering\./,
+  );
+  assert.match(llms, /\[Hello\]\(https:\/\/fixture\.example\.com\/en\/examples\/basic\/simple\/hello\/\)/);
+  assert.doesNotMatch(llms, /Private notes/);
+
+  const llmsFull = await readFile(resolve(output, "llms-full.txt"), "utf8");
+  assert.match(llmsFull, /^# Fixture — Full Documentation$/m);
+  assert.match(llmsFull, /使用标准 Astro 内容集合。/);
+  assert.match(llmsFull, /Result: \{1 \+ 1\}/);
+  assert.match(llmsFull, /hello from esm/);
+  assert.match(llmsFull, /hello from tsx/);
+  assert.doesNotMatch(llmsFull, /Private notes/);
+
+  const rawDocument = await readFile(
+    resolve(output, "markdown/zh/guide.md"),
+    "utf8",
+  );
+  assert.match(rawDocument, /^title: "快速开始"$/m);
+  assert.match(
+    rawDocument,
+    /^canonical: "https:\/\/fixture\.example\.com\/zh\/guide\/"$/m,
+  );
+  assert.match(
+    rawDocument,
+    /\[Read in English\]\(https:\/\/fixture\.example\.com\/markdown\/en\/guide\.md\)/,
+  );
+  assert.match(
+    rawDocument,
+    /\[MDX 指南\]\(https:\/\/fixture\.example\.com\/markdown\/zh\/guide\/advanced\.md\)/,
+  );
 
   const document = await readFile(
     resolve(output, "zh/guide/index.html"),
@@ -196,6 +244,9 @@ test("prefixes generated URLs for an Astro base deployment", async () => {
     access(resolve(baseOutput, "zh/guide/index.html")),
     access(resolve(baseOutput, "zh/guide/advanced/index.html")),
     access(resolve(baseOutput, "pagefind/pagefind.js")),
+    access(resolve(baseOutput, "llms.txt")),
+    access(resolve(baseOutput, "llms-full.txt")),
+    access(resolve(baseOutput, "markdown/en/guide.md")),
     access(resolve(baseOutput, "sitemap-0.xml")),
   ]);
 
@@ -229,6 +280,26 @@ test("prefixes generated URLs for an Astro base deployment", async () => {
 
   const home = await readFile(resolve(baseOutput, "zh/index.html"), "utf8");
   assert.match(home, /data-result-url="\/platform\/zh\/result\/"/);
+  assert.match(home, /href="\/platform\/llms\.txt" download="llms\.txt"/);
+
+  const llms = await readFile(resolve(baseOutput, "llms.txt"), "utf8");
+  assert.match(
+    llms,
+    /\[Quick start\]\(https:\/\/fixture\.example\.com\/platform\/markdown\/en\/guide\.md\): English quick start/,
+  );
+  assert.match(
+    llms,
+    /\[Full documentation\]\(https:\/\/fixture\.example\.com\/platform\/llms-full\.txt\)/,
+  );
+
+  const rawDocument = await readFile(
+    resolve(baseOutput, "markdown/en/guide.md"),
+    "utf8",
+  );
+  assert.match(
+    rawDocument,
+    /^canonical: "https:\/\/fixture\.example\.com\/platform\/en\/guide\/"$/m,
+  );
 
   const result = await readFile(
     resolve(baseOutput, "zh/result/index.html"),

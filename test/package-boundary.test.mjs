@@ -130,6 +130,12 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
   await access(resolve(packageRoot, "dist/theme/components/QaEntry.astro"));
   await access(resolve(packageRoot, "dist/theme/features/qa/result.ts"));
   await access(resolve(packageRoot, "dist/theme/components/SiteSearch.astro"));
+  await access(resolve(packageRoot, "dist/theme/lib/agent-content.ts"));
+  await access(resolve(packageRoot, "dist/theme/pages/llms.txt.ts"));
+  await access(resolve(packageRoot, "dist/theme/pages/llms-full.txt.ts"));
+  await access(
+    resolve(packageRoot, "dist/theme/pages/markdown/[locale]/[...route].md.ts"),
+  );
   await access(resolve(packageRoot, "dist/theme/pages/demos/[...key].astro"));
   await access(resolve(packageRoot, "demos/basic-site/astro.config.mjs"));
   for (const removedPath of [

@@ -116,6 +116,8 @@ Use normal Astro commands:
 
 The public `defineConfig` facade installs the integration and configures the bundled theme, sitemap, Demo ESM entries, and Pagefind indexing. `@antv/site` supports Astro's static output only and fails during configuration when non-static output is requested. It does not replace Astro's `srcDir` or `publicDir`: consumer pages, components, middleware, content configuration, and static assets remain in the standard Astro project tree.
 
+The default footer also links to a downloadable `/llms.txt`. It is a compact Agent-oriented index of the configured site identity, version, localized public documents, runnable examples, repository, and `/llms-full.txt`. The full file combines the published document Markdown and Demo source, while `/markdown/{locale}/{slug}.md` exposes individual documents with canonical metadata. Draft and sidebar-hidden documents are excluded, localized document links are rewritten to their Agent-readable Markdown endpoints, and deployment `base` paths are included in every absolute URL. Supplying custom footer groups replaces the default groups, including the footer link.
+
 Advanced Astro configurations can compose the same integration directly:
 
 ```js
