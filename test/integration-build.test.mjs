@@ -81,6 +81,10 @@ test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () 
   assert.match(home, /href="\/zh\/examples\/"/);
   assert.match(home, /href="tel:\+861012345678"/);
   assert.match(home, /href="\/llms\.txt" download="llms\.txt"/);
+  assert.match(
+    home,
+    /© Copyright 2026 Ant Group Co\., Ltd\.\.备案号：京ICP备15032932号-38/,
+  );
   assert.match(home, /data-fixture-home-slot="beforeFooter"/);
 
   const llms = await readFile(resolve(output, "llms.txt"), "utf8");
