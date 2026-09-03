@@ -128,6 +128,33 @@ test("resolves search and QA configuration for the Astro integration", async () 
   );
 });
 
+test("defaults omitted QA preview products to every available built-in", async () => {
+  const root = await mkdtemp(resolve(tmpdir(), "antv-site-config-"));
+  const defaults = await resolveConfig(
+    { ...baseConfig(), qa: {} },
+    root,
+  );
+  const disabled = await resolveConfig(
+    { ...baseConfig(), qa: { previewProducts: [] } },
+    root,
+  );
+  const customOverride = await resolveConfig(
+    {
+      ...baseConfig(),
+      qa: { previewAdapters: { g2: "./qa/g2.ts" } },
+    },
+    root,
+  );
+
+  assert.deepEqual(defaults.qa?.previewProducts, ["g2", "s2", "g6"]);
+  assert.deepEqual(disabled.qa?.previewProducts, []);
+  assert.deepEqual(customOverride.qa?.previewProducts, ["s2", "g6"]);
+  assert.equal(
+    customOverride.qa?.previewAdapters.g2,
+    resolve(await realpath(root), "qa/g2.ts"),
+  );
+});
+
 test("rejects duplicate and conflicting built-in QA preview adapters", async () => {
   const root = await mkdtemp(resolve(tmpdir(), "antv-site-config-"));
 

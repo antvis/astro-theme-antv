@@ -149,12 +149,13 @@ const { locale } = Astro.props;
 <QaEntry locale={locale} />
 ```
 
-G2, G6, and S2 have package-owned preview adapters. Consumers explicitly enable only the products they install, so unused visualization runtimes are neither resolved nor bundled. The visualization packages remain consumer dependencies rather than `@antv/site` dependencies; the built-ins currently target G2 5.x, G6 5.x, and S2 2.x:
+G2, G6, and S2 have package-owned preview adapters. Omitting `previewProducts` enables all three built-ins; set it to an explicit subset to reduce the resolved visualization runtimes, or to `[]` to disable every built-in preview. A custom adapter named `g2`, `g6`, or `s2` replaces that built-in when `previewProducts` is omitted. The visualization packages remain consumer dependencies rather than `@antv/site` dependencies, so consumers must install every enabled product; the built-ins currently target G2 5.x, G6 5.x, and S2 2.x:
 
 ```js
 qa: {
   defaultStack: "g2",
-  previewProducts: ["g2", "g6", "s2"],
+  // Omit for G2 + S2 + G6, or choose a smaller installed subset.
+  previewProducts: ["g2"],
   // Non-standard preview protocols can still provide custom adapters.
   previewAdapters: {
     custom: "./src/qa/custom-preview.ts",

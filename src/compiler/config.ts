@@ -76,6 +76,7 @@ export interface AntVSiteConfig {
   qa?: {
     path?: string;
     defaultStack?: QaProduct;
+    /** Omit for every built-in preview product; use [] to disable built-ins. */
     previewProducts?: QaPreviewProduct[];
     previewAdapters?: Record<string, string>;
   } | null;
@@ -364,7 +365,7 @@ const configSchema = z
       .strictObject({
         path: routeSegmentSchema.default("result"),
         defaultStack: z.enum(qaProducts).default("g2"),
-        previewProducts: z.array(z.enum(qaPreviewProducts)).default([]),
+        previewProducts: z.array(z.enum(qaPreviewProducts)).optional(),
         previewAdapters: z
           .record(qaPreviewAdapterNameSchema, z.string().min(1))
           .default({}),
@@ -453,8 +454,9 @@ const configSchema = z
     }
     const qa = config.qa;
     if (qa) {
-      const duplicatePreviewProduct = qa.previewProducts.find(
-        (product, index) => qa.previewProducts.indexOf(product) !== index,
+      const configuredPreviewProducts = qa.previewProducts ?? [];
+      const duplicatePreviewProduct = configuredPreviewProducts.find(
+        (product, index) => configuredPreviewProducts.indexOf(product) !== index,
       );
       if (duplicatePreviewProduct) {
         context.addIssue({
@@ -463,7 +465,7 @@ const configSchema = z
           message: `Duplicate QA preview product: ${duplicatePreviewProduct}`,
         });
       }
-      const conflictingPreviewAdapter = qa.previewProducts.find(
+      const conflictingPreviewAdapter = configuredPreviewProducts.find(
         (product) => product in qa.previewAdapters,
       );
       if (conflictingPreviewAdapter) {
@@ -590,6 +592,11 @@ export async function resolveConfig(
       ? {
           ...config.qa,
           service: qaServiceEndpoints,
+          previewProducts:
+            config.qa.previewProducts ??
+            qaPreviewProducts.filter(
+              (product) => !(product in (config.qa?.previewAdapters ?? {})),
+            ),
           previewAdapters: Object.fromEntries(
             Object.entries(config.qa.previewAdapters).map(([name, path]) => [
               name,

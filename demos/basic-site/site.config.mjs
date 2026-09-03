@@ -20,6 +20,7 @@ export const siteConfig = {
   },
   qa: {
     defaultStack: "s2",
+    previewProducts: [],
     previewAdapters: {
       fixture: "./qa-preview-adapter.js",
     },
