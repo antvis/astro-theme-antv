@@ -99,6 +99,8 @@ export default defineConfig({
 
 `theme.tokens` is a single CSS custom-property map applied to `:root`. It keeps product branding and theme customization in the consuming repository without exposing Astro internals or adding a package-owned color-mode switch.
 
+The shared theme self-hosts Alibaba PuHuiTi 2.0 in the 400, 500, 600, 700, and 900 weights. All sites use it through `--font-sans`, while shared home-page headings use `--font-heading-weight: 900`. Consumers can override either token through `theme.tokens` when a product has a deliberate typography exception.
+
 `site.origin` must be a bare HTTP(S) origin without credentials, a path, query, or fragment. Navigation, footer, home-action, and version links accept relative URLs plus HTTP(S), `mailto:`, and `tel:` schemes; unsafe schemes and control characters are rejected during configuration.
 
 Use normal Astro commands:

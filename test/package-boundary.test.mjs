@@ -131,6 +131,26 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
   await access(resolve(packageRoot, "dist/theme/features/qa/result.ts"));
   await access(resolve(packageRoot, "dist/theme/components/SiteSearch.astro"));
   await access(resolve(packageRoot, "dist/theme/lib/agent-content.ts"));
+  const globalStyles = await readFile(
+    resolve(packageRoot, "dist/theme/styles/global.css"),
+    "utf8",
+  );
+  assert.match(globalStyles, /font-family: "Alibaba PuHuiTi 2\.0"/);
+  assert.match(globalStyles, /--font-sans:/);
+  assert.match(globalStyles, /--font-heading-weight: 900/);
+  assert.match(globalStyles, /font-family: var\(--font-sans\)/);
+  for (const font of ["Regular", "Medium", "SemiBold", "Bold", "Heavy"]) {
+    await access(
+      resolve(
+        packageRoot,
+        `dist/theme/assets/fonts/AlibabaPuHuiTi-2-${font}.woff2`,
+      ),
+    );
+    assert.match(
+      globalStyles,
+      new RegExp(`AlibabaPuHuiTi-2-${font}\\.woff2`),
+    );
+  }
   await access(resolve(packageRoot, "dist/theme/pages/llms.txt.ts"));
   await access(resolve(packageRoot, "dist/theme/pages/llms-full.txt.ts"));
   await access(
