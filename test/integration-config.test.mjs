@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp } from "node:fs/promises";
+import { access, mkdir, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -43,6 +43,73 @@ test("rejects non-static Astro output before mutating configuration", async () =
   );
 });
 
+test("rejects Astro outDir that overlaps a custom source directory", async () => {
+  const root = await mkdtemp(resolve(tmpdir(), "antv-site-integration-"));
+  const srcDir = resolve(root, "source");
+  await Promise.all([
+    mkdir(resolve(root, "docs")),
+    mkdir(resolve(root, "examples")),
+    mkdir(srcDir),
+    mkdir(resolve(root, "static")),
+    mkdir(resolve(root, ".cache")),
+  ]);
+  const integration = antvSite(baseConfig());
+  const setup = integration.hooks["astro:config:setup"];
+
+  await assert.rejects(
+    setup({
+      config: {
+        cacheDir: pathToFileURL(`${resolve(root, ".cache")}/`),
+        outDir: pathToFileURL(`${srcDir}/`),
+        output: "static",
+        publicDir: pathToFileURL(`${resolve(root, "static")}/`),
+        root: pathToFileURL(`${root}/`),
+        srcDir: pathToFileURL(`${srcDir}/`),
+      },
+    }),
+    /overlaps a protected input or workspace directory/,
+  );
+});
+
+test("does not partially mutate Astro when a feature boundary fails", async () => {
+  const root = await mkdtemp(resolve(tmpdir(), "antv-site-integration-"));
+  await mkdir(resolve(root, "docs"));
+  await mkdir(resolve(root, "examples"));
+  const integration = antvSite({
+    ...baseConfig(),
+    slots: { home: { hero: ["./missing-home-slot.astro"] } },
+  });
+  const setup = integration.hooks["astro:config:setup"];
+  const mutations = [];
+
+  await assert.rejects(
+    setup({
+      addWatchFile(path) {
+        mutations.push(["watch", path]);
+      },
+      command: "build",
+      config: {
+        base: "/",
+        cacheDir: pathToFileURL(`${resolve(root, ".astro")}/`),
+        markdown: { processor: markdownProcessor },
+        outDir: pathToFileURL(`${resolve(root, "dist")}/`),
+        output: "static",
+        publicDir: pathToFileURL(`${resolve(root, "public")}/`),
+        root: pathToFileURL(`${root}/`),
+        srcDir: pathToFileURL(`${resolve(root, "src")}/`),
+      },
+      injectRoute(route) {
+        mutations.push(["route", route.pattern]);
+      },
+      updateConfig() {
+        mutations.push(["config"]);
+      },
+    }),
+    /Home slot "hero" component does not exist/,
+  );
+  assert.deepEqual(mutations, []);
+});
+
 test("preserves Astro publicDir and injects QA as a dedicated route", async () => {
   const root = await mkdtemp(resolve(tmpdir(), "antv-site-integration-"));
   await mkdir(resolve(root, "docs"));
@@ -57,12 +124,16 @@ test("preserves Astro publicDir and injects QA as a dedicated route", async () =
     command: "build",
     config: {
       base: "/",
+      cacheDir: pathToFileURL(`${resolve(root, ".astro")}/`),
       markdown: { processor: markdownProcessor },
+      outDir: pathToFileURL(`${resolve(root, "dist")}/`),
       output: "static",
+      publicDir: pathToFileURL(`${resolve(root, "public")}/`),
       root: pathToFileURL(`${root}/`),
+      srcDir: pathToFileURL(`${resolve(root, "src")}/`),
     },
     injectRoute(route) {
-      injectedRoutes.push(route.pattern);
+      injectedRoutes.push(route);
     },
     updateConfig(value) {
       update = value;
@@ -70,10 +141,29 @@ test("preserves Astro publicDir and injects QA as a dedicated route", async () =
   });
 
   assert.equal(Object.hasOwn(update, "publicDir"), false);
+  assert.equal(Object.hasOwn(update, "outDir"), false);
   assert.equal(Object.hasOwn(update, "output"), false);
-  assert.ok(injectedRoutes.includes("/[locale]/result"));
-  assert.ok(injectedRoutes.includes("/llms.txt"));
-  assert.ok(injectedRoutes.includes("/llms-full.txt"));
-  assert.ok(injectedRoutes.includes("/markdown/[locale]/[...route].md"));
-  assert.ok(injectedRoutes.includes("/[locale]/[...route]"));
+  const routePatterns = injectedRoutes.map((route) => route.pattern);
+  assert.ok(routePatterns.includes("/[locale]/result"));
+  assert.ok(routePatterns.includes("/llms.txt"));
+  assert.ok(routePatterns.includes("/llms-full.txt"));
+  assert.ok(routePatterns.includes("/markdown/[locale]/[...route].md"));
+  assert.ok(routePatterns.includes("/[locale]/[...route]"));
+  await Promise.all(
+    injectedRoutes.map((route) => access(new URL(route.entrypoint))),
+  );
+  assert.deepEqual(
+    update.vite.plugins.map((plugin) => plugin.name),
+    ["antv-site-slots", "antv-site-demos", "antv-site-qa"],
+  );
+  assert.equal(
+    update.vite.define["import.meta.env.ANTV_SITE_DEVELOPMENT_SEARCH"],
+    '"false"',
+  );
+  assert.equal(
+    update.vite.define["import.meta.env.ANTV_SITE_DEVELOPMENT"],
+    'false',
+  );
+  assert.ok(update.vite.server.fs.allow.includes(resolve("dist/theme")));
+  assert.ok(update.vite.server.fs.allow.includes(resolve("dist/qa-adapters")));
 });

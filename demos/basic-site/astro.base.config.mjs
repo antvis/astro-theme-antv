@@ -6,11 +6,9 @@ import { siteConfig } from "./site.config.mjs";
 
 export default defineConfig({
   base: "/platform/",
+  outDir: "./dist-base",
   integrations: [
-    antvSite({
-      ...siteConfig,
-      output: "./dist-base",
-    }),
+    antvSite(siteConfig),
     mdx(),
     sitemap(),
   ],

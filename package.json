@@ -43,7 +43,7 @@
     "build": "pnpm run clean && tsc -p tsconfig.build.json && node scripts/copy-theme.mjs",
     "check:types": "tsc -p tsconfig.build.json --noEmit",
     "check:theme": "astro check --root demos/basic-site",
-    "test:unit": "node --test test/config.test.mjs test/content.test.mjs test/package-boundary.test.mjs test/qa-adapters.test.mjs test/qa-protocol.test.mjs test/integration-config.test.mjs",
+    "test:unit": "node --test test/architecture-boundaries.test.mjs test/config.test.mjs test/content.test.mjs test/package-boundary.test.mjs test/qa-adapters.test.mjs test/qa-protocol.test.mjs test/integration-config.test.mjs",
     "test:integration": "node --test test/integration-build.test.mjs test/development-search.test.mjs",
     "test": "pnpm run build && node --test test/*.test.mjs",
     "check": "pnpm run test",

@@ -2,7 +2,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, relative, resolve, sep } from "node:path";
 import { z } from "zod";
-import { assertWithin, pathKey } from "../util.js";
+import { assertRealpathWithin, assertWithin, pathKey } from "../util.js";
 import { localize as localized } from "./localization.js";
 import type {
   LocalizedText,
@@ -263,6 +263,7 @@ export async function scanSite(
     for (const item of meta.demos) {
       const sourcePath = resolve(demoDirectory, item.filename);
       assertWithin(demoDirectory, sourcePath);
+      await assertRealpathWithin(demoDirectory, sourcePath);
       const source = await readFile(sourcePath, "utf8");
       const slug = item.filename
         .replace(demoExtensionPattern, "")

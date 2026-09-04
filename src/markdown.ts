@@ -7,7 +7,7 @@ import type {
   ResolvedSiteConfig,
   SiteLocale,
 } from "./compiler/config.js";
-import { assertWithin, pathKey } from "./util.js";
+import { assertRealpathWithin, assertWithin, pathKey } from "./util.js";
 
 const escapeHtml = (value: unknown) =>
   String(value)
@@ -209,6 +209,7 @@ async function expandLegacyCodeSources(
   for (const match of matches) {
     const sourcePath = resolve(dirname(markdownPath), match[1]);
     assertWithin(docsRoot, sourcePath);
+    await assertRealpathWithin(docsRoot, sourcePath);
     const source = await readFile(sourcePath, "utf8");
     const language = extname(sourcePath).replace(/^\./, "") || "text";
     const replacement = [

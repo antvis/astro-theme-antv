@@ -46,7 +46,6 @@ test("resolves the minimal site config with defaults", async () => {
   });
   assert.deepEqual(config.theme.tokens, {});
   assert.deepEqual(config.site.locales, ["zh", "en"]);
-  assert.equal(config.output, resolve(physicalRoot, "dist"));
 });
 
 test("resolves a custom docs collection name", async () => {
@@ -221,12 +220,45 @@ test("rejects example categories when example discovery is disabled", async () =
   );
 });
 
-test("rejects output outside the consumer root", async () => {
+test("rejects removed package output configuration", async () => {
   const root = await mkdtemp(resolve(tmpdir(), "antv-site-config-"));
   await assert.rejects(
     resolveConfig({ ...baseConfig(), output: "../dist" }, root),
+    /Configure Astro's standard outDir instead/,
+  );
+});
+
+test("rejects Astro output outside the root or overlapping protected inputs", async () => {
+  const root = await mkdtemp(resolve(tmpdir(), "antv-site-config-"));
+  const srcDir = resolve(root, "source");
+  const publicDir = resolve(root, "static");
+  const cacheDir = resolve(root, ".cache");
+  await Promise.all([
+    mkdir(srcDir),
+    mkdir(publicDir),
+    mkdir(cacheDir),
+    mkdir(resolve(root, "docs")),
+    mkdir(resolve(root, "examples")),
+  ]);
+  const workspace = { srcDir, publicDir, cacheDir };
+
+  await assert.rejects(
+    resolveConfig(baseConfig(), root, {
+      ...workspace,
+      outDir: resolve(root, "../dist"),
+    }),
     /dedicated directory inside the consumer root/,
   );
+  for (const outDir of [srcDir, resolve(publicDir, "generated"), cacheDir]) {
+    await assert.rejects(
+      resolveConfig(baseConfig(), root, { ...workspace, outDir }),
+      /overlaps a protected input or workspace directory/,
+    );
+  }
+  await resolveConfig(baseConfig(), root, {
+    ...workspace,
+    outDir: resolve(root, "build-output"),
+  });
 });
 
 test("accepts safe links and preserves non-HTTP link schemes", async () => {

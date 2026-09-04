@@ -135,10 +135,19 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
     resolve(packageRoot, "dist/theme/styles/global.css"),
     "utf8",
   );
-  assert.match(globalStyles, /font-family: "Alibaba PuHuiTi 2\.0"/);
+  const fontStyles = await readFile(
+    resolve(packageRoot, "dist/theme/styles/fonts.css"),
+    "utf8",
+  );
+  const homeFontStyles = await readFile(
+    resolve(packageRoot, "dist/theme/styles/home-font.css"),
+    "utf8",
+  );
   assert.match(globalStyles, /--font-sans:/);
   assert.match(globalStyles, /--font-heading-weight: 900/);
   assert.match(globalStyles, /font-family: var\(--font-sans\)/);
+  assert.match(fontStyles, /font-family: "Alibaba PuHuiTi 2\.0"/);
+  assert.match(homeFontStyles, /font-family: "Alibaba PuHuiTi 2\.0"/);
   for (const font of ["Regular", "Medium", "SemiBold", "Bold", "Heavy"]) {
     await access(
       resolve(
@@ -147,7 +156,7 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
       ),
     );
     assert.match(
-      globalStyles,
+      `${fontStyles}\n${homeFontStyles}`,
       new RegExp(`AlibabaPuHuiTi-2-${font}\\.woff2`),
     );
   }

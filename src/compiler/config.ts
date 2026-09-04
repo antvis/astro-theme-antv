@@ -119,7 +119,15 @@ export interface AntVSiteConfig {
   demo?: {
     height?: number;
   };
-  output?: string;
+  /** @deprecated Configure Astro's standard `outDir` instead. */
+  output?: never;
+}
+
+export interface SiteWorkspacePaths {
+  outDir?: string;
+  srcDir?: string;
+  publicDir?: string;
+  cacheDir?: string;
 }
 
 export interface ResolvedSiteConfig {
@@ -195,7 +203,6 @@ export interface ResolvedSiteConfig {
   demo: {
     height: number;
   };
-  output: string;
 }
 
 const localizedTextSchema = z.strictObject({
@@ -428,7 +435,12 @@ const configSchema = z
       .default({
         height: 480,
       }),
-    output: z.string().min(1).default("./dist"),
+    output: z
+      .never({
+        error:
+          "output was removed. Configure Astro's standard outDir instead.",
+      })
+      .optional(),
   })
   .superRefine((config, context) => {
     if (!config.site.locales.includes(config.site.defaultLocale)) {
@@ -529,7 +541,8 @@ async function validateOutputPath(
   root: string,
   output: string,
   content: Pick<ResolvedSiteConfig["content"], "docs" | "examples">,
-): Promise<string> {
+  workspace: SiteWorkspacePaths,
+): Promise<void> {
   const physicalRoot = await resolvePhysicalPath(root);
   const physicalOutput = await resolvePhysicalPath(output);
   if (
@@ -544,7 +557,9 @@ async function validateOutputPath(
   const protectedPaths = [
     content.docs,
     content.examples,
-    resolve(physicalRoot, "public"),
+    workspace.srcDir ?? resolve(physicalRoot, "src"),
+    workspace.publicDir ?? resolve(physicalRoot, "public"),
+    workspace.cacheDir ?? resolve(physicalRoot, ".astro"),
     resolve(physicalRoot, ".antv-site"),
     resolve(physicalRoot, ".git"),
     resolve(physicalRoot, "node_modules"),
@@ -557,17 +572,16 @@ async function validateOutputPath(
       isWithin(physicalProtectedPath, physicalOutput)
     ) {
       throw new Error(
-        `Site output overlaps a protected input or workspace directory: ${physicalOutput}`,
+        `Site output overlaps a protected input or workspace directory: ${physicalOutput} (protected: ${physicalProtectedPath})`,
       );
     }
   }
-
-  return physicalOutput;
 }
 
 export async function resolveConfig(
   input: AntVSiteConfig,
   consumerRoot: string,
+  workspace: SiteWorkspacePaths = {},
 ): Promise<ResolvedSiteConfig> {
   const config = configSchema.parse(input);
   const root = await resolvePhysicalPath(consumerRoot);
@@ -578,10 +592,11 @@ export async function resolveConfig(
       ? resolveFromRoot(root, config.content.examples)
       : null,
   };
-  const output = await validateOutputPath(
+  await validateOutputPath(
     root,
-    resolveFromRoot(root, config.output),
+    workspace.outDir ?? resolve(root, "dist"),
     content,
+    workspace,
   );
 
   return {
@@ -615,6 +630,5 @@ export async function resolveConfig(
         ]),
       ) as Record<HomeSlotName, string[]>,
     },
-    output,
   } as ResolvedSiteConfig;
 }

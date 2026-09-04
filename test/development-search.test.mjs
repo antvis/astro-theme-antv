@@ -52,6 +52,9 @@ test("serves live document and Demo search records during development", async (t
   assert.equal(page.status, 200);
   const html = await page.text();
   assert.match(html, /data-search-mode="development"/);
+  assert.match(html, /styles\/search\.css/);
+  assert.match(html, /SiteSearch\.astro\?astro&type=script/);
+  assert.doesNotMatch(html, /Failed to search documentation\./);
   assert.match(
     html,
     /data-search-module-url="\/platform\/pagefind\/dev-index\.json"/,

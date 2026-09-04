@@ -15,7 +15,7 @@ interface Props {
 
 const { locale, service } = Astro.props;
 const isZh = locale === 'zh';
-const qaServiceBaseUrl = import.meta.env.DEV
+const qaServiceBaseUrl = import.meta.env.ANTV_SITE_DEVELOPMENT === 'true'
   ? service.development
   : service.production;
 const text = {

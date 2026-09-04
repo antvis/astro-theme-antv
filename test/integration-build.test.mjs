@@ -108,7 +108,7 @@ test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () 
   assert.match(llmsFull, /^# Fixture — Full Documentation$/m);
   assert.match(llmsFull, /使用标准 Astro 内容集合。/);
   assert.match(llmsFull, /Result: \{1 \+ 1\}/);
-  assert.match(llmsFull, /hello from esm/);
+  assert.match(llmsFull, /import \{ message \} from '\.\/message\.js';/);
   assert.match(llmsFull, /hello from tsx/);
   assert.doesNotMatch(llmsFull, /Private notes/);
 

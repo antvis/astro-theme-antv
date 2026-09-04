@@ -251,7 +251,7 @@ The public configuration covers:
 - home content, feature cards, and controlled Astro component slots;
 - CSS token overrides for consumer-defined branding and theme customization;
 - footer content;
-- Demo height and output directory.
+- Demo height.
 
 Unknown keys are rejected. Removed features therefore fail fast instead of being silently ignored.
 

@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import test from "node:test";
 import { resolveConfig } from "../dist/compiler/config.js";
 import { scanSite } from "../dist/compiler/content.js";
+import { createLegacyContentMarkdownProcessor } from "../dist/markdown.js";
 
 const baseConfig = () => ({
   site: {
@@ -37,6 +39,8 @@ async function createExampleFixture(metadata, sources = {}) {
     }),
   );
   return {
+    root,
+    demoDirectory,
     config: await resolveConfig(baseConfig(), root),
   };
 }
@@ -78,6 +82,56 @@ test("rejects Demo source traversal and duplicate generated route keys", async (
   await assert.rejects(
     scanSite(duplicate.config),
     /Duplicate Demo route key: basic\/simple\/hello/,
+  );
+});
+
+test("rejects Demo sources that escape through symbolic links", async () => {
+  const fixture = await createExampleFixture({
+    demos: [{ filename: "leak.ts", title: "Leak" }],
+  });
+  const outside = await mkdtemp(resolve(tmpdir(), "antv-site-outside-"));
+  const secret = resolve(outside, "secret.ts");
+  await writeFile(secret, "export const secret = true;");
+  await symlink(secret, resolve(fixture.demoDirectory, "leak.ts"));
+
+  await assert.rejects(scanSite(fixture.config), /escaped its root/);
+});
+
+test("rejects legacy code sources that escape through symbolic links", async () => {
+  const root = await mkdtemp(resolve(tmpdir(), "antv-site-markdown-"));
+  const docs = resolve(root, "docs");
+  const markdownPath = resolve(docs, "guide.zh.md");
+  const outside = await mkdtemp(resolve(tmpdir(), "antv-site-outside-"));
+  const secret = resolve(outside, "secret.ts");
+  await mkdir(docs);
+  await writeFile(markdownPath, "# Guide");
+  await writeFile(secret, "export const secret = true;");
+  await symlink(secret, resolve(docs, "leak.ts"));
+  const config = await resolveConfig(
+    { ...baseConfig(), content: { docs, examples: null } },
+    root,
+  );
+  const processor = createLegacyContentMarkdownProcessor(
+    {
+      name: "fixture",
+      options: {},
+      async createRenderer() {
+        return {
+          async render(content) {
+            return { code: content, metadata: {} };
+          },
+        };
+      },
+    },
+    () => config,
+  );
+  const renderer = await processor.createRenderer({});
+
+  await assert.rejects(
+    renderer.render('<code src="./leak.ts"></code>', {
+      fileURL: pathToFileURL(markdownPath),
+    }),
+    /escaped its root/,
   );
 });
 

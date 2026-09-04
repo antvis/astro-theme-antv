@@ -10,6 +10,7 @@ import QaEntry from '../../components/QaEntry.astro';
 import { withBase } from '../../lib/paths';
 import { config, registry } from '../../lib/site';
 import { homeSlots } from 'virtual:antv-site-home-slots';
+import '../../styles/home-font.css';
 
 export function getStaticPaths() {
   return config.site.locales.map((locale) => ({ params: { locale } }));
