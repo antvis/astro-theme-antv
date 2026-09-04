@@ -1,9 +1,13 @@
 export {
   requestQaSession,
+  requestQaSessionDetail,
+  requestQaSessionHistory,
+  requestQaSessionStream,
   toQaProduct,
   type QaContext,
 } from './qa/client.js';
 export {
+  cacheQaHistory,
   readQaHistory,
   saveQaHistory,
   type QaHistoryEntry,

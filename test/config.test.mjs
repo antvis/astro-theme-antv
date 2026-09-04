@@ -161,9 +161,9 @@ test("defaults omitted QA preview products to every available built-in", async (
     root,
   );
 
-  expect(defaults.qa?.previewProducts).toEqual(["g2", "s2", "g6"]);
+  expect(defaults.qa?.previewProducts).toEqual(["g2", "s2", "g6", "x6"]);
   expect(disabled.qa?.previewProducts).toEqual([]);
-  expect(customOverride.qa?.previewProducts).toEqual(["s2", "g6"]);
+  expect(customOverride.qa?.previewProducts).toEqual(["s2", "g6", "x6"]);
   expect(customOverride.qa?.previewAdapters.g2).toBe(
     resolve(await realpath(root), "qa/g2.ts"),
   );

@@ -4,8 +4,12 @@ import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import { highlightCodeBlocks } from './code-highlight';
 import {
+  cacheQaHistory,
   readQaHistory,
   requestQaSession,
+  requestQaSessionDetail,
+  requestQaSessionHistory,
+  requestQaSessionStream,
   saveQaHistory,
   type QaHistoryEntry,
 } from '../../../qa-browser.js';
@@ -24,14 +28,22 @@ type SharedMessage =
       status: 'streaming' | 'finished' | 'aborted' | 'error';
     };
 
+interface ExternalQaSession {
+  context: { product: string };
+  id: string;
+  lastMessageAt: string | null;
+  title: string;
+  updatedAt: string;
+}
+
 export function mountQaResult(): void {
   const root = document.querySelector('[data-antv-result]');
   if (!(root instanceof HTMLElement)) return;
 
   const params = new URLSearchParams(window.location.search);
   let sessionId = params.get('session')?.trim() ?? '';
-  let initialQuery = params.get('q')?.trim() ?? '';
-  let stack = params.get('stack')?.trim() ?? '';
+  let initialQuery = '';
+  let stack = '';
   const serviceBaseUrl = root.dataset.qaServiceBase ?? '';
   const statusTarget = root.querySelector('[data-result-status]');
   const messagesTarget = root.querySelector('[data-result-messages]');
@@ -99,6 +111,36 @@ export function mountQaResult(): void {
     { day: 'numeric', month: 'short' },
   );
 
+  const accessErrors = (request: string) => ({
+    blocked: copy.popupBlocked,
+    closed: copy.popupClosed,
+    request,
+    timeout: copy.popupTimeout,
+  });
+
+  const toHistoryEntry = (value: unknown): QaHistoryEntry | null => {
+    if (!value || typeof value !== 'object') return null;
+    const session = value as Partial<ExternalQaSession>;
+    if (
+      typeof session.id !== 'string' ||
+      typeof session.title !== 'string' ||
+      typeof session.updatedAt !== 'string' ||
+      (session.lastMessageAt !== null && typeof session.lastMessageAt !== 'string') ||
+      !session.context ||
+      typeof session.context.product !== 'string'
+    ) {
+      return null;
+    }
+    const updatedAt = Date.parse(session.lastMessageAt ?? session.updatedAt);
+    if (!session.id.trim() || !session.title.trim() || !Number.isFinite(updatedAt)) return null;
+    return {
+      session: session.id,
+      stack: session.context.product.toUpperCase(),
+      title: session.title,
+      updatedAt,
+    };
+  };
+
   const renderHistory = (history: QaHistoryEntry[] = readQaHistory()) => {
     if (!(historyList instanceof HTMLElement)) return;
     historyList.replaceChildren();
@@ -116,8 +158,6 @@ export function mountQaResult(): void {
       link.className = 'antv-history-item';
       const target = new URL(window.location.href);
       target.search = '';
-      target.searchParams.set('q', entry.title);
-      if (entry.stack) target.searchParams.set('stack', entry.stack);
       target.searchParams.set('session', entry.session);
       link.href = `${target.pathname}${target.search}`;
       if (entry.session === sessionId) link.setAttribute('aria-current', 'page');
@@ -139,6 +179,34 @@ export function mountQaResult(): void {
     });
   };
 
+  const cacheSession = (session: ExternalQaSession) => {
+    const entry = toHistoryEntry(session);
+    if (!entry) return;
+    const history = cacheQaHistory([
+      entry,
+      ...readQaHistory().filter((item) => item.session !== entry.session),
+    ]);
+    renderHistory(history);
+  };
+
+  const loadServerHistory = async () => {
+    try {
+      const response = await requestQaSessionHistory({
+        errors: accessErrors(copy.loadError),
+        serviceBaseUrl,
+      });
+      if (!response.ok) return;
+      const payload = (await response.json()) as { data?: unknown };
+      if (!Array.isArray(payload.data)) return;
+      const entries = payload.data
+        .map(toHistoryEntry)
+        .filter((item): item is QaHistoryEntry => Boolean(item));
+      renderHistory(cacheQaHistory(entries));
+    } catch {
+      // Keep rendering the disposable local cache when history refresh fails.
+    }
+  };
+
   if (
     historyTarget instanceof HTMLElement &&
     historyToggle instanceof HTMLButtonElement
@@ -151,11 +219,7 @@ export function mountQaResult(): void {
     });
   }
 
-  renderHistory(
-    sessionId
-      ? saveQaHistory({ session: sessionId, stack, title: initialQuery })
-      : readQaHistory(),
-  );
+  renderHistory(readQaHistory());
 
   const setStatus = (value: string) => {
     if (!(statusTarget instanceof HTMLElement)) return;
@@ -383,7 +447,7 @@ export function mountQaResult(): void {
     }, 48);
   };
 
-  const connectSharedStream = async (initialContent: string) => {
+  const connectExternalQaStream = async (initialContent: string) => {
     if (stopped || streamConnecting) return;
 
     const revision = sessionRevision;
@@ -394,14 +458,12 @@ export function mountQaResult(): void {
     streamController = controller;
 
     try {
-      const response = await fetch(
-        `${serviceBaseUrl}/integrations/qa/session/stream?id=${encodeURIComponent(streamSessionId)}`,
-        {
-          credentials: 'omit',
-          headers: { Accept: 'text/event-stream' },
-          signal: controller.signal,
-        },
-      );
+      const response = await requestQaSessionStream({
+        errors: accessErrors(copy.loadError),
+        serviceBaseUrl,
+        sessionId: streamSessionId,
+        signal: controller.signal,
+      });
       if (revision !== sessionRevision) return;
       if (response.status === 204) {
         streamConnecting = false;
@@ -478,13 +540,11 @@ export function mountQaResult(): void {
     const revision = sessionRevision;
     const requestedSessionId = sessionId;
     try {
-      const response = await fetch(
-        `${serviceBaseUrl}/integrations/qa/session?id=${encodeURIComponent(requestedSessionId)}`,
-        {
-          credentials: 'omit',
-          headers: { Accept: 'application/json' },
-        },
-      );
+      const response = await requestQaSessionDetail({
+        errors: accessErrors(copy.loadError),
+        serviceBaseUrl,
+        sessionId: requestedSessionId,
+      });
       if (revision !== sessionRevision) return;
       if (!response.ok) {
         showPageError(response.status === 404 ? copy.missing : copy.loadError);
@@ -496,6 +556,12 @@ export function mountQaResult(): void {
       const result = payload?.data;
       if (!result || !Array.isArray(result.messages) || typeof result.status !== 'string') {
         throw new Error('Invalid response');
+      }
+      if (result.session) {
+        const currentSession = result.session as ExternalQaSession;
+        initialQuery = currentSession.title.trim();
+        stack = currentSession.context.product.toUpperCase();
+        cacheSession(currentSession);
       }
 
       consecutiveFailures = 0;
@@ -518,7 +584,7 @@ export function mountQaResult(): void {
       if (generationActive) {
         const latestAssistant = messages.findLast((message) => message.role === 'assistant');
         if (result.status === 'streaming' && latestAssistant?.role === 'assistant') {
-          void connectSharedStream(latestAssistant.content);
+          void connectExternalQaStream(latestAssistant.content);
         } else {
           schedulePoll();
         }
@@ -535,23 +601,18 @@ export function mountQaResult(): void {
     }
   };
 
-  const activateSession = (
-    next: { session: string; stack: string; title: string },
-    pushHistory: boolean,
-  ) => {
-    const nextSessionId = next.session.trim();
+  const activateSession = (nextSession: string, pushHistory: boolean) => {
+    const nextSessionId = nextSession.trim();
     if (!nextSessionId || nextSessionId === sessionId) return;
 
     sessionRevision += 1;
     sessionId = nextSessionId;
-    initialQuery = next.title.trim();
-    stack = next.stack.trim();
+    initialQuery = '';
+    stack = '';
 
     if (pushHistory) {
       const target = new URL(window.location.href);
       target.search = '';
-      if (initialQuery) target.searchParams.set('q', initialQuery);
-      if (stack) target.searchParams.set('stack', stack);
       target.searchParams.set('session', sessionId);
       window.history.pushState(null, '', `${target.pathname}${target.search}`);
     }
@@ -659,14 +720,7 @@ export function mountQaResult(): void {
 
     event.preventDefault();
     const url = new URL(link.href);
-    activateSession(
-      {
-        session: url.searchParams.get('session')?.trim() ?? '',
-        stack: url.searchParams.get('stack')?.trim() ?? '',
-        title: url.searchParams.get('q')?.trim() ?? '',
-      },
-      true,
-    );
+    activateSession(url.searchParams.get('session')?.trim() ?? '', true);
   };
 
   const handlePopState = () => {
@@ -677,14 +731,7 @@ export function mountQaResult(): void {
       else showNewConversation(false);
       return;
     }
-    activateSession(
-      {
-        session: nextSessionId,
-        stack: nextParams.get('stack')?.trim() ?? '',
-        title: nextParams.get('q')?.trim() ?? '',
-      },
-      false,
-    );
+    activateSession(nextSessionId, false);
   };
 
   if (historyList instanceof HTMLElement) {
@@ -782,6 +829,7 @@ export function mountQaResult(): void {
           title: submittedTitle,
         });
         renderHistory(history);
+        void loadServerHistory();
         if (submittedRevision !== sessionRevision) return;
         followupInput.value = '';
         followupInput.style.height = 'auto';
@@ -805,6 +853,8 @@ export function mountQaResult(): void {
     showPageError(copy.loadError);
     return;
   }
+
+  void loadServerHistory();
 
   if (!sessionId) {
     showNewConversation(false);

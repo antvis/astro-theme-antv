@@ -26,6 +26,10 @@ const builtinAdapters: Record<
     loader:
       '() => Promise.all([import("@antv/s2"), import("@antv/s2/dist/s2.min.css")]).then(([library]) => library)',
   },
+  x6: {
+    factory: "createX6PreviewAdapter",
+    loader: '() => import("@antv/x6")',
+  },
 };
 
 export function createQaPlugin(getConfig: () => ResolvedSiteConfig): Plugin {

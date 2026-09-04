@@ -1,13 +1,15 @@
 import { qaProducts, type QaProduct } from '../qa.js';
 
+interface QaAccessErrors {
+  blocked: string;
+  closed: string;
+  request: string;
+  timeout: string;
+}
+
 interface QaSessionRequest {
   context?: QaContext;
-  errors: {
-    blocked: string;
-    closed: string;
-    request: string;
-    timeout: string;
-  };
+  errors: QaAccessErrors;
   message: string;
   serviceBaseUrl: string;
   sessionId?: string;
@@ -37,6 +39,7 @@ const QA_WINDOW_TIMEOUT_MS = 5 * 60 * 1000;
 const QA_REQUEST_TIMEOUT_MS = 30 * 1000;
 const QA_TOKEN_STORAGE_PREFIX = 'sive.qa.access-token:';
 const qaAccessTokens = new Map<string, StoredQaAccessToken>();
+const qaAccessTokenRequests = new Map<string, Promise<string>>();
 
 export interface QaContext {
   locale: 'zh-CN' | 'en-US';
@@ -45,6 +48,11 @@ export interface QaContext {
 }
 
 const qaProductSet = new Set<QaProduct>(qaProducts);
+
+interface QaReadRequest {
+  errors: QaAccessErrors;
+  serviceBaseUrl: string;
+}
 
 export function toQaProduct(value: string): QaProduct | null {
   const product = value.trim().toLowerCase() as QaProduct;
@@ -69,22 +77,122 @@ export function requestQaSession({
   });
 }
 
+export function requestQaSessionDetail({
+  errors,
+  serviceBaseUrl,
+  sessionId,
+}: QaReadRequest & { sessionId: string }): Promise<Response> {
+  const url = new URL('/integrations/qa/session', serviceBaseUrl);
+  url.searchParams.set('id', sessionId);
+  return fetchWithAccessToken(
+    { errors, serviceBaseUrl },
+    url,
+    { headers: { Accept: 'application/json' } },
+  );
+}
+
+export function requestQaSessionHistory({
+  errors,
+  serviceBaseUrl,
+}: QaReadRequest): Promise<Response> {
+  return fetchWithAccessToken(
+    { errors, serviceBaseUrl },
+    new URL('/integrations/qa/sessions', serviceBaseUrl),
+    { headers: { Accept: 'application/json' } },
+  );
+}
+
+export function requestQaSessionStream({
+  errors,
+  serviceBaseUrl,
+  sessionId,
+  signal,
+}: QaReadRequest & { sessionId: string; signal: AbortSignal }): Promise<Response> {
+  const url = new URL('/integrations/qa/session/stream', serviceBaseUrl);
+  url.searchParams.set('id', sessionId);
+  return fetchWithAccessToken(
+    { errors, serviceBaseUrl },
+    url,
+    { headers: { Accept: 'text/event-stream' }, signal },
+    false,
+  );
+}
+
 async function submitWithAccessToken(
   request: QaSessionRequest & { serviceOrigin: string },
 ): Promise<string> {
-  let accessToken = getQaAccessToken(request.serviceOrigin);
+  return submitQaSession(request);
+}
+
+async function fetchWithAccessToken(
+  request: QaReadRequest,
+  url: URL,
+  init: RequestInit,
+  withTimeout = true,
+): Promise<Response> {
+  const serviceOrigin = new URL(request.serviceBaseUrl).origin;
+  let accessToken = getQaAccessToken(serviceOrigin);
   if (!accessToken) {
-    accessToken = await requestQaAccessToken(request);
+    accessToken = await getOrRequestQaAccessToken({ ...request, serviceOrigin });
   }
 
+  const send = (token: string) =>
+    fetchQaRequest(url, init, token, request.errors.request, withTimeout);
+  let response = await send(accessToken);
+  if (response.status !== 401 && response.status !== 403) return response;
+
+  clearQaAccessToken(serviceOrigin);
+  accessToken = await getOrRequestQaAccessToken({ ...request, serviceOrigin });
+  response = await send(accessToken);
+  return response;
+}
+
+async function fetchQaRequest(
+  url: URL,
+  init: RequestInit,
+  accessToken: string,
+  requestError: string,
+  withTimeout: boolean,
+): Promise<Response> {
+  const controller = withTimeout ? new AbortController() : null;
+  const timeoutId = controller
+    ? window.setTimeout(() => controller.abort(), QA_REQUEST_TIMEOUT_MS)
+    : 0;
   try {
-    return await submitQaSession({ ...request, accessToken });
+    return await fetch(url, {
+      ...init,
+      credentials: 'omit',
+      headers: {
+        ...Object.fromEntries(new Headers(init.headers).entries()),
+        Authorization: `Bearer ${accessToken}`,
+      },
+      signal: controller?.signal ?? init.signal,
+    });
   } catch (error) {
-    if (!(error instanceof QaAuthorizationError)) throw error;
-    clearQaAccessToken(request.serviceOrigin);
-    accessToken = await requestQaAccessToken(request);
-    return submitQaSession({ ...request, accessToken });
+    if (!withTimeout && error instanceof DOMException && error.name === 'AbortError') {
+      throw error;
+    }
+    throw new Error(requestError);
+  } finally {
+    if (timeoutId) window.clearTimeout(timeoutId);
   }
+}
+
+function getOrRequestQaAccessToken(
+  request: Pick<QaSessionRequest, 'errors' | 'serviceBaseUrl'> & {
+    serviceOrigin: string;
+  },
+): Promise<string> {
+  const existing = qaAccessTokenRequests.get(request.serviceOrigin);
+  if (existing) return existing;
+
+  const pending = requestQaAccessToken(request).finally(() => {
+    if (qaAccessTokenRequests.get(request.serviceOrigin) === pending) {
+      qaAccessTokenRequests.delete(request.serviceOrigin);
+    }
+  });
+  qaAccessTokenRequests.set(request.serviceOrigin, pending);
+  return pending;
 }
 
 function requestQaAccessToken({
@@ -213,25 +321,17 @@ function clearQaAccessToken(serviceOrigin: string): void {
 }
 
 async function submitQaSession({
-  accessToken,
   context,
   errors,
   message,
   serviceBaseUrl,
   sessionId,
-}: QaSessionRequest & {
-  accessToken: string;
-  serviceOrigin: string;
-}): Promise<string> {
-  const controller = new AbortController();
-  const timeoutId = window.setTimeout(
-    () => controller.abort(),
-    QA_REQUEST_TIMEOUT_MS,
-  );
+}: QaSessionRequest & { serviceOrigin: string }): Promise<string> {
   let response: Response;
   let payload: QaSubmitResponse;
   try {
-    response = await fetch(
+    response = await fetchWithAccessToken(
+      { errors, serviceBaseUrl },
       new URL('/integrations/qa/session', serviceBaseUrl),
       {
         body: JSON.stringify({
@@ -241,29 +341,20 @@ async function submitQaSession({
         }),
         headers: {
           Accept: 'application/json',
-          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
         method: 'POST',
-        signal: controller.signal,
       },
     );
     payload = (await response.json()) as QaSubmitResponse;
-  } catch {
-    throw new Error(errors.request);
-  } finally {
-    window.clearTimeout(timeoutId);
+  } catch (error) {
+    throw error instanceof Error ? error : new Error(errors.request);
   }
 
   const nextSessionId = payload.data?.session;
   if (!response.ok || typeof nextSessionId !== 'string') {
-    if (response.status === 401 || response.status === 403) {
-      throw new QaAuthorizationError(payload.error || errors.request);
-    }
     throw new Error(payload.error || errors.request);
   }
 
   return nextSessionId;
 }
-
-class QaAuthorizationError extends Error {}

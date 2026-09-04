@@ -4,7 +4,7 @@ export const qaProducts = ['g2', 's2', 'g6', 'f2', 'x6', 'l7'] as const;
 
 export type QaProduct = (typeof qaProducts)[number];
 
-export const qaPreviewProducts = ['g2', 's2', 'g6'] as const;
+export const qaPreviewProducts = ['g2', 's2', 'g6', 'x6'] as const;
 
 export type QaPreviewProduct = (typeof qaPreviewProducts)[number];
 

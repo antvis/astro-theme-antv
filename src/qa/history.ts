@@ -75,3 +75,18 @@ export const saveQaHistory = ({
 
   return nextHistory;
 };
+
+export const cacheQaHistory = (entries: QaHistoryEntry[]): QaHistoryEntry[] => {
+  const nextHistory = entries
+    .filter(isHistoryEntry)
+    .sort((left, right) => right.updatedAt - left.updatedAt)
+    .slice(0, QA_HISTORY_LIMIT);
+
+  try {
+    window.localStorage.setItem(QA_HISTORY_STORAGE_KEY, JSON.stringify(nextHistory));
+  } catch {
+    // History is a disposable cache and must not block the QA flow.
+  }
+
+  return nextHistory;
+};

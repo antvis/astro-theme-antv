@@ -178,8 +178,6 @@ export function mountQaEntries(): void {
           serviceBaseUrl,
         });
         const target = new URL(resultUrl, window.location.origin);
-        target.searchParams.set('q', query);
-        target.searchParams.set('stack', stackLabel);
         target.searchParams.set('session', session);
         saveQaHistory({ session, stack: stackLabel, title: query });
         window.location.assign(target);
@@ -192,4 +190,3 @@ export function mountQaEntries(): void {
     });
   });
 }
-

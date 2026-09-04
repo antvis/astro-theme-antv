@@ -3,6 +3,7 @@ import {
   createG2PreviewAdapter,
   createG6PreviewAdapter,
   createS2PreviewAdapter,
+  createX6PreviewAdapter,
 } from "../dist/qa-adapters/index.js";
 
 test("parses standard G2, G6, and S2 preview payloads", () => {
@@ -47,6 +48,42 @@ test("parses standard G2, G6, and S2 preview payloads", () => {
       options: {},
     }),
   ).toBeTruthy();
+});
+
+test("parses and renders declarative X6 JSON", async () => {
+  let instance;
+  class Graph {
+    constructor(options) {
+      this.options = options;
+      this.destroyed = false;
+      instance = this;
+    }
+
+    fromJSON(data) {
+      this.data = data;
+      return this;
+    }
+
+    destroy() {
+      this.destroyed = true;
+    }
+  }
+
+  const adapter = createX6PreviewAdapter(async () => ({ Graph }));
+  const preview = adapter.parse({
+    library: "x6",
+    data: {
+      nodes: [{ id: "node-a", shape: "rect" }, { id: "node-b" }],
+      edges: [{ source: "node-a", target: { cell: "node-b", port: "in" } }],
+    },
+    options: { grid: true, container: "unsafe", width: 9999 },
+  });
+  expect(preview).toBeTruthy();
+
+  const container = { clientWidth: 640 };
+  await expect(adapter.render(container, preview)).resolves.toBe(instance);
+  expect(instance.options).toEqual({ grid: true, container, height: 360, width: 640 });
+  expect(instance.data).toEqual(preview.data);
 });
 
 test("rejects unsafe preview payloads", () => {
