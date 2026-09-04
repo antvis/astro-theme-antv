@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import test from "node:test";
+import { expect, test } from "vitest";
 import { bindPageLifecycle } from "../dist/qa/page-lifecycle.js";
 import { ServerSentEventDecoder } from "../dist/qa/sse.js";
 
@@ -11,20 +10,20 @@ const pageTransition = (type, persisted) => {
 
 test("decodes LF, CRLF, chunked, and final SSE events", () => {
   const decoder = new ServerSentEventDecoder();
-  assert.deepEqual(decoder.push('data: {"type":"first"}\n\n'), [
+  expect(decoder.push('data: {"type":"first"}\n\n')).toEqual([
     { data: '{"type":"first"}' },
   ]);
-  assert.deepEqual(decoder.push('event: update\r\ndata: first\r\ndata: second\r\n'), []);
-  assert.deepEqual(decoder.push('\r\n'), [
+  expect(decoder.push('event: update\r\ndata: first\r\ndata: second\r\n')).toEqual([]);
+  expect(decoder.push('\r\n')).toEqual([
     { event: "update", data: "first\nsecond" },
   ]);
-  assert.deepEqual(decoder.finish("data: final"), [{ data: "final" }]);
+  expect(decoder.finish("data: final")).toEqual([{ data: "final" }]);
 });
 
 test("bounds incomplete SSE events", () => {
   const decoder = new ServerSentEventDecoder(8);
-  assert.throws(() => decoder.push("data: payload"), /maximum buffered size/);
-  assert.deepEqual(decoder.finish("data: ok"), [{ data: "ok" }]);
+  expect(() => decoder.push("data: payload")).toThrow(/maximum buffered size/);
+  expect(decoder.finish("data: ok")).toEqual([{ data: "ok" }]);
 });
 
 test("pauses BFCache pages, resumes restored pages, and disposes discarded pages", () => {
@@ -39,9 +38,9 @@ test("pauses BFCache pages, resumes restored pages, and disposes discarded pages
   target.dispatchEvent(pageTransition("pagehide", true));
   target.dispatchEvent(pageTransition("pageshow", true));
   target.dispatchEvent(pageTransition("pagehide", false));
-  assert.deepEqual(calls, ["pause", "resume", "dispose"]);
+  expect(calls).toEqual(["pause", "resume", "dispose"]);
 
   unbind();
   target.dispatchEvent(pageTransition("pageshow", true));
-  assert.deepEqual(calls, ["pause", "resume", "dispose"]);
+  expect(calls).toEqual(["pause", "resume", "dispose"]);
 });

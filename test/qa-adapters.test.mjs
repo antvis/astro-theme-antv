@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import test from "node:test";
+import { expect, test } from "vitest";
 import {
   createG2PreviewAdapter,
   createG6PreviewAdapter,
@@ -13,13 +12,13 @@ test("parses standard G2, G6, and S2 preview payloads", () => {
     data: [{ category: "A", value: 1 }],
     options: { type: "interval", container: "unsafe", width: 9999 },
   });
-  assert.deepEqual(g2Preview, {
+  expect(g2Preview).toEqual({
     data: [{ category: "A", value: 1 }],
     options: { type: "interval" },
   });
 
   const g6 = createG6PreviewAdapter(async () => ({ Graph: class {} }));
-  assert.ok(
+  expect(
     g6.parse({
       library: "g6",
       data: {
@@ -28,18 +27,17 @@ test("parses standard G2, G6, and S2 preview payloads", () => {
       },
       options: {},
     }),
-  );
-  assert.equal(
+  ).toBeTruthy();
+  expect(
     g6.parse({
       library: "g6",
       data: { nodes: [{ id: "" }], edges: [] },
       options: {},
     }),
-    null,
-  );
+  ).toBeNull();
 
   const s2 = createS2PreviewAdapter(async () => ({ PivotSheet: class {} }));
-  assert.ok(
+  expect(
     s2.parse({
       library: "s2",
       dataConfig: {
@@ -48,7 +46,7 @@ test("parses standard G2, G6, and S2 preview payloads", () => {
       },
       options: {},
     }),
-  );
+  ).toBeTruthy();
 });
 
 test("rejects unsafe preview payloads", () => {
@@ -56,7 +54,7 @@ test("rejects unsafe preview payloads", () => {
   const payload = JSON.parse(
     '{"library":"g2","data":[{"x":1}],"options":{"type":"interval"},"__proto__":{"polluted":true}}',
   );
-  assert.equal(adapter.parse(payload), null);
+  expect(adapter.parse(payload)).toBeNull();
 });
 
 test("owns render sizing and cleans up instances after render failures", async () => {
@@ -87,17 +85,17 @@ test("owns render sizing and cleans up instances after render failures", async (
     data: [{ x: 1 }],
     options: { type: "interval", height: 9999 },
   });
-  assert.ok(preview);
+  expect(preview).toBeTruthy();
   const container = { clientWidth: 640 };
 
-  await assert.rejects(adapter.render(container, preview), /render failed/);
-  assert.equal(instance.destroyed, true);
-  assert.deepEqual(instance.constructorOptions, {
+  await expect(adapter.render(container, preview)).rejects.toThrow(/render failed/);
+  expect(instance.destroyed).toBe(true);
+  expect(instance.constructorOptions).toEqual({
     container,
     autoFit: true,
     height: 360,
   });
-  assert.deepEqual(instance.spec, {
+  expect(instance.spec).toEqual({
     type: "interval",
     data: [{ x: 1 }],
   });

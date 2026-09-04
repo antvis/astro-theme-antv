@@ -21,17 +21,11 @@
     "./content": {
       "types": "./dist/content.d.ts",
       "import": "./dist/content.js"
-    },
-    "./qa": {
-      "types": "./dist/qa-browser.d.ts",
-      "import": "./dist/qa-browser.js"
-    },
-    "./qa-entry": {
-      "types": "./dist/theme/components/QaEntry.astro",
-      "import": "./dist/theme/components/QaEntry.astro"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -39,14 +33,13 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "clean": "rimraf dist",
     "build": "pnpm run clean && tsc -p tsconfig.build.json && node scripts/copy-theme.mjs",
     "check:types": "tsc -p tsconfig.build.json --noEmit",
     "check:theme": "astro check --root demos/basic-site",
-    "test:unit": "node --test test/architecture-boundaries.test.mjs test/config.test.mjs test/content.test.mjs test/package-boundary.test.mjs test/qa-adapters.test.mjs test/qa-protocol.test.mjs test/integration-config.test.mjs",
+    "test:unit": "vitest run test/architecture-boundaries.test.mjs test/config.test.mjs test/content.test.mjs test/package-boundary.test.mjs test/qa-adapters.test.mjs test/qa-protocol.test.mjs test/integration-config.test.mjs",
     "test:integration": "node --test test/integration-build.test.mjs test/development-search.test.mjs",
-    "test": "pnpm run build && node --test test/*.test.mjs",
-    "check": "pnpm run test",
+    "test": "pnpm run build && pnpm run test:unit && pnpm run test:integration",
     "prepack": "pnpm run build"
   },
   "dependencies": {
@@ -68,6 +61,8 @@
     "@astrojs/check": "0.9.10",
     "@types/node": "22.18.6",
     "astro": "7.2.0",
-    "typescript": "5.9.3"
+    "rimraf": "6.1.3",
+    "typescript": "5.9.3",
+    "vitest": "5.0.0"
   }
 }

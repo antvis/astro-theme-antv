@@ -1,7 +1,6 @@
-import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import test from "node:test";
+import { expect, test } from "vitest";
 
 const importsOf = async (path) => {
   const source = await readFile(resolve(path), "utf8");
@@ -14,7 +13,7 @@ const importsOf = async (path) => {
 
 test("keeps integration dependencies flowing through the Astro adapter", async () => {
   const configImports = await importsOf("src/compiler/config.ts");
-  assert.equal(
+  expect(
     configImports.some(
       (specifier) =>
         specifier === "astro" ||
@@ -22,23 +21,19 @@ test("keeps integration dependencies flowing through the Astro adapter", async (
         specifier === "vite" ||
         specifier.startsWith("vite/"),
     ),
-    false,
-  );
+  ).toBe(false);
 
   const adapterImports = await importsOf("src/astro/adapter.ts");
-  assert.deepEqual(
+  expect(
     adapterImports
       .filter((specifier) => specifier.startsWith("../integration/"))
       .sort(),
-    [
+  ).toEqual([
       "../integration/qa.js",
       "../integration/search.js",
       "../integration/theme.js",
-    ],
-  );
-  assert.deepEqual(await importsOf("src/integration.ts"), [
-    "./astro/adapter.js",
   ]);
+  expect(await importsOf("src/integration.ts")).toEqual(["./astro/adapter.js"]);
 
   const forbiddenFeatureImports = new Set([
     "./qa.js",
@@ -52,10 +47,8 @@ test("keeps integration dependencies flowing through the Astro adapter", async (
     "src/integration/theme.ts",
   ]) {
     const imports = await importsOf(path);
-    assert.equal(
+    expect(
       imports.some((specifier) => forbiddenFeatureImports.has(specifier)),
-      false,
-      `${path} must not call another integration boundary`,
-    );
+    ).toBe(false);
   }
 });

@@ -1,8 +1,7 @@
-import assert from "node:assert/strict";
 import { mkdir, mkdtemp, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
-import test from "node:test";
+import { expect, test } from "vitest";
 import { resolveConfig } from "../dist/compiler/config.js";
 
 const baseConfig = () => ({
@@ -26,16 +25,16 @@ test("resolves the minimal site config with defaults", async () => {
   const config = await resolveConfig(baseConfig(), root);
   const physicalRoot = await realpath(root);
 
-  assert.equal(config.root, physicalRoot);
-  assert.equal(config.content.docs, resolve(physicalRoot, "docs"));
-  assert.equal(config.content.examples, resolve(physicalRoot, "examples"));
-  assert.equal(config.content.collectionName, "docs");
-  assert.equal(config.demo.height, 480);
-  assert.equal(config.search.enabled, true);
-  assert.deepEqual(config.search.aliases, {});
-  assert.deepEqual(config.search.pathBoosts, []);
-  assert.equal(config.qa, null);
-  assert.deepEqual(config.slots.home, {
+  expect(config.root).toBe(physicalRoot);
+  expect(config.content.docs).toBe(resolve(physicalRoot, "docs"));
+  expect(config.content.examples).toBe(resolve(physicalRoot, "examples"));
+  expect(config.content.collectionName).toBe("docs");
+  expect(config.demo.height).toBe(480);
+  expect(config.search.enabled).toBe(true);
+  expect(config.search.aliases).toEqual({});
+  expect(config.search.pathBoosts).toEqual([]);
+  expect(config.qa).toBeNull();
+  expect(config.slots.home).toEqual({
     beforeHero: [],
     hero: [],
     afterHero: [],
@@ -44,8 +43,24 @@ test("resolves the minimal site config with defaults", async () => {
     afterFeatures: [],
     beforeFooter: [],
   });
-  assert.deepEqual(config.theme.tokens, {});
-  assert.deepEqual(config.site.locales, ["zh", "en"]);
+  expect(config.theme.tokens).toEqual({});
+  expect(config.site.locales).toEqual(["zh", "en"]);
+});
+
+test("requires the explicit QA enabled switch", async () => {
+  const root = await mkdtemp(resolve(tmpdir(), "antv-site-config-"));
+  const config = await resolveConfig(
+    {
+      ...baseConfig(),
+      qa: {
+        enabled: false,
+        previewAdapters: { custom: "./qa/custom.ts" },
+      },
+    },
+    root,
+  );
+
+  expect(config.qa).toBeNull();
 });
 
 test("resolves a custom docs collection name", async () => {
@@ -54,7 +69,7 @@ test("resolves a custom docs collection name", async () => {
     { ...baseConfig(), content: { docs: "./docs", collectionName: "documentation" } },
     root,
   );
-  assert.equal(config.content.collectionName, "documentation");
+  expect(config.content.collectionName).toBe("documentation");
 });
 
 
@@ -73,11 +88,11 @@ test("resolves flat theme tokens and rejects removed color-mode maps", async () 
     root,
   );
 
-  assert.deepEqual(config.theme.tokens, {
+  expect(config.theme.tokens).toEqual({
     "--brand": "#5b5bd6",
     "--surface-raised": "#fefefe",
   });
-  await assert.rejects(
+  await expect(
     resolveConfig(
       {
         ...baseConfig(),
@@ -85,6 +100,7 @@ test("resolves flat theme tokens and rejects removed color-mode maps", async () 
       },
       root,
     ),
+  ).rejects.toSatisfy(
     (error) =>
       Array.isArray(error?.issues) &&
       error.issues.some(
@@ -103,6 +119,7 @@ test("resolves search and QA configuration for the Astro integration", async () 
         pathBoosts: [{ prefix: "/guide/", weight: 500 }],
       },
       qa: {
+        enabled: true,
         defaultStack: "s2",
         previewProducts: ["g2", "s2"],
         previewAdapters: { custom: "./qa/custom.ts" },
@@ -112,17 +129,16 @@ test("resolves search and QA configuration for the Astro integration", async () 
   );
   const physicalRoot = await realpath(root);
 
-  assert.equal(config.search.enabled, true);
-  assert.deepEqual(config.search.aliases, { graph: ["chart"] });
-  assert.equal(config.qa?.path, "result");
-  assert.equal(config.qa?.defaultStack, "s2");
-  assert.deepEqual(config.qa?.previewProducts, ["g2", "s2"]);
-  assert.deepEqual(config.qa?.service, {
+  expect(config.search.enabled).toBe(true);
+  expect(config.search.aliases).toEqual({ graph: ["chart"] });
+  expect(config.qa?.path).toBe("result");
+  expect(config.qa?.defaultStack).toBe("s2");
+  expect(config.qa?.previewProducts).toEqual(["g2", "s2"]);
+  expect(config.qa?.service).toEqual({
     development: "http://localhost:3000",
     production: "https://sive.antv.antgroup.com",
   });
-  assert.equal(
-    config.qa?.previewAdapters.custom,
+  expect(config.qa?.previewAdapters.custom).toBe(
     resolve(physicalRoot, "qa/custom.ts"),
   );
 });
@@ -130,26 +146,25 @@ test("resolves search and QA configuration for the Astro integration", async () 
 test("defaults omitted QA preview products to every available built-in", async () => {
   const root = await mkdtemp(resolve(tmpdir(), "antv-site-config-"));
   const defaults = await resolveConfig(
-    { ...baseConfig(), qa: {} },
+    { ...baseConfig(), qa: { enabled: true } },
     root,
   );
   const disabled = await resolveConfig(
-    { ...baseConfig(), qa: { previewProducts: [] } },
+    { ...baseConfig(), qa: { enabled: true, previewProducts: [] } },
     root,
   );
   const customOverride = await resolveConfig(
     {
       ...baseConfig(),
-      qa: { previewAdapters: { g2: "./qa/g2.ts" } },
+      qa: { enabled: true, previewAdapters: { g2: "./qa/g2.ts" } },
     },
     root,
   );
 
-  assert.deepEqual(defaults.qa?.previewProducts, ["g2", "s2", "g6"]);
-  assert.deepEqual(disabled.qa?.previewProducts, []);
-  assert.deepEqual(customOverride.qa?.previewProducts, ["s2", "g6"]);
-  assert.equal(
-    customOverride.qa?.previewAdapters.g2,
+  expect(defaults.qa?.previewProducts).toEqual(["g2", "s2", "g6"]);
+  expect(disabled.qa?.previewProducts).toEqual([]);
+  expect(customOverride.qa?.previewProducts).toEqual(["s2", "g6"]);
+  expect(customOverride.qa?.previewAdapters.g2).toBe(
     resolve(await realpath(root), "qa/g2.ts"),
   );
 });
@@ -157,29 +172,28 @@ test("defaults omitted QA preview products to every available built-in", async (
 test("rejects duplicate and conflicting built-in QA preview adapters", async () => {
   const root = await mkdtemp(resolve(tmpdir(), "antv-site-config-"));
 
-  await assert.rejects(
+  await expect(
     resolveConfig(
       {
         ...baseConfig(),
-        qa: { previewProducts: ["g2", "g2"] },
+        qa: { enabled: true, previewProducts: ["g2", "g2"] },
       },
       root,
     ),
-    /Duplicate QA preview product: g2/,
-  );
-  await assert.rejects(
+  ).rejects.toThrow(/Duplicate QA preview product: g2/);
+  await expect(
     resolveConfig(
       {
         ...baseConfig(),
         qa: {
+          enabled: true,
           previewProducts: ["g2"],
           previewAdapters: { g2: "./qa/g2.ts" },
         },
       },
       root,
     ),
-    /conflicts with an enabled built-in preview product/,
-  );
+  ).rejects.toThrow(/conflicts with an enabled built-in preview product/);
 });
 
 test("resolves controlled home slot components from the consumer root", async () => {
@@ -198,13 +212,13 @@ test("resolves controlled home slot components from the consumer root", async ()
   );
   const physicalRoot = await realpath(root);
 
-  assert.deepEqual(config.slots.home.hero, [
+  expect(config.slots.home.hero).toEqual([
     resolve(physicalRoot, "site/Home.astro"),
   ]);
-  assert.deepEqual(config.slots.home.beforeFooter, [
+  expect(config.slots.home.beforeFooter).toEqual([
     resolve(physicalRoot, "site/FooterNote.astro"),
   ]);
-  assert.deepEqual(config.slots.home.afterHero, []);
+  expect(config.slots.home.afterHero).toEqual([]);
 });
 
 test("rejects example categories when example discovery is disabled", async () => {
@@ -214,18 +228,16 @@ test("rejects example categories when example discovery is disabled", async () =
     content: { examples: null },
     examples: [{ slug: "basic", title: { zh: "基础", en: "Basic" } }],
   };
-  await assert.rejects(
-    resolveConfig(config, root),
+  await expect(resolveConfig(config, root)).rejects.toThrow(
     /Example categories require content\.examples to be enabled/,
   );
 });
 
 test("rejects removed package output configuration", async () => {
   const root = await mkdtemp(resolve(tmpdir(), "antv-site-config-"));
-  await assert.rejects(
+  await expect(
     resolveConfig({ ...baseConfig(), output: "../dist" }, root),
-    /Configure Astro's standard outDir instead/,
-  );
+  ).rejects.toThrow(/Configure Astro's standard outDir instead/);
 });
 
 test("rejects Astro output outside the root or overlapping protected inputs", async () => {
@@ -242,18 +254,16 @@ test("rejects Astro output outside the root or overlapping protected inputs", as
   ]);
   const workspace = { srcDir, publicDir, cacheDir };
 
-  await assert.rejects(
+  await expect(
     resolveConfig(baseConfig(), root, {
       ...workspace,
       outDir: resolve(root, "../dist"),
     }),
-    /dedicated directory inside the consumer root/,
-  );
+  ).rejects.toThrow(/dedicated directory inside the consumer root/);
   for (const outDir of [srcDir, resolve(publicDir, "generated"), cacheDir]) {
-    await assert.rejects(
+    await expect(
       resolveConfig(baseConfig(), root, { ...workspace, outDir }),
-      /overlaps a protected input or workspace directory/,
-    );
+    ).rejects.toThrow(/overlaps a protected input or workspace directory/);
   }
   await resolveConfig(baseConfig(), root, {
     ...workspace,
@@ -280,15 +290,15 @@ test("accepts safe links and preserves non-HTTP link schemes", async () => {
     root,
   );
 
-  assert.equal(config.navigation[0].href, "mailto:team@example.com");
-  assert.equal(config.versions.support, "tel:+861012345678");
-  assert.equal(config.home.actions[0].href, "tel:+861012345678");
+  expect(config.navigation[0].href).toBe("mailto:team@example.com");
+  expect(config.versions.support).toBe("tel:+861012345678");
+  expect(config.home.actions[0].href).toBe("tel:+861012345678");
 });
 
 test("rejects invalid origins and unsafe link schemes", async () => {
   const root = await mkdtemp(resolve(tmpdir(), "antv-site-config-"));
 
-  await assert.rejects(
+  await expect(
     resolveConfig(
       {
         ...baseConfig(),
@@ -296,9 +306,8 @@ test("rejects invalid origins and unsafe link schemes", async () => {
       },
       root,
     ),
-    /URL must use HTTP or HTTPS/,
-  );
-  await assert.rejects(
+  ).rejects.toThrow(/URL must use HTTP or HTTPS/);
+  await expect(
     resolveConfig(
       {
         ...baseConfig(),
@@ -309,9 +318,8 @@ test("rejects invalid origins and unsafe link schemes", async () => {
       },
       root,
     ),
-    /must not include credentials, a path, a query, or a hash/,
-  );
-  await assert.rejects(
+  ).rejects.toThrow(/must not include credentials, a path, a query, or a hash/);
+  await expect(
     resolveConfig(
       {
         ...baseConfig(),
@@ -321,9 +329,8 @@ test("rejects invalid origins and unsafe link schemes", async () => {
       },
       root,
     ),
-    /Links must be relative or use HTTP, HTTPS, mailto, or tel/,
-  );
-  await assert.rejects(
+  ).rejects.toThrow(/Links must be relative or use HTTP, HTTPS, mailto, or tel/);
+  await expect(
     resolveConfig(
       {
         ...baseConfig(),
@@ -331,6 +338,5 @@ test("rejects invalid origins and unsafe link schemes", async () => {
       },
       root,
     ),
-    /Links must not contain whitespace/,
-  );
+  ).rejects.toThrow(/Links must not contain whitespace/);
 });

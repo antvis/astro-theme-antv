@@ -1,9 +1,8 @@
-import assert from "node:assert/strict";
 import { mkdir, mkdtemp, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import test from "node:test";
+import { expect, test } from "vitest";
 import { resolveConfig } from "../dist/compiler/config.js";
 import { scanSite } from "../dist/compiler/content.js";
 import { createLegacyContentMarkdownProcessor } from "../dist/markdown.js";
@@ -47,8 +46,7 @@ async function createExampleFixture(metadata, sources = {}) {
 
 test("rejects malformed and invalid Demo metadata with its source path", async () => {
   const malformed = await createExampleFixture("{");
-  await assert.rejects(
-    scanSite(malformed.config),
+  await expect(scanSite(malformed.config)).rejects.toSatisfy(
     (error) =>
       error instanceof Error &&
       error.message.startsWith("Invalid Demo metadata JSON: ") &&
@@ -58,17 +56,16 @@ test("rejects malformed and invalid Demo metadata with its source path", async (
   const invalid = await createExampleFixture({
     demos: [{ filename: "chart.css", title: "Chart" }],
   });
-  await assert.rejects(
+  await expect(
     scanSite(invalid.config),
-    /Invalid Demo metadata: .*meta\.json:.*JavaScript or TypeScript modules/s,
-  );
+  ).rejects.toThrow(/Invalid Demo metadata: .*meta\.json:.*JavaScript or TypeScript modules/s);
 });
 
 test("rejects Demo source traversal and duplicate generated route keys", async () => {
   const traversal = await createExampleFixture({
     demos: [{ filename: "../outside.ts", title: "Outside" }],
   });
-  await assert.rejects(scanSite(traversal.config), /escaped its root/);
+  await expect(scanSite(traversal.config)).rejects.toThrow(/escaped its root/);
 
   const duplicate = await createExampleFixture(
     {
@@ -79,10 +76,9 @@ test("rejects Demo source traversal and duplicate generated route keys", async (
     },
     { "examples/basic/simple/demo/hello.ts": "export {};" },
   );
-  await assert.rejects(
+  await expect(
     scanSite(duplicate.config),
-    /Duplicate Demo route key: basic\/simple\/hello/,
-  );
+  ).rejects.toThrow(/Duplicate Demo route key: basic\/simple\/hello/);
 });
 
 test("rejects Demo sources that escape through symbolic links", async () => {
@@ -94,7 +90,7 @@ test("rejects Demo sources that escape through symbolic links", async () => {
   await writeFile(secret, "export const secret = true;");
   await symlink(secret, resolve(fixture.demoDirectory, "leak.ts"));
 
-  await assert.rejects(scanSite(fixture.config), /escaped its root/);
+  await expect(scanSite(fixture.config)).rejects.toThrow(/escaped its root/);
 });
 
 test("rejects legacy code sources that escape through symbolic links", async () => {
@@ -127,12 +123,11 @@ test("rejects legacy code sources that escape through symbolic links", async () 
   );
   const renderer = await processor.createRenderer({});
 
-  await assert.rejects(
+  await expect(
     renderer.render('<code src="./leak.ts"></code>', {
       fileURL: pathToFileURL(markdownPath),
     }),
-    /escaped its root/,
-  );
+  ).rejects.toThrow(/escaped its root/);
 });
 
 test("fails closed when example group frontmatter is invalid", async () => {
@@ -146,8 +141,7 @@ test("fails closed when example group frontmatter is invalid", async () => {
     },
   );
 
-  await assert.rejects(
+  await expect(
     scanSite(fixture.config),
-    /Invalid Markdown frontmatter: .*index\.zh\.md/,
-  );
+  ).rejects.toThrow(/Invalid Markdown frontmatter: .*index\.zh\.md/);
 });

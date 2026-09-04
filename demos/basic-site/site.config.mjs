@@ -19,6 +19,7 @@ export const siteConfig = {
     pathBoosts: [{ prefix: "/guide/", weight: 500 }],
   },
   qa: {
+    enabled: true,
     defaultStack: "s2",
     previewProducts: [],
     previewAdapters: {

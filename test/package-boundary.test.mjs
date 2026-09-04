@@ -1,8 +1,8 @@
-import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import test from "node:test";
+import { expect, test } from "vitest";
 
 const packageRoot = fileURLToPath(new URL("../", import.meta.url));
 const packageJson = JSON.parse(
@@ -14,54 +14,45 @@ const projectTsconfig = JSON.parse(
 const buildTsconfig = JSON.parse(
   await readFile(resolve(packageRoot, "tsconfig.build.json"), "utf8"),
 );
+const requirePackageSubpath = createRequire(import.meta.url);
 
 test("publishes a site configuration facade without a parallel CLI", async () => {
-  assert.equal(packageJson.name, "@antv/site");
-  assert.equal(packageJson.bin, undefined);
-  assert.deepEqual(Object.keys(packageJson.exports), [
+  expect(packageJson.name).toBe("@antv/site");
+  expect(packageJson.bin).toBeUndefined();
+  expect(Object.keys(packageJson.exports)).toEqual([
     ".",
     "./content",
-    "./qa",
-    "./qa-entry",
   ]);
-  assert.deepEqual(packageJson.files, ["dist"]);
-  assert.equal(projectTsconfig.extends, "astro/tsconfigs/strict");
-  assert.equal(projectTsconfig.compilerOptions.types[0], "node");
-  assert.equal(buildTsconfig.compilerOptions.outDir, "dist");
-  assert.equal(buildTsconfig.compilerOptions.module, "NodeNext");
-  assert.equal(buildTsconfig.compilerOptions.moduleResolution, "NodeNext");
-  assert.deepEqual(buildTsconfig.exclude, ["src/theme"]);
-  assert.deepEqual(packageJson.exports["./qa"], {
-    types: "./dist/qa-browser.d.ts",
-    import: "./dist/qa-browser.js",
-  });
-  assert.deepEqual(packageJson.exports["./qa-entry"], {
-    types: "./dist/theme/components/QaEntry.astro",
-    import: "./dist/theme/components/QaEntry.astro",
-  });
-  assert.equal(packageJson.peerDependencies.astro, ">=7.2.0 <8");
-  assert.equal(packageJson.license, "MIT");
-  assert.deepEqual(packageJson.repository, {
+  expect(packageJson.files).toEqual(["dist"]);
+  expect(projectTsconfig.extends).toBe("astro/tsconfigs/strict");
+  expect(projectTsconfig.compilerOptions.types[0]).toBe("node");
+  expect(buildTsconfig.compilerOptions.outDir).toBe("dist");
+  expect(buildTsconfig.compilerOptions.module).toBe("NodeNext");
+  expect(buildTsconfig.compilerOptions.moduleResolution).toBe("NodeNext");
+  expect(buildTsconfig.exclude).toEqual(["src/theme"]);
+  expect(packageJson.peerDependencies.astro).toBe(">=7.2.0 <8");
+  expect(packageJson.license).toBe("MIT");
+  expect(packageJson.repository).toEqual({
     type: "git",
     url: "https://github.com/antvis/site.git",
   });
-  assert.equal(packageJson.homepage, "https://github.com/antvis/site#readme");
-  assert.equal(packageJson.bugs.url, "https://github.com/antvis/site/issues");
-  assert.equal(packageJson.dependencies["@antv/g2"], undefined);
-  assert.equal(packageJson.dependencies["@antv/g6"], undefined);
-  assert.equal(packageJson.dependencies["@antv/s2"], undefined);
+  expect(packageJson.homepage).toBe("https://github.com/antvis/site#readme");
+  expect(packageJson.bugs.url).toBe("https://github.com/antvis/site/issues");
+  expect(packageJson.dependencies["@antv/g2"]).toBeUndefined();
+  expect(packageJson.dependencies["@antv/g6"]).toBeUndefined();
+  expect(packageJson.dependencies["@antv/s2"]).toBeUndefined();
 
   for (const dependency of [
     "esbuild",
     "codemirror",
     "sucrase",
   ]) {
-    assert.equal(packageJson.dependencies[dependency], undefined);
+    expect(packageJson.dependencies[dependency]).toBeUndefined();
   }
-  assert.equal(packageJson.dependencies.pagefind, "1.5.2");
-  assert.equal(packageJson.dependencies["@astrojs/mdx"], "7.0.8");
-  assert.equal(packageJson.dependencies.dompurify, "3.4.14");
-  assert.equal(packageJson.dependencies["highlight.js"], "11.12.0");
+  expect(packageJson.dependencies.pagefind).toBe("1.5.2");
+  expect(packageJson.dependencies["@astrojs/mdx"]).toBe("7.0.8");
+  expect(packageJson.dependencies.dompurify).toBe("3.4.14");
+  expect(packageJson.dependencies["highlight.js"]).toBe("11.12.0");
 
   const publicApi = await import("../dist/index.js");
   const { defineConfig } = publicApi;
@@ -79,40 +70,38 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
     },
   };
   const publicConfig = defineConfig(siteConfig);
-  assert.equal(typeof defineConfig, "function");
-  assert.equal(publicApi.default, defineConfig);
-  assert.deepEqual(publicApi.qaProducts, ["g2", "s2", "g6", "f2", "x6", "l7"]);
-  assert.deepEqual(publicApi.qaPreviewProducts, ["g2", "s2", "g6"]);
-  assert.equal(typeof publicApi.antvSite, "function");
-  assert.equal(publicApi.antvSite(siteConfig).name, "@antv/site");
-  assert.equal(publicConfig.integrations?.length, 3);
-  assert.equal(publicConfig.integrations?.[0]?.name, "@antv/site");
-  assert.equal(publicConfig.integrations?.[1]?.name, "@astrojs/mdx");
-  assert.equal(publicConfig.integrations?.[2]?.name, "@astrojs/sitemap");
+  expect(defineConfig).toBeTypeOf("function");
+  expect(publicApi.default).toBe(defineConfig);
+  expect(publicApi.qaProducts).toEqual(["g2", "s2", "g6", "f2", "x6", "l7"]);
+  expect(publicApi.qaPreviewProducts).toEqual(["g2", "s2", "g6"]);
+  expect(publicApi.antvSite).toBeTypeOf("function");
+  expect(publicApi.antvSite(siteConfig).name).toBe("@antv/site");
+  expect(publicConfig.integrations?.length).toBe(3);
+  expect(publicConfig.integrations?.[0]?.name).toBe("@antv/site");
+  expect(publicConfig.integrations?.[1]?.name).toBe("@astrojs/mdx");
+  expect(publicConfig.integrations?.[2]?.name).toBe("@astrojs/sitemap");
 
   const contentApi = await import("../dist/content.js");
-  assert.equal(contentApi.antvDocsLoader().name, "glob-loader");
-  assert.deepEqual(
-    contentApi.antvDocsSchema.parse({ title: "Guide" }),
-    {
-      title: "Guide",
-      order: 0,
-      sidebar: { hidden: false },
-      draft: false,
-    },
-  );
-  assert.deepEqual(contentApi.getAntvDocIdentity("zh/guide"), {
+  expect(contentApi.antvDocsLoader().name).toBe("glob-loader");
+  expect(contentApi.antvDocsSchema.parse({ title: "Guide" })).toEqual({
+    title: "Guide",
+    order: 0,
+    sidebar: { hidden: false },
+    draft: false,
+  });
+  expect(contentApi.getAntvDocIdentity("zh/guide")).toEqual({
     locale: "zh",
     slug: "guide",
     section: "guide",
     route: "/zh/guide/",
   });
 
-  const qaApi = await import("@antv/site/qa");
-  assert.equal(typeof qaApi.requestQaSession, "function");
-  assert.equal(typeof qaApi.readQaHistory, "function");
-  assert.equal(typeof qaApi.saveQaHistory, "function");
-  assert.equal(typeof qaApi.toQaProduct, "function");
+  expect(() => requirePackageSubpath("@antv/site/qa")).toThrow(
+    /Package subpath '.\/qa'/,
+  );
+  expect(() => requirePackageSubpath("@antv/site/qa-entry")).toThrow(
+    /Package subpath '.\/qa-entry'/,
+  );
 
   await access(resolve(packageRoot, "dist/integration.js"));
   await access(resolve(packageRoot, "dist/content.js"));
@@ -145,11 +134,11 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
     resolve(packageRoot, "dist/theme/styles/home-font.css"),
     "utf8",
   );
-  assert.match(globalStyles, /--font-sans:/);
-  assert.match(globalStyles, /--font-heading-weight: 900/);
-  assert.match(globalStyles, /font-family: var\(--font-sans\)/);
-  assert.match(fontStyles, /font-family: "Alibaba PuHuiTi 2\.0"/);
-  assert.match(homeFontStyles, /font-family: "Alibaba PuHuiTi 2\.0"/);
+  expect(globalStyles).toMatch(/--font-sans:/);
+  expect(globalStyles).toMatch(/--font-heading-weight: 900/);
+  expect(globalStyles).toMatch(/font-family: var\(--font-sans\)/);
+  expect(fontStyles).toMatch(/font-family: "Alibaba PuHuiTi 2\.0"/);
+  expect(homeFontStyles).toMatch(/font-family: "Alibaba PuHuiTi 2\.0"/);
   for (const font of ["Regular", "Medium", "SemiBold", "Bold", "Heavy"]) {
     await access(
       resolve(
@@ -157,8 +146,7 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
         `dist/theme/assets/fonts/AlibabaPuHuiTi-2-${font}.woff2`,
       ),
     );
-    assert.match(
-      `${fontStyles}\n${homeFontStyles}`,
+    expect(`${fontStyles}\n${homeFontStyles}`).toMatch(
       new RegExp(`AlibabaPuHuiTi-2-${font}\\.woff2`),
     );
   }
@@ -187,6 +175,6 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
     "dist/theme/features/qa/index.ts",
     "scripts/rewrite-imports.mjs",
   ]) {
-    await assert.rejects(access(resolve(packageRoot, removedPath)));
+    await expect(access(resolve(packageRoot, removedPath))).rejects.toThrow();
   }
 });

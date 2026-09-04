@@ -39,24 +39,24 @@ async function validateQaPreviewAdapters(
 export async function prepareQaIntegration(
   config: ResolvedSiteConfig,
 ): Promise<QaIntegrationContribution> {
+  if (!config.qa) {
+    return { plugins: [], fsAllow: [], routes: [], watchFiles: [] };
+  }
+
   await validateQaPreviewAdapters(config);
 
-  const previewAdapterPaths = Object.values(
-    config.qa?.previewAdapters ?? {},
-  );
+  const previewAdapterPaths = Object.values(config.qa.previewAdapters);
 
   return {
     plugins: [createQaPlugin(() => config)],
     fsAllow: [qaAdapterRoot, ...previewAdapterPaths.map(dirname)],
-    routes: config.qa
-      ? [
-          {
-            pattern: `/[locale]/${config.qa.path}`,
-            entrypoint: pathToFileURL(qaPage),
-            prerender: true,
-          },
-        ]
-      : [],
+    routes: [
+      {
+        pattern: `/[locale]/${config.qa.path}`,
+        entrypoint: pathToFileURL(qaPage),
+        prerender: true,
+      },
+    ],
     watchFiles: previewAdapterPaths,
   };
 }

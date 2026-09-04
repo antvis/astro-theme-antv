@@ -74,6 +74,8 @@ export interface AntVSiteConfig {
     pathBoosts?: Array<{ prefix: string; weight: number }>;
   };
   qa?: {
+    /** Enable the package-owned QA entry, route, and preview integration. */
+    enabled?: boolean;
     path?: string;
     defaultStack?: QaProduct;
     /** Omit for every built-in preview product; use [] to disable built-ins. */
@@ -370,6 +372,7 @@ const configSchema = z
       .default({ enabled: true, aliases: {}, pathBoosts: [] }),
     qa: z
       .strictObject({
+        enabled: z.boolean().default(false),
         path: routeSegmentSchema.default("result"),
         defaultStack: z.enum(qaProducts).default("g2"),
         previewProducts: z.array(z.enum(qaPreviewProducts)).optional(),
@@ -465,7 +468,7 @@ const configSchema = z
       });
     }
     const qa = config.qa;
-    if (qa) {
+    if (qa?.enabled) {
       const configuredPreviewProducts = qa.previewProducts ?? [];
       const duplicatePreviewProduct = configuredPreviewProducts.find(
         (product, index) => configuredPreviewProducts.indexOf(product) !== index,
@@ -603,9 +606,10 @@ export async function resolveConfig(
     ...config,
     root,
     content,
-    qa: config.qa
+    qa: config.qa?.enabled
       ? {
-          ...config.qa,
+          path: config.qa.path,
+          defaultStack: config.qa.defaultStack,
           service: qaServiceEndpoints,
           previewProducts:
             config.qa.previewProducts ??

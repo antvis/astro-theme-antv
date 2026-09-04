@@ -64,6 +64,7 @@ export default defineConfig({
     pathBoosts: [{ prefix: "/guide/", weight: 500 }],
   },
   qa: {
+    enabled: true,
     defaultStack: "g2",
     previewProducts: ["g2"],
   },
@@ -136,23 +137,13 @@ export default defineConfig({
 
 Use this standard Astro composition whenever the site needs Astro-level options such as `base`, redirects, or additional integrations. Server adapters are intentionally unsupported because generated content, Demo runners, QA routes, and Pagefind indexing are owned as a static-site pipeline. `antvSite()` returns only the package-owned core integration; advanced consumers explicitly install and enable `@astrojs/mdx` and `@astrojs/sitemap` when needed. The package `defineConfig` facade enables both by default. Internal theme links, canonical URLs, Demo iframes, QA navigation, static assets, and search assets all honor Astro's `base` value.
 
-When qa is configured, each locale receives a Result route at /{locale}/result/ by default and the shared home page renders the package-owned QA entry. `qa.defaultStack` selects the initial G2, S2, G6, F2, X6, or L7 stack. Change `qa.path` to use another route. The platform owns the shared Sive service endpoints and protocol. The QA entry owns stack selection, authentication, session creation, history, and Result navigation; the Result page owns streaming responses, follow-up questions, Markdown rendering, code highlighting, and optional visualization previews.
-
-Custom home components can reuse the same entry without reimplementing QA behavior:
-
-```astro
----
-import QaEntry from '@antv/site/qa-entry';
-const { locale } = Astro.props;
----
-
-<QaEntry locale={locale} />
-```
+Set `qa.enabled` to `true` to enable the package-owned QA entry, Result route, Vite integration, and optional preview adapters. With the switch omitted or `false`, none of these QA capabilities are added to the downstream site. Each locale receives a Result route at /{locale}/result/ by default. `qa.defaultStack` selects the initial G2, S2, G6, F2, X6, or L7 stack. Change `qa.path` to use another route. The platform owns the shared Sive service endpoints and protocol. The QA entry owns stack selection, authentication, session creation, history, and Result navigation; the Result page owns streaming responses, follow-up questions, Markdown rendering, code highlighting, and optional visualization previews.
 
 G2, G6, and S2 have package-owned preview adapters. Omitting `previewProducts` enables all three built-ins; set it to an explicit subset to reduce the resolved visualization runtimes, or to `[]` to disable every built-in preview. A custom adapter named `g2`, `g6`, or `s2` replaces that built-in when `previewProducts` is omitted. The visualization packages remain consumer dependencies rather than `@antv/site` dependencies, so consumers must install every enabled product; the built-ins currently target G2 5.x, G6 5.x, and S2 2.x:
 
 ```js
 qa: {
+  enabled: true,
   defaultStack: "g2",
   // Omit for G2 + S2 + G6, or choose a smaller installed subset.
   previewProducts: ["g2"],
@@ -257,7 +248,7 @@ Unknown keys are rejected. Removed features therefore fail fast instead of being
 
 ## Package boundary
 
-Consumers import `defineConfig`, `antvSite`, and configuration types from the package root. The `@antv/site/content` subpath exports the Astro Content Loader and schema. The shared QA entry is available from `@antv/site/qa-entry`; lower-level browser-side QA session and history helpers are compiled to JavaScript and published from `@antv/site/qa`. The package build emits NodeNext-compatible ESM directly, without a regex-based post-build import rewrite, then copies the consumer-compiled Astro theme source into `dist/theme`. npm publishes only `dist`; `src/theme` is a repository source directory, not a separate package path. Astro remains the peer build engine; Vite, Pagefind, and the sitemap integration are implementation dependencies.
+Consumers import `defineConfig`, `antvSite`, and configuration types from the package root. The `@antv/site/content` subpath exports the Astro Content Loader and schema. QA is configured only through the package configuration; it has no consumer-facing entry or browser-helper subpath. The package build emits NodeNext-compatible ESM directly, without a regex-based post-build import rewrite, then copies the consumer-compiled Astro theme source into `dist/theme`. npm publishes only `dist`; `src/theme` is a repository source directory, not a separate package path. Astro remains the peer build engine; Vite, Pagefind, and the sitemap integration are implementation dependencies.
 
 ## Repository demo
 
