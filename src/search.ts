@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import * as pagefind from "pagefind";
 import type { ResolvedSiteConfig } from "./compiler/config.js";
 
 const assertPagefindResult = <Result extends { errors: string[] }>(
@@ -17,7 +18,6 @@ export async function buildProductionSearch(
 ): Promise<void> {
   if (!config.search.enabled) return;
 
-  const pagefind = await import("pagefind");
   const created = assertPagefindResult(
     await pagefind.createIndex(),
     "index creation",
