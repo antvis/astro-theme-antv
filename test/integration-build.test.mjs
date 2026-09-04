@@ -76,6 +76,9 @@ test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () 
 
   const home = await readFile(resolve(output, "zh/index.html"), "utf8");
   assert.match(home, /data-antv-qa-entry/);
+  assert.match(home, /data-products-menu/);
+  assert.match(home, /data-products-list/);
+  assert.match(home, /所有产品/);
   assert.match(home, /data-default-stack="s2"/);
   assert.match(home, /data-result-url="\/zh\/result\/"/);
   assert.match(home, /href="\/zh\/examples\/"/);

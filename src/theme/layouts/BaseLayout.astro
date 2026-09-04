@@ -9,6 +9,7 @@ import { getGeneratedRoutes } from '../lib/routes';
 import { config } from '../lib/site';
 import '../styles/fonts.css';
 import '../styles/global.css';
+import '../styles/product.css';
 
 interface Props {
   locale: 'zh' | 'en';
@@ -193,6 +194,26 @@ const structuredData = {
           {navigation.map((item) => (
             <a href={item.href} aria-current={item.active ? 'page' : undefined}>{localize(item.text, locale)}</a>
           ))}
+          <details class="header-menu product-menu" data-products-menu>
+            <summary aria-label={locale === 'zh' ? '所有产品' : 'All products'}>
+              <span>{locale === 'zh' ? '所有产品' : 'Products'}</span>
+              <span class="nav-chevron" aria-hidden="true"></span>
+            </summary>
+            <div class="product-panel">
+              <div
+                class="product-groups"
+                data-products-list
+                data-locale={locale}
+                aria-live="polite"
+                aria-busy="true"
+              >
+                <div class="product-loading" data-products-loading>
+                  <span aria-hidden="true"></span>
+                  {locale === 'zh' ? '正在加载产品…' : 'Loading products…'}
+                </div>
+              </div>
+            </div>
+          </details>
           {versionEntries.length > 0 && (
             <details class="header-menu version-menu">
               <summary>
@@ -267,6 +288,11 @@ const structuredData = {
         pathBoosts={config.search.pathBoosts}
       />
     )}
+    <script>
+      import { mountProductMenu } from '../features/products/client';
+
+      mountProductMenu();
+    </script>
     <script is:inline>
       (() => {
         const navButton = document.querySelector('.mobile-nav-toggle');

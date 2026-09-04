@@ -130,6 +130,8 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
   await access(resolve(packageRoot, "dist/theme/components/QaEntry.astro"));
   await access(resolve(packageRoot, "dist/theme/features/qa/result.ts"));
   await access(resolve(packageRoot, "dist/theme/components/SiteSearch.astro"));
+  await access(resolve(packageRoot, "dist/theme/features/products/client.ts"));
+  await access(resolve(packageRoot, "dist/theme/styles/product.css"));
   await access(resolve(packageRoot, "dist/theme/lib/agent-content.ts"));
   const globalStyles = await readFile(
     resolve(packageRoot, "dist/theme/styles/global.css"),
