@@ -22,7 +22,12 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
   expect(Object.keys(packageJson.exports)).toEqual([
     ".",
     "./content",
+    "./qa-entry",
   ]);
+  expect(packageJson.exports["./qa-entry"]).toEqual({
+    types: "./dist/theme/components/QaEntry.astro",
+    import: "./dist/theme/components/QaEntry.astro",
+  });
   expect(packageJson.files).toEqual(["dist"]);
   expect(projectTsconfig.extends).toBe("astro/tsconfigs/strict");
   expect(projectTsconfig.compilerOptions.types[0]).toBe("node");
@@ -98,9 +103,6 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
 
   expect(() => requirePackageSubpath("@antv/site/qa")).toThrow(
     /Package subpath '.\/qa'/,
-  );
-  expect(() => requirePackageSubpath("@antv/site/qa-entry")).toThrow(
-    /Package subpath '.\/qa-entry'/,
   );
 
   await access(resolve(packageRoot, "dist/integration.js"));

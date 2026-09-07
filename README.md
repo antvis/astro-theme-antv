@@ -248,7 +248,7 @@ Unknown keys are rejected. Removed features therefore fail fast instead of being
 
 ## Package boundary
 
-Consumers import `defineConfig`, `antvSite`, and configuration types from the package root. The `@antv/site/content` subpath exports the Astro Content Loader and schema. QA is configured only through the package configuration; it has no consumer-facing entry or browser-helper subpath. The package build emits NodeNext-compatible ESM directly, without a regex-based post-build import rewrite, then copies the consumer-compiled Astro theme source into `dist/theme`. npm publishes only `dist`; `src/theme` is a repository source directory, not a separate package path. Astro remains the peer build engine; Vite, Pagefind, and the sitemap integration are implementation dependencies.
+Consumers import `defineConfig`, `antvSite`, and configuration types from the package root. The `@antv/site/content` subpath exports the Astro Content Loader and schema, and `@antv/site/qa-entry` exports the package-owned Astro QA entry component for consumer-owned pages. QA has no consumer-facing browser-helper subpath. The package build emits NodeNext-compatible ESM directly, without a regex-based post-build import rewrite, then copies the consumer-compiled Astro theme source into `dist/theme`. npm publishes only `dist`; `src/theme` is a repository source directory, not a separate package path. Astro remains the peer build engine; Vite, Pagefind, and the sitemap integration are implementation dependencies.
 
 ## Repository demo
 

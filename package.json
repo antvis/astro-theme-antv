@@ -21,6 +21,10 @@
     "./content": {
       "types": "./dist/content.d.ts",
       "import": "./dist/content.js"
+    },
+    "./qa-entry": {
+      "types": "./dist/theme/components/QaEntry.astro",
+      "import": "./dist/theme/components/QaEntry.astro"
     }
   },
   "files": [
