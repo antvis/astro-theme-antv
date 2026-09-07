@@ -16,9 +16,6 @@ interface QaSessionRequest {
 }
 
 interface QaReadyMessage {
-  accessToken: string;
-  expiresIn: number;
-  tokenType: 'Bearer';
   type: 'sive.qa.auth.ready';
 }
 
@@ -29,17 +26,10 @@ interface QaSubmitResponse {
   error?: string;
 }
 
-interface StoredQaAccessToken {
-  accessToken: string;
-  expiresAt: number;
-}
-
 const QA_WINDOW_NAME = 'antv-qa-auth';
 const QA_WINDOW_TIMEOUT_MS = 5 * 60 * 1000;
 const QA_REQUEST_TIMEOUT_MS = 30 * 1000;
-const QA_TOKEN_STORAGE_PREFIX = 'sive.qa.access-token:';
-const qaAccessTokens = new Map<string, StoredQaAccessToken>();
-const qaAccessTokenRequests = new Map<string, Promise<string>>();
+const qaAuthenticationRequests = new Map<string, Promise<void>>();
 
 export interface QaContext {
   locale: 'zh-CN' | 'en-US';
@@ -66,15 +56,7 @@ export function requestQaSession({
   serviceBaseUrl,
   sessionId,
 }: QaSessionRequest): Promise<string> {
-  const serviceOrigin = new URL(serviceBaseUrl).origin;
-  return submitWithAccessToken({
-    context,
-    errors,
-    message,
-    serviceBaseUrl,
-    serviceOrigin,
-    sessionId,
-  });
+  return submitQaSession({ context, errors, message, serviceBaseUrl, sessionId });
 }
 
 export function requestQaSessionDetail({
@@ -84,7 +66,7 @@ export function requestQaSessionDetail({
 }: QaReadRequest & { sessionId: string }): Promise<Response> {
   const url = new URL('/integrations/qa/session', serviceBaseUrl);
   url.searchParams.set('id', sessionId);
-  return fetchWithAccessToken(
+  return fetchWithSiveCookie(
     { errors, serviceBaseUrl },
     url,
     { headers: { Accept: 'application/json' } },
@@ -95,7 +77,7 @@ export function requestQaSessionHistory({
   errors,
   serviceBaseUrl,
 }: QaReadRequest): Promise<Response> {
-  return fetchWithAccessToken(
+  return fetchWithSiveCookie(
     { errors, serviceBaseUrl },
     new URL('/integrations/qa/sessions', serviceBaseUrl),
     { headers: { Accept: 'application/json' } },
@@ -110,7 +92,7 @@ export function requestQaSessionStream({
 }: QaReadRequest & { sessionId: string; signal: AbortSignal }): Promise<Response> {
   const url = new URL('/integrations/qa/session/stream', serviceBaseUrl);
   url.searchParams.set('id', sessionId);
-  return fetchWithAccessToken(
+  return fetchWithSiveCookie(
     { errors, serviceBaseUrl },
     url,
     { headers: { Accept: 'text/event-stream' }, signal },
@@ -118,39 +100,26 @@ export function requestQaSessionStream({
   );
 }
 
-async function submitWithAccessToken(
-  request: QaSessionRequest & { serviceOrigin: string },
-): Promise<string> {
-  return submitQaSession(request);
-}
-
-async function fetchWithAccessToken(
+async function fetchWithSiveCookie(
   request: QaReadRequest,
   url: URL,
   init: RequestInit,
   withTimeout = true,
 ): Promise<Response> {
   const serviceOrigin = new URL(request.serviceBaseUrl).origin;
-  let accessToken = getQaAccessToken(serviceOrigin);
-  if (!accessToken) {
-    accessToken = await getOrRequestQaAccessToken({ ...request, serviceOrigin });
-  }
-
-  const send = (token: string) =>
-    fetchQaRequest(url, init, token, request.errors.request, withTimeout);
-  let response = await send(accessToken);
+  const send = () =>
+    fetchQaRequest(url, init, request.errors.request, withTimeout);
+  let response = await send();
   if (response.status !== 401 && response.status !== 403) return response;
 
-  clearQaAccessToken(serviceOrigin);
-  accessToken = await getOrRequestQaAccessToken({ ...request, serviceOrigin });
-  response = await send(accessToken);
+  await getOrRequestQaAuthentication({ ...request, serviceOrigin });
+  response = await send();
   return response;
 }
 
 async function fetchQaRequest(
   url: URL,
   init: RequestInit,
-  accessToken: string,
   requestError: string,
   withTimeout: boolean,
 ): Promise<Response> {
@@ -161,11 +130,7 @@ async function fetchQaRequest(
   try {
     return await fetch(url, {
       ...init,
-      credentials: 'omit',
-      headers: {
-        ...Object.fromEntries(new Headers(init.headers).entries()),
-        Authorization: `Bearer ${accessToken}`,
-      },
+      credentials: 'include',
       signal: controller?.signal ?? init.signal,
     });
   } catch (error) {
@@ -178,30 +143,30 @@ async function fetchQaRequest(
   }
 }
 
-function getOrRequestQaAccessToken(
+function getOrRequestQaAuthentication(
   request: Pick<QaSessionRequest, 'errors' | 'serviceBaseUrl'> & {
     serviceOrigin: string;
   },
-): Promise<string> {
-  const existing = qaAccessTokenRequests.get(request.serviceOrigin);
+): Promise<void> {
+  const existing = qaAuthenticationRequests.get(request.serviceOrigin);
   if (existing) return existing;
 
-  const pending = requestQaAccessToken(request).finally(() => {
-    if (qaAccessTokenRequests.get(request.serviceOrigin) === pending) {
-      qaAccessTokenRequests.delete(request.serviceOrigin);
+  const pending = requestQaAuthentication(request).finally(() => {
+    if (qaAuthenticationRequests.get(request.serviceOrigin) === pending) {
+      qaAuthenticationRequests.delete(request.serviceOrigin);
     }
   });
-  qaAccessTokenRequests.set(request.serviceOrigin, pending);
+  qaAuthenticationRequests.set(request.serviceOrigin, pending);
   return pending;
 }
 
-function requestQaAccessToken({
+function requestQaAuthentication({
   errors,
   serviceBaseUrl,
   serviceOrigin,
 }: Pick<QaSessionRequest, 'errors' | 'serviceBaseUrl'> & {
   serviceOrigin: string;
-}): Promise<string> {
+}): Promise<void> {
   const bridgeUrl = new URL('/integrations/qa/auth', serviceBaseUrl);
   bridgeUrl.searchParams.set('origin', window.location.origin);
 
@@ -241,83 +206,14 @@ function requestQaAccessToken({
     const handleMessage = (event: MessageEvent<unknown>) => {
       if (event.origin !== serviceOrigin || event.source !== popup) return;
       const data = event.data as Partial<QaReadyMessage> | null;
-      if (
-        data?.type !== 'sive.qa.auth.ready' ||
-        typeof data.accessToken !== 'string' ||
-        typeof data.expiresIn !== 'number' ||
-        !Number.isFinite(data.expiresIn) ||
-        data.expiresIn <= 0 ||
-        data.tokenType !== 'Bearer'
-      )
-        return;
+      if (data?.type !== 'sive.qa.auth.ready') return;
 
       cleanup();
-      saveQaAccessToken(serviceOrigin, data.accessToken, data.expiresIn);
-      resolve(data.accessToken);
+      resolve();
     };
 
     window.addEventListener('message', handleMessage);
   });
-}
-
-function getQaAccessToken(serviceOrigin: string): string | null {
-  const cached =
-    qaAccessTokens.get(serviceOrigin) ?? readStoredQaAccessToken(serviceOrigin);
-  if (!cached || cached.expiresAt <= Date.now() + 30_000) {
-    clearQaAccessToken(serviceOrigin);
-    return null;
-  }
-  qaAccessTokens.set(serviceOrigin, cached);
-  return cached.accessToken;
-}
-
-function readStoredQaAccessToken(
-  serviceOrigin: string,
-): StoredQaAccessToken | null {
-  try {
-    const value = window.sessionStorage.getItem(
-      `${QA_TOKEN_STORAGE_PREFIX}${serviceOrigin}`,
-    );
-    if (!value) return null;
-    const token = JSON.parse(value) as Partial<StoredQaAccessToken>;
-    return typeof token.accessToken === 'string' &&
-      typeof token.expiresAt === 'number'
-      ? { accessToken: token.accessToken, expiresAt: token.expiresAt }
-      : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveQaAccessToken(
-  serviceOrigin: string,
-  accessToken: string,
-  expiresIn: number,
-): void {
-  const token = {
-    accessToken,
-    expiresAt: Date.now() + expiresIn * 1000,
-  };
-  qaAccessTokens.set(serviceOrigin, token);
-  try {
-    window.sessionStorage.setItem(
-      `${QA_TOKEN_STORAGE_PREFIX}${serviceOrigin}`,
-      JSON.stringify(token),
-    );
-  } catch {
-    // The in-memory token still avoids repeated popups in this page.
-  }
-}
-
-function clearQaAccessToken(serviceOrigin: string): void {
-  qaAccessTokens.delete(serviceOrigin);
-  try {
-    window.sessionStorage.removeItem(
-      `${QA_TOKEN_STORAGE_PREFIX}${serviceOrigin}`,
-    );
-  } catch {
-    // Ignore unavailable storage.
-  }
 }
 
 async function submitQaSession({
@@ -326,11 +222,11 @@ async function submitQaSession({
   message,
   serviceBaseUrl,
   sessionId,
-}: QaSessionRequest & { serviceOrigin: string }): Promise<string> {
+}: QaSessionRequest): Promise<string> {
   let response: Response;
   let payload: QaSubmitResponse;
   try {
-    response = await fetchWithAccessToken(
+    response = await fetchWithSiveCookie(
       { errors, serviceBaseUrl },
       new URL('/integrations/qa/session', serviceBaseUrl),
       {

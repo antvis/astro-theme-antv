@@ -15,31 +15,16 @@ const errors = {
   timeout: 'timeout',
 };
 
-const createStorage = () => {
-  const values = new Map<string, string>();
-  return {
-    getItem: (key: string) => values.get(key) ?? null,
-    removeItem: (key: string) => values.delete(key),
-    setItem: (key: string, value: string) => values.set(key, value),
-  };
-};
-
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
 describe('QA authenticated reads', () => {
-  it('uses the cached bearer token for detail, history, and SSE', async () => {
+  it('uses the Sive cookie for detail, history, and SSE', async () => {
     const serviceBaseUrl = 'https://sive.example';
-    const sessionStorage = createStorage();
-    sessionStorage.setItem(
-      `sive.qa.access-token:${serviceBaseUrl}`,
-      JSON.stringify({ accessToken: 'short-lived-token', expiresAt: Date.now() + 60_000 }),
-    );
     vi.stubGlobal('window', {
       clearTimeout,
-      sessionStorage,
       setTimeout,
     });
     const fetchMock = vi.fn(async () => new Response('{}'));
@@ -62,9 +47,59 @@ describe('QA authenticated reads', () => {
       'https://sive.example/integrations/qa/session/stream?id=session-1',
     ]);
     for (const [, init] of fetchMock.mock.calls) {
-      expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer short-lived-token');
+      expect(init?.credentials).toBe('include');
+      expect(new Headers(init?.headers).get('Authorization')).toBeNull();
     }
     expect(fetchMock.mock.calls[2]?.[1]?.signal).toBe(controller.signal);
+  });
+
+  it('retries with the Sive cookie after popup authentication', async () => {
+    const serviceBaseUrl = 'https://sive.example';
+    const popup = { closed: false, focus: vi.fn() };
+    let handleMessage: ((event: MessageEvent<unknown>) => void) | undefined;
+    const open = vi.fn(() => popup);
+    vi.stubGlobal('window', {
+      addEventListener: vi.fn(
+        (type: string, listener: (event: MessageEvent<unknown>) => void) => {
+          if (type === 'message') handleMessage = listener;
+        },
+      ),
+      clearInterval: vi.fn(),
+      clearTimeout,
+      location: { origin: 'https://g2.antgroup.com' },
+      open,
+      outerHeight: 800,
+      outerWidth: 1200,
+      removeEventListener: vi.fn(),
+      screenX: 0,
+      screenY: 0,
+      setInterval: vi.fn(() => 1),
+      setTimeout,
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('{}', { status: 401 }))
+      .mockResolvedValueOnce(new Response('{}'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const detail = requestQaSessionDetail({
+      errors,
+      serviceBaseUrl,
+      sessionId: 'session-1',
+    });
+    await vi.waitFor(() => expect(open).toHaveBeenCalledOnce());
+    handleMessage?.({
+      data: { type: 'sive.qa.auth.ready' },
+      origin: serviceBaseUrl,
+      source: popup,
+    } as unknown as MessageEvent<unknown>);
+
+    await expect(detail).resolves.toBeInstanceOf(Response);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    for (const [, init] of fetchMock.mock.calls) {
+      expect(init?.credentials).toBe('include');
+      expect(new Headers(init?.headers).get('Authorization')).toBeNull();
+    }
   });
 
   it('keeps the result URL free of the original question and stack', async () => {
