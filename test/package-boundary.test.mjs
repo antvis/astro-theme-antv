@@ -172,6 +172,7 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
     "dist/demo-runtime/index.js",
     "dist/runtime/build.js",
     "dist/verify.js",
+    "dist/qa/history.js",
     "dist/theme/features/qa/client.ts",
     "dist/theme/features/qa/history.ts",
     "dist/theme/features/qa/index.ts",

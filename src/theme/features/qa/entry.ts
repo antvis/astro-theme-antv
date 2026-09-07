@@ -1,4 +1,4 @@
-import { requestQaSession, saveQaHistory, toQaProduct } from '../../../qa-browser.js';
+import { requestQaSession, toQaProduct } from '../../../qa-browser.js';
 
 export function mountQaEntries(): void {
   document.querySelectorAll('[data-antv-qa-entry]').forEach((entry) => {
@@ -148,13 +148,6 @@ export function mountQaEntries(): void {
       const resultUrl = entry.dataset.resultUrl;
       const stackInput = entry.querySelector('[data-stack-input]');
       const stackValue = stackInput instanceof HTMLInputElement ? stackInput.value.trim() : '';
-      const selectedStack = entry.querySelector(
-        `[data-stack-value="${CSS.escape(stackValue)}"]`,
-      );
-      const stackLabel =
-        selectedStack instanceof HTMLButtonElement
-          ? selectedStack.dataset.stackLabelValue ?? stackValue.toUpperCase()
-          : stackValue.toUpperCase();
       const product = toQaProduct(stackValue);
       if (!serviceBaseUrl || !resultUrl || !product) return;
 
@@ -179,7 +172,6 @@ export function mountQaEntries(): void {
         });
         const target = new URL(resultUrl, window.location.origin);
         target.searchParams.set('session', session);
-        saveQaHistory({ session, stack: stackLabel, title: query });
         window.location.assign(target);
       } catch (error) {
         errorTarget.textContent = error instanceof Error ? error.message : String(error);

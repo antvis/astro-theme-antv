@@ -4,14 +4,10 @@ import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import { highlightCodeBlocks } from './code-highlight';
 import {
-  cacheQaHistory,
-  readQaHistory,
   requestQaSession,
   requestQaSessionDetail,
   requestQaSessionHistory,
   requestQaSessionStream,
-  saveQaHistory,
-  type QaHistoryEntry,
 } from '../../../qa-browser.js';
 import { bindPageLifecycle } from '../../../qa/page-lifecycle.js';
 import { ServerSentEventDecoder } from '../../../qa/sse.js';
@@ -35,6 +31,15 @@ interface ExternalQaSession {
   title: string;
   updatedAt: string;
 }
+
+interface QaHistoryEntry {
+  session: string;
+  stack: string;
+  title: string;
+  updatedAt: number;
+}
+
+const QA_HISTORY_LIMIT = 30;
 
 export function mountQaResult(): void {
   const root = document.querySelector('[data-antv-result]');
@@ -73,6 +78,7 @@ export function mountQaResult(): void {
   let forceFollow = false;
   let sessionRevision = 0;
   let sessionSwitchPending = false;
+  let historyEntries: QaHistoryEntry[] = [];
 
   const copy = {
     aborted: root.dataset.textAborted ?? '',
@@ -141,11 +147,11 @@ export function mountQaResult(): void {
     };
   };
 
-  const renderHistory = (history: QaHistoryEntry[] = readQaHistory()) => {
+  const renderHistory = () => {
     if (!(historyList instanceof HTMLElement)) return;
     historyList.replaceChildren();
 
-    if (!history.length) {
+    if (!historyEntries.length) {
       const empty = document.createElement('p');
       empty.className = 'antv-history-empty';
       empty.textContent = copy.historyEmpty;
@@ -153,7 +159,7 @@ export function mountQaResult(): void {
       return;
     }
 
-    history.forEach((entry) => {
+    historyEntries.forEach((entry) => {
       const link = document.createElement('a');
       link.className = 'antv-history-item';
       const target = new URL(window.location.href);
@@ -179,14 +185,17 @@ export function mountQaResult(): void {
     });
   };
 
-  const cacheSession = (session: ExternalQaSession) => {
-    const entry = toHistoryEntry(session);
-    if (!entry) return;
-    const history = cacheQaHistory([
+  const upsertHistory = (entry: QaHistoryEntry) => {
+    historyEntries = [
       entry,
-      ...readQaHistory().filter((item) => item.session !== entry.session),
-    ]);
-    renderHistory(history);
+      ...historyEntries.filter((item) => item.session !== entry.session),
+    ].slice(0, QA_HISTORY_LIMIT);
+    renderHistory();
+  };
+
+  const upsertSessionHistory = (session: ExternalQaSession) => {
+    const entry = toHistoryEntry(session);
+    if (entry) upsertHistory(entry);
   };
 
   const loadServerHistory = async () => {
@@ -201,9 +210,10 @@ export function mountQaResult(): void {
       const entries = payload.data
         .map(toHistoryEntry)
         .filter((item): item is QaHistoryEntry => Boolean(item));
-      renderHistory(cacheQaHistory(entries));
+      historyEntries = entries.slice(0, QA_HISTORY_LIMIT);
+      renderHistory();
     } catch {
-      // Keep rendering the disposable local cache when history refresh fails.
+      // History is secondary UI; the active conversation remains usable when refresh fails.
     }
   };
 
@@ -219,7 +229,7 @@ export function mountQaResult(): void {
     });
   }
 
-  renderHistory(readQaHistory());
+  renderHistory();
 
   const setStatus = (value: string) => {
     if (!(statusTarget instanceof HTMLElement)) return;
@@ -561,7 +571,7 @@ export function mountQaResult(): void {
         const currentSession = result.session as ExternalQaSession;
         initialQuery = currentSession.title.trim();
         stack = currentSession.context.product.toUpperCase();
-        cacheSession(currentSession);
+        upsertSessionHistory(currentSession);
       }
 
       consecutiveFailures = 0;
@@ -647,7 +657,7 @@ export function mountQaResult(): void {
     }
     if (followupError instanceof HTMLElement) followupError.hidden = true;
 
-    renderHistory(readQaHistory());
+    renderHistory();
     setStatus(copy.loading);
     setComposerState();
     void loadResult();
@@ -701,7 +711,7 @@ export function mountQaResult(): void {
     }
     if (followupError instanceof HTMLElement) followupError.hidden = true;
 
-    renderHistory(readQaHistory());
+    renderHistory();
     requestAnimationFrame(() => {
       const prompt = newConversationTarget?.querySelector('[data-qa-prompt]');
       if (prompt instanceof HTMLTextAreaElement) prompt.focus({ preventScroll: true });
@@ -823,12 +833,12 @@ export function mountQaResult(): void {
           serviceBaseUrl,
           sessionId: submittedSessionId,
         });
-        const history = saveQaHistory({
+        upsertHistory({
           session: submittedSessionId,
           stack: submittedStack,
           title: submittedTitle,
+          updatedAt: Date.now(),
         });
-        renderHistory(history);
         void loadServerHistory();
         if (submittedRevision !== sessionRevision) return;
         followupInput.value = '';
