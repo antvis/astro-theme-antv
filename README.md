@@ -157,6 +157,67 @@ slots: {
 
 Slot components receive `locale`, `slotName`, the resolved `config`, and the in-memory `registry`; the public `HomeSlotProps` type describes that contract. Slot paths are consumer-relative, validated before startup, watched by Astro, and compiled by Vite.
 
+## Shared updates
+
+Import the opt-in announcement carousel in a home slot or another Astro component:
+
+```astro
+---
+import { Updates } from '@antv/site/components';
+const { locale } = Astro.props;
+---
+
+<Updates locale={locale} />
+```
+
+The component fetches `https://assets.antv.antgroup.com/antv/banner-messages.json`
+in the browser, so announcements can change without rebuilding a static site.
+It renders localized `title`/`subTitle`, `img` and `link` directly from the feed;
+missing translations fall back to the other locale. It does not rewrite upstream
+copy or use a bundled announcement snapshot. Links and images accept only absolute
+HTTP(S) URLs. Failed requests time out after 10 seconds and offer a retry; empty
+feeds show an empty state. JavaScript is required to load announcements.
+
+The component owns its card styles and responsive 3/2/1-card track; the host owns
+section spacing and surrounding content. It is not inserted into layouts by default.
+Pagination follows actual scroll destinations, is disabled when every card fits,
+and autoplay pauses on hover/focus, manual interaction, hidden pages and reduced motion.
+
+## Shared components
+
+Import supported UI from `@antv/site/components`: `QaEntry`, `Updates`, and `Carousel`.
+Keep site-specific content and layout in the existing home slots. For a custom card
+carousel, pass cards through the default slot:
+
+```astro
+---
+import { Carousel } from '@antv/site/components';
+const { locale } = Astro.props;
+---
+
+<Carousel locale={locale} label="Featured projects" list>
+  <article role="listitem">First project</article>
+  <article role="listitem">Second project</article>
+</Carousel>
+```
+
+`Carousel` owns track markup, scroll-snap, pagination, autoplay and lifecycle cleanup.
+It refreshes when direct slot children change and reconnects safely after removal.
+Set `disabled` while asynchronous content is loading; remove the `disabled` attribute
+from the rendered `antv-carousel` element once cards are ready. Optional `pageLabel`
+accepts a `{page}` placeholder; `list` gives the track list semantics (provide
+`role="listitem"` on each card).
+
+Customize geometry through inherited CSS properties on a wrapper:
+`--carousel-columns`, `--carousel-gap`, `--carousel-track-padding`, and
+`--carousel-pagination-margin`. Defaults show 3/2/1 cards at desktop/1000px/767px;
+when setting `--carousel-columns`, supply your own responsive overrides as needed.
+Consumer pages do not need browser mounting scripts or internal DOM selectors.
+
+The old `@antv/site/qa-entry`, `@antv/site/updates`, and `@antv/site/carousel`
+entry points remain available for compatibility. Use the shared components entry
+for new code; the DOM-level carousel helper is no longer the recommended integration.
+
 ## Content conventions
 
 Localized documents use a locale suffix:
@@ -230,7 +291,7 @@ Unknown keys are rejected. Removed features therefore fail fast instead of being
 
 ## Package boundary
 
-Consumers import `defineConfig`, `antvSite`, and configuration types from the package root. The `@antv/site/content` subpath exports the Astro Content Loader and schema, and `@antv/site/qa-entry` exports the package-owned Astro QA entry component for consumer-owned pages. QA has no consumer-facing browser-helper subpath. The package build emits NodeNext-compatible ESM directly, without a regex-based post-build import rewrite, then copies the consumer-compiled Astro theme source into `dist/theme`. npm publishes only `dist`; `src/theme` is a repository source directory, not a separate package path. Astro remains the peer build engine; Vite, Pagefind, and the sitemap integration are implementation dependencies.
+Consumers import `defineConfig`, `antvSite`, and configuration types from the package root. The `@antv/site/content` subpath exports the Astro Content Loader and schema; `@antv/site/components` exports supported Astro UI components. UI is deliberately separate from the Node-loaded configuration facade, and adding a shared component does not require a new package subpath. QA has no consumer-facing browser-helper subpath. The package build emits NodeNext-compatible ESM directly, without a regex-based post-build import rewrite, then copies the consumer-compiled Astro theme source into `dist/theme`. npm publishes only `dist`; `src/theme` is a repository source directory, not a separate package path. Astro remains the peer build engine; Vite, Pagefind, and the sitemap integration are implementation dependencies.
 
 ## Repository demo
 

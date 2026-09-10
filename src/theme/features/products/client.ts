@@ -21,7 +21,9 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const safeRemoteUrl = (value: unknown) => {
   try {
     const url = new URL(String(value || ''));
-    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : '';
+    return url.protocol === 'https:' || url.protocol === 'http:'
+      ? url.href
+      : '';
   } catch {
     return '';
   }
@@ -43,23 +45,25 @@ const productLinks = (item: ProductItem, locale: string): ProductLink[] => {
       href: safeRemoteUrl(isRecord(links.home) ? links.home.url : undefined),
       label: String(
         (isRecord(links.home) ? links.home.title : undefined) ||
-          (locale === 'zh' ? '产品首页' : 'Product home'),
-      ),
+          (locale === 'zh' ? '产品首页' : 'Product home')
+      )
     },
     {
-      href: safeRemoteUrl(isRecord(links.example) ? links.example.url : undefined),
+      href: safeRemoteUrl(
+        isRecord(links.example) ? links.example.url : undefined
+      ),
       label: String(
         (isRecord(links.example) ? links.example.title : undefined) ||
-          (locale === 'zh' ? '图表示例' : 'Examples'),
-      ),
-    },
+          (locale === 'zh' ? '图表示例' : 'Examples')
+      )
+    }
   ].filter((link) => link.href);
 };
 
 const createProductCard = (
   item: ProductItem,
   locale: string,
-  currentProduct: string,
+  currentProduct: string
 ) => {
   const links = productLinks(item, locale);
   const name = String(item.title || '').trim();
@@ -74,9 +78,6 @@ const createProductCard = (
   const mark = document.createElement('span');
   mark.className = 'product-mark';
   mark.setAttribute('aria-hidden', 'true');
-  const fallback = document.createElement('span');
-  fallback.textContent = name.slice(0, 3);
-  mark.append(fallback);
   const iconUrl = safeRemoteUrl(item.icon);
   if (iconUrl) {
     const icon = document.createElement('img');
@@ -84,8 +85,17 @@ const createProductCard = (
     icon.alt = '';
     icon.loading = 'lazy';
     icon.decoding = 'async';
-    icon.addEventListener('error', () => icon.remove(), { once: true });
+    icon.addEventListener(
+      'error',
+      () => {
+        icon.remove();
+        mark.textContent = name.slice(0, 3);
+      },
+      { once: true }
+    );
     mark.append(icon);
+  } else {
+    mark.textContent = name.slice(0, 3);
   }
 
   const copy = document.createElement('div');
@@ -98,7 +108,9 @@ const createProductCard = (
   slogan.textContent = String(item.slogan || '').trim();
   titleLine.append(title, slogan);
   const description = document.createElement('p');
-  description.textContent = String(item.description || item.slogan || '').trim();
+  description.textContent = String(
+    item.description || item.slogan || ''
+  ).trim();
   const actions = document.createElement('div');
   actions.className = 'product-card-actions';
   links.forEach((link) => {
@@ -114,17 +126,23 @@ const createProductCard = (
 
 export function mountProductMenu(): void {
   const root = document.documentElement;
-  const productMenu = document.querySelector<HTMLElement>('[data-products-menu]');
-  const productList = productMenu?.querySelector<HTMLElement>('[data-products-list]');
+  const productMenu = document.querySelector<HTMLElement>(
+    '[data-products-menu]'
+  );
+  const productList = productMenu?.querySelector<HTMLElement>(
+    '[data-products-list]'
+  );
   if (!productMenu || !productList) return;
 
   const locale = productList.dataset.locale || 'en';
   const categoryTitles: Record<string, string> = {
     basic: locale === 'zh' ? '标准版基础产品' : 'Core products',
-    extension: locale === 'zh' ? '标准版扩展产品' : 'Extended products',
-    ecology: locale === 'zh' ? '周边生态' : 'Ecosystem',
+    ai: locale === 'zh' ? 'AI 可视化方案' : 'AI Visualization Solutions',
+    ecology: locale === 'zh' ? '周边生态' : 'Ecosystem'
   };
-  const currentProduct = String(root.dataset.siteTitle || '').toLocaleLowerCase();
+  const currentProduct = String(
+    root.dataset.siteTitle || ''
+  ).toLocaleLowerCase();
   let productsPromise: Promise<void> | undefined;
   let productCloseTimer: number | undefined;
 
@@ -132,7 +150,9 @@ export function mountProductMenu(): void {
     const localizedItems = items.filter((item) => item?.lang === locale);
     const fragment = document.createDocumentFragment();
     Object.entries(categoryTitles).forEach(([category, label]) => {
-      const products = localizedItems.filter((item) => item?.category === category);
+      const products = localizedItems.filter(
+        (item) => item?.category === category
+      );
       if (!products.length) return;
       const section = document.createElement('section');
       section.className = `product-group product-group-${category}`;
@@ -159,9 +179,10 @@ export function mountProductMenu(): void {
     const state = document.createElement('div');
     state.className = 'product-error';
     const message = document.createElement('span');
-    message.textContent = locale === 'zh'
-      ? '产品数据暂时无法加载'
-      : 'Products are temporarily unavailable';
+    message.textContent =
+      locale === 'zh'
+        ? '产品数据暂时无法加载'
+        : 'Products are temporarily unavailable';
     const retry = document.createElement('button');
     retry.type = 'button';
     retry.textContent = locale === 'zh' ? '重新加载' : 'Try again';
@@ -179,21 +200,26 @@ export function mountProductMenu(): void {
       loading.className = 'product-loading';
       const spinner = document.createElement('span');
       spinner.setAttribute('aria-hidden', 'true');
-      loading.append(spinner, locale === 'zh' ? '正在加载产品…' : 'Loading products…');
+      loading.append(
+        spinner,
+        locale === 'zh' ? '正在加载产品…' : 'Loading products…'
+      );
       productList.replaceChildren(loading);
     }
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 8000);
     productsPromise = fetch(productsUrl, {
       headers: { Accept: 'application/json' },
-      signal: controller.signal,
+      signal: controller.signal
     })
       .then((response) => {
-        if (!response.ok) throw new Error(`Product request failed with ${response.status}.`);
+        if (!response.ok)
+          throw new Error(`Product request failed with ${response.status}.`);
         return response.json();
       })
       .then((value: unknown) => {
-        if (!Array.isArray(value)) throw new TypeError('Invalid AntV product response.');
+        if (!Array.isArray(value))
+          throw new TypeError('Invalid AntV product response.');
         renderProducts(value.filter(isRecord) as ProductItem[]);
       })
       .catch((error) => {
@@ -211,7 +237,10 @@ export function mountProductMenu(): void {
   };
   const closeProducts = () => {
     if (productCloseTimer !== undefined) window.clearTimeout(productCloseTimer);
-    productCloseTimer = window.setTimeout(() => productMenu.removeAttribute('open'), 140);
+    productCloseTimer = window.setTimeout(
+      () => productMenu.removeAttribute('open'),
+      140
+    );
   };
 
   if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
@@ -221,7 +250,10 @@ export function mountProductMenu(): void {
     productMenu.addEventListener('mouseleave', closeProducts);
   }
   productMenu.addEventListener('focusout', (event) => {
-    if (!(event.relatedTarget instanceof Node) || !productMenu.contains(event.relatedTarget)) {
+    if (
+      !(event.relatedTarget instanceof Node) ||
+      !productMenu.contains(event.relatedTarget)
+    ) {
       closeProducts();
     }
   });

@@ -1,0 +1,246 @@
+---
+import arrowUpRightIcon from '@tabler/icons/outline/arrow-up-right.svg?raw';
+import Carousel from './Carousel.astro';
+
+interface Props { locale: 'zh' | 'en'; }
+const { locale } = Astro.props;
+const isZh = locale === 'zh';
+---
+
+<antv-updates
+  class="antv-update-carousel"
+  data-locale={locale}
+  data-state="loading"
+  data-loading={isZh ? '正在加载最新动态…' : 'Loading updates…'}
+  data-empty={isZh ? '暂无最新动态' : 'No updates yet'}
+  data-error={isZh ? '动态加载失败，请重试' : 'Unable to load updates. Please retry.'}
+  aria-busy="true"
+>
+  <Carousel
+    locale={locale}
+    label={isZh ? 'AntV 最新动态' : 'Latest from AntV'}
+    pageLabel={isZh ? '查看第 {page} 组最新动态' : 'View updates group {page}'}
+    disabled
+  >
+    {[0, 1, 2].map(() => <div class="antv-update-card antv-update-skeleton" aria-hidden="true"><span></span><span></span></div>)}
+  </Carousel>
+  <div class="antv-update-status">
+    <span role="status" data-updates-status>{isZh ? '正在加载最新动态…' : 'Loading updates…'}</span>
+    <button type="button" data-updates-retry hidden>{isZh ? '重试' : 'Retry'}</button>
+  </div>
+  <template data-updates-skeleton>
+    {[0, 1, 2].map(() => <div class="antv-update-card antv-update-skeleton" aria-hidden="true"><span></span><span></span></div>)}
+  </template>
+  <template data-updates-card>
+    <a class="antv-update-card" target="_blank" rel="noreferrer">
+      <span class="antv-update-visual"><img alt="" width="36" height="36" loading="lazy" decoding="async" /></span>
+      <span class="antv-update-copy">
+        <strong></strong>
+        <span data-update-description></span>
+      </span>
+      <span class="antv-update-arrow" aria-hidden="true" set:html={arrowUpRightIcon}></span>
+    </a>
+  </template>
+  <noscript>{isZh ? '启用 JavaScript 以查看最新动态。' : 'Enable JavaScript to view updates.'}</noscript>
+</antv-updates>
+
+<script>
+  import { AntvUpdates } from '../features/updates/client';
+  if (!customElements.get('antv-updates')) customElements.define('antv-updates', AntvUpdates);
+</script>
+
+<style>
+  .antv-update-carousel {
+    display: flow-root;
+    --carousel-columns: 3;
+    --carousel-gap: 20px;
+    --carousel-track-padding: 40px;
+    --carousel-pagination-margin: 50px;
+  }
+
+  .antv-update-card {
+    color: inherit;
+    text-decoration: none;
+    transition: border-color .25s, box-shadow .25s, transform .25s;
+  }
+
+  .antv-update-card {
+    position: relative;
+    display: grid;
+    height: 150px;
+    grid-template-columns: 50px minmax(0, 1fr);
+    grid-template-rows: 52px 52px;
+    column-gap: 16px;
+    row-gap: 10px;
+    padding: 17px 18px;
+    border: 2px solid #fff;
+    border-radius: 20px;
+    background: linear-gradient(180deg, #fff 0%, #fafafa 100%);
+    box-shadow: 0 10px 30px #f0ebf6;
+    scroll-snap-align: start;
+  }
+
+  .antv-update-card:hover {
+    background:
+      linear-gradient(180deg, #b39aff 0%, rgb(255 255 255 / 0%) 100%),
+      linear-gradient(180deg, #fff 0%, #fafafa 100%);
+  }
+
+  .antv-update-card:active {
+    transform: translateY(-1px) scale(.99);
+  }
+
+  .antv-update-visual {
+    display: grid;
+    width: 50px;
+    height: 50px;
+    margin-top: 1px;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 14px;
+    background: rgb(255 255 255 / 88%);
+  }
+
+  .antv-update-visual img {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+  }
+
+  .antv-update-copy {
+    display: contents;
+  }
+
+  .antv-update-copy strong {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    padding-right: 33px;
+    color: #000;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 26px;
+  }
+
+  .antv-update-copy > span {
+    display: -webkit-box;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    overflow: hidden;
+    color: #666;
+    font-family: var(--antv-copy-font, var(--font-sans, sans-serif));
+    font-size: 16px;
+    font-weight: 300;
+    line-height: 26px;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .antv-update-arrow {
+    position: absolute;
+    top: 20px;
+    right: 17px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-3px);
+    transition: opacity .2s ease, transform .2s ease;
+  }
+
+  .antv-update-card:hover .antv-update-arrow,
+  .antv-update-card:focus-visible .antv-update-arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .antv-update-arrow :global(svg) {
+    width: 14px;
+    height: 14px;
+  }
+
+
+  .antv-update-carousel {
+    min-width: 0;
+    min-height: 210px;
+  }
+
+  .antv-update-carousel [hidden] { display: none; }
+
+  .antv-update-card,
+  .antv-update-visual { box-sizing: border-box; }
+
+  .antv-update-copy strong {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .antv-update-arrow {
+    display: inline-grid;
+    color: color-mix(in srgb, var(--brand) 72%, var(--muted));
+  }
+
+  .antv-update-arrow :global(svg) { stroke-width: 1.7; }
+
+  .antv-update-card:focus-visible,
+  [data-updates-retry]:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 3px;
+  }
+
+  .antv-update-status {
+    display: flex;
+    min-height: 210px;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    color: var(--muted, #666);
+    font-size: 14px;
+  }
+
+  [data-state="loading"] .antv-update-status,
+  [data-state="ready"] .antv-update-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  [data-updates-retry] {
+    border: 1px solid var(--border, #ddd);
+    border-radius: 6px;
+    padding: 4px 12px;
+    color: var(--brand);
+    background: var(--surface-raised, #fff);
+    cursor: pointer;
+    font: inherit;
+  }
+
+  .antv-update-skeleton > span {
+    grid-column: 1 / -1;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--brand-soft, #f0e8ff);
+    align-self: center;
+  }
+
+  .antv-update-skeleton > span:first-child { width: 65%; }
+
+  @media (max-width: 1000px) {
+    .antv-update-carousel { --carousel-columns: 2; }
+  }
+
+  @media (max-width: 767px) {
+    .antv-update-carousel { --carousel-columns: 1; --carousel-gap: 14px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .antv-update-card, .antv-update-arrow { transition: none; }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .antv-update-card { background: var(--surface-raised, #fff); }
+  }
+</style>

@@ -22,12 +22,25 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
   expect(Object.keys(packageJson.exports)).toEqual([
     ".",
     "./content",
+    "./components",
     "./qa-entry",
+    "./updates",
+    "./carousel",
   ]);
   expect(packageJson.exports["./qa-entry"]).toEqual({
     types: "./dist/theme/components/QaEntry.astro",
     import: "./dist/theme/components/QaEntry.astro",
   });
+  expect(packageJson.exports["./components"]).toEqual({
+    types: "./dist/theme/components/index.ts",
+    import: "./dist/theme/components/index.ts",
+  });
+  const components = await readFile(resolve(packageRoot, "dist/theme/components/index.ts"), "utf8");
+  expect(components.match(/export \{ default as \w+ \}/g)).toEqual([
+    "export { default as QaEntry }",
+    "export { default as Updates }",
+    "export { default as Carousel }",
+  ]);
   expect(packageJson.files).toEqual(["dist"]);
   expect(projectTsconfig.extends).toBe("astro/tsconfigs/strict");
   expect(projectTsconfig.compilerOptions.types[0]).toBe("node");
@@ -108,6 +121,14 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
   await access(resolve(packageRoot, "dist/theme/components/Demo.astro"));
   await access(resolve(packageRoot, "dist/theme/components/QaResult.astro"));
   await access(resolve(packageRoot, "dist/theme/components/QaEntry.astro"));
+  await access(resolve(packageRoot, "dist/theme/components/Updates.astro"));
+  await access(resolve(packageRoot, "dist/theme/components/index.ts"));
+  await access(resolve(packageRoot, "dist/theme/components/Carousel.astro"));
+  await access(resolve(packageRoot, "dist/theme/features/carousel-element.ts"));
+  await access(resolve(packageRoot, "dist/theme/features/updates/client.ts"));
+  await access(resolve(packageRoot, "dist/theme/features/updates/data.ts"));
+  await access(resolve(packageRoot, "dist/theme/features/carousel.ts"));
+  await access(resolve(packageRoot, "dist/theme/styles/carousel.css"));
   await access(resolve(packageRoot, "dist/theme/features/qa/result.ts"));
   await access(resolve(packageRoot, "dist/theme/components/SiteSearch.astro"));
   await access(resolve(packageRoot, "dist/theme/features/products/client.ts"));

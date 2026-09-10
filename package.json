@@ -22,9 +22,21 @@
       "types": "./dist/content.d.ts",
       "import": "./dist/content.js"
     },
+    "./components": {
+      "types": "./dist/theme/components/index.ts",
+      "import": "./dist/theme/components/index.ts"
+    },
     "./qa-entry": {
       "types": "./dist/theme/components/QaEntry.astro",
       "import": "./dist/theme/components/QaEntry.astro"
+    },
+    "./updates": {
+      "types": "./dist/theme/components/Updates.astro",
+      "import": "./dist/theme/components/Updates.astro"
+    },
+    "./carousel": {
+      "types": "./dist/theme/features/carousel.ts",
+      "import": "./dist/theme/features/carousel.ts"
     }
   },
   "files": [
