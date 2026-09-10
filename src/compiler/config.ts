@@ -8,13 +8,7 @@ import {
   sep,
 } from "node:path";
 import { z } from "zod";
-import {
-  qaPreviewProducts,
-  qaProducts,
-  qaServiceEndpoints,
-  type QaPreviewProduct,
-  type QaProduct,
-} from "../qa.js";
+import { qaServiceEndpoints } from "../qa.js";
 
 export type SiteLocale = "zh" | "en";
 
@@ -74,13 +68,9 @@ export interface AntVSiteConfig {
     pathBoosts?: Array<{ prefix: string; weight: number }>;
   };
   qa?: {
-    /** Enable the package-owned QA entry, route, and preview integration. */
+    /** Enable the package-owned QA entry and Result route. */
     enabled?: boolean;
     path?: string;
-    defaultStack?: QaProduct;
-    /** Omit for every built-in preview product; use [] to disable built-ins. */
-    previewProducts?: QaPreviewProduct[];
-    previewAdapters?: Record<string, string>;
   } | null;
   examples?: Array<{
     slug: string;
@@ -165,13 +155,10 @@ export interface ResolvedSiteConfig {
   };
   qa: {
     path: string;
-    defaultStack: QaProduct;
     service: {
       development: string;
       production: string;
     };
-    previewProducts: QaPreviewProduct[];
-    previewAdapters: Record<string, string>;
   } | null;
   examples: Array<{ slug: string; title: LocalizedText; icon?: string }>;
   home: {
@@ -212,27 +199,21 @@ const localizedTextSchema = z.strictObject({
   en: z.string(),
 });
 
-const httpUrlSchema = z.url().refine(
-  (value) => {
-    const protocol = new URL(value).protocol;
-    return protocol === "http:" || protocol === "https:";
-  },
-  "URL must use HTTP or HTTPS.",
-);
+const httpUrlSchema = z.url().refine((value) => {
+  const protocol = new URL(value).protocol;
+  return protocol === "http:" || protocol === "https:";
+}, "URL must use HTTP or HTTPS.");
 
-const siteOriginSchema = httpUrlSchema.refine(
-  (value) => {
-    const url = new URL(value);
-    return (
-      !url.username &&
-      !url.password &&
-      url.pathname === "/" &&
-      !url.search &&
-      !url.hash
-    );
-  },
-  "Site origin must not include credentials, a path, a query, or a hash.",
-);
+const siteOriginSchema = httpUrlSchema.refine((value) => {
+  const url = new URL(value);
+  return (
+    !url.username &&
+    !url.password &&
+    url.pathname === "/" &&
+    !url.search &&
+    !url.hash
+  );
+}, "Site origin must not include credentials, a path, a query, or a hash.");
 
 const supportedLinkProtocols = new Set(["http:", "https:", "mailto:", "tel:"]);
 const linkProtocolPattern = /^[a-z][a-z\d+.-]*:/i;
@@ -309,13 +290,6 @@ const routeSegmentSchema = z
     "Route segments must contain lowercase letters, numbers, slashes, or hyphens.",
   );
 
-const qaPreviewAdapterNameSchema = z
-  .string()
-  .regex(
-    /^[a-z][a-z0-9-]*$/,
-    "QA preview adapter names must contain lowercase letters, numbers, or hyphens.",
-  );
-
 const configSchema = z
   .strictObject({
     site: z.strictObject({
@@ -374,11 +348,6 @@ const configSchema = z
       .strictObject({
         enabled: z.boolean().default(false),
         path: routeSegmentSchema.default("result"),
-        defaultStack: z.enum(qaProducts).default("g2"),
-        previewProducts: z.array(z.enum(qaPreviewProducts)).optional(),
-        previewAdapters: z
-          .record(qaPreviewAdapterNameSchema, z.string().min(1))
-          .default({}),
       })
       .nullable()
       .default(null),
@@ -440,8 +409,7 @@ const configSchema = z
       }),
     output: z
       .never({
-        error:
-          "output was removed. Configure Astro's standard outDir instead.",
+        error: "output was removed. Configure Astro's standard outDir instead.",
       })
       .optional(),
   })
@@ -466,30 +434,6 @@ const configSchema = z
         path: ["examples"],
         message: "Example categories require content.examples to be enabled.",
       });
-    }
-    const qa = config.qa;
-    if (qa?.enabled) {
-      const configuredPreviewProducts = qa.previewProducts ?? [];
-      const duplicatePreviewProduct = configuredPreviewProducts.find(
-        (product, index) => configuredPreviewProducts.indexOf(product) !== index,
-      );
-      if (duplicatePreviewProduct) {
-        context.addIssue({
-          code: "custom",
-          path: ["qa", "previewProducts"],
-          message: `Duplicate QA preview product: ${duplicatePreviewProduct}`,
-        });
-      }
-      const conflictingPreviewAdapter = configuredPreviewProducts.find(
-        (product) => product in qa.previewAdapters,
-      );
-      if (conflictingPreviewAdapter) {
-        context.addIssue({
-          code: "custom",
-          path: ["qa", "previewAdapters", conflictingPreviewAdapter],
-          message: `QA preview adapter "${conflictingPreviewAdapter}" conflicts with an enabled built-in preview product.`,
-        });
-      }
     }
     const duplicateCategory = config.examples.find(
       (category, index) =>
@@ -609,19 +553,7 @@ export async function resolveConfig(
     qa: config.qa?.enabled
       ? {
           path: config.qa.path,
-          defaultStack: config.qa.defaultStack,
           service: qaServiceEndpoints,
-          previewProducts:
-            config.qa.previewProducts ??
-            qaPreviewProducts.filter(
-              (product) => !(product in (config.qa?.previewAdapters ?? {})),
-            ),
-          previewAdapters: Object.fromEntries(
-            Object.entries(config.qa.previewAdapters).map(([name, path]) => [
-              name,
-              resolveFromRoot(root, path),
-            ]),
-          ),
         }
       : null,
     slots: {

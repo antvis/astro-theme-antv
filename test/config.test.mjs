@@ -54,7 +54,6 @@ test("requires the explicit QA enabled switch", async () => {
       ...baseConfig(),
       qa: {
         enabled: false,
-        previewAdapters: { custom: "./qa/custom.ts" },
       },
     },
     root,
@@ -66,12 +65,14 @@ test("requires the explicit QA enabled switch", async () => {
 test("resolves a custom docs collection name", async () => {
   const root = await mkdtemp(resolve(tmpdir(), "antv-site-config-"));
   const config = await resolveConfig(
-    { ...baseConfig(), content: { docs: "./docs", collectionName: "documentation" } },
+    {
+      ...baseConfig(),
+      content: { docs: "./docs", collectionName: "documentation" },
+    },
     root,
   );
   expect(config.content.collectionName).toBe("documentation");
 });
-
 
 test("resolves flat theme tokens and rejects removed color-mode maps", async () => {
   const root = await mkdtemp(resolve(tmpdir(), "antv-site-config-"));
@@ -120,80 +121,17 @@ test("resolves search and QA configuration for the Astro integration", async () 
       },
       qa: {
         enabled: true,
-        defaultStack: "s2",
-        previewProducts: ["g2", "s2"],
-        previewAdapters: { custom: "./qa/custom.ts" },
       },
     },
     root,
   );
-  const physicalRoot = await realpath(root);
-
   expect(config.search.enabled).toBe(true);
   expect(config.search.aliases).toEqual({ graph: ["chart"] });
   expect(config.qa?.path).toBe("result");
-  expect(config.qa?.defaultStack).toBe("s2");
-  expect(config.qa?.previewProducts).toEqual(["g2", "s2"]);
   expect(config.qa?.service).toEqual({
     development: "http://localhost:3000",
     production: "https://sive.antv.antgroup.com",
   });
-  expect(config.qa?.previewAdapters.custom).toBe(
-    resolve(physicalRoot, "qa/custom.ts"),
-  );
-});
-
-test("defaults omitted QA preview products to every available built-in", async () => {
-  const root = await mkdtemp(resolve(tmpdir(), "antv-site-config-"));
-  const defaults = await resolveConfig(
-    { ...baseConfig(), qa: { enabled: true } },
-    root,
-  );
-  const disabled = await resolveConfig(
-    { ...baseConfig(), qa: { enabled: true, previewProducts: [] } },
-    root,
-  );
-  const customOverride = await resolveConfig(
-    {
-      ...baseConfig(),
-      qa: { enabled: true, previewAdapters: { g2: "./qa/g2.ts" } },
-    },
-    root,
-  );
-
-  expect(defaults.qa?.previewProducts).toEqual(["g2", "s2", "g6", "x6"]);
-  expect(disabled.qa?.previewProducts).toEqual([]);
-  expect(customOverride.qa?.previewProducts).toEqual(["s2", "g6", "x6"]);
-  expect(customOverride.qa?.previewAdapters.g2).toBe(
-    resolve(await realpath(root), "qa/g2.ts"),
-  );
-});
-
-test("rejects duplicate and conflicting built-in QA preview adapters", async () => {
-  const root = await mkdtemp(resolve(tmpdir(), "antv-site-config-"));
-
-  await expect(
-    resolveConfig(
-      {
-        ...baseConfig(),
-        qa: { enabled: true, previewProducts: ["g2", "g2"] },
-      },
-      root,
-    ),
-  ).rejects.toThrow(/Duplicate QA preview product: g2/);
-  await expect(
-    resolveConfig(
-      {
-        ...baseConfig(),
-        qa: {
-          enabled: true,
-          previewProducts: ["g2"],
-          previewAdapters: { g2: "./qa/g2.ts" },
-        },
-      },
-      root,
-    ),
-  ).rejects.toThrow(/conflicts with an enabled built-in preview product/);
 });
 
 test("resolves controlled home slot components from the consumer root", async () => {
@@ -329,7 +267,9 @@ test("rejects invalid origins and unsafe link schemes", async () => {
       },
       root,
     ),
-  ).rejects.toThrow(/Links must be relative or use HTTP, HTTPS, mailto, or tel/);
+  ).rejects.toThrow(
+    /Links must be relative or use HTTP, HTTPS, mailto, or tel/,
+  );
   await expect(
     resolveConfig(
       {

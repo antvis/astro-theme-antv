@@ -20,11 +20,6 @@ export const siteConfig = {
   },
   qa: {
     enabled: true,
-    defaultStack: "s2",
-    previewProducts: [],
-    previewAdapters: {
-      fixture: "./qa-preview-adapter.js",
-    },
   },
   examples: [{ slug: "basic", title: { zh: "基础", en: "Basic" } }],
   home: {

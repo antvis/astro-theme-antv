@@ -47,17 +47,11 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
   expect(packageJson.dependencies["@antv/g6"]).toBeUndefined();
   expect(packageJson.dependencies["@antv/s2"]).toBeUndefined();
 
-  for (const dependency of [
-    "esbuild",
-    "codemirror",
-    "sucrase",
-  ]) {
+  for (const dependency of ["esbuild", "codemirror", "sucrase"]) {
     expect(packageJson.dependencies[dependency]).toBeUndefined();
   }
   expect(packageJson.dependencies.pagefind).toBe("1.5.2");
   expect(packageJson.dependencies["@astrojs/mdx"]).toBe("7.0.8");
-  expect(packageJson.dependencies.dompurify).toBe("3.4.14");
-  expect(packageJson.dependencies["highlight.js"]).toBe("11.12.0");
 
   const publicApi = await import("../dist/index.js");
   const { defineConfig } = publicApi;
@@ -77,8 +71,6 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
   const publicConfig = defineConfig(siteConfig);
   expect(defineConfig).toBeTypeOf("function");
   expect(publicApi.default).toBe(defineConfig);
-  expect(publicApi.qaProducts).toEqual(["g2", "s2", "g6", "f2", "x6", "l7"]);
-  expect(publicApi.qaPreviewProducts).toEqual(["g2", "s2", "g6"]);
   expect(publicApi.antvSite).toBeTypeOf("function");
   expect(publicApi.antvSite(siteConfig).name).toBe("@antv/site");
   expect(publicConfig.integrations?.length).toBe(3);
@@ -108,13 +100,10 @@ test("publishes a site configuration facade without a parallel CLI", async () =>
   await access(resolve(packageRoot, "dist/integration.js"));
   await access(resolve(packageRoot, "dist/content.js"));
   await access(resolve(packageRoot, "dist/qa.js"));
-  await access(resolve(packageRoot, "dist/qa-browser.js"));
   await access(resolve(packageRoot, "LICENSE"));
-  await access(resolve(packageRoot, "dist/qa-adapters/index.js"));
   await access(resolve(packageRoot, "dist/search.js"));
   await access(resolve(packageRoot, "dist/slots.js"));
   await access(resolve(packageRoot, "dist/vite/demo-plugin.js"));
-  await access(resolve(packageRoot, "dist/vite/qa-plugin.js"));
   await access(resolve(packageRoot, "dist/vite/slots-plugin.js"));
   await access(resolve(packageRoot, "dist/theme/components/Demo.astro"));
   await access(resolve(packageRoot, "dist/theme/components/QaResult.astro"));

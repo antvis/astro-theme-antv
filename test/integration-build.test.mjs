@@ -8,20 +8,6 @@ const root = resolve("demos/basic-site");
 const output = resolve(root, "dist");
 const baseOutput = resolve(root, "dist-base");
 
-const stylesheetHrefs = (html) =>
-  [...html.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="([^"]+)"/g)].map(
-    (match) => match[1],
-  );
-
-const readStylesheets = async (directory, html) =>
-  (
-    await Promise.all(
-      stylesheetHrefs(html).map((href) =>
-        readFile(resolve(directory, href.replace(/^\//, "")), "utf8"),
-      ),
-    )
-  ).join("\n");
-
 test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () => {
   await build({ root });
 
@@ -49,10 +35,7 @@ test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () 
     resolve(output, "zh/examples/basic/simple/hello/index.html"),
     "utf8",
   );
-  assert.match(
-    page,
-    /<iframe[^>]+src="\/demos\/basic\/simple\/hello\/"/,
-  );
+  assert.match(page, /<iframe[^>]+src="\/demos\/basic\/simple\/hello\/"/);
   assert.doesNotMatch(page, /sandbox=/);
   assert.doesNotMatch(page, /playground/);
   assert.match(page, /message\.js/);
@@ -79,7 +62,7 @@ test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () 
   assert.match(home, /data-products-menu/);
   assert.match(home, /data-products-list/);
   assert.match(home, /所有产品/);
-  assert.match(home, /data-default-stack="s2"/);
+  assert.doesNotMatch(home, /data-qa-stack/);
   assert.match(home, /data-result-url="\/zh\/result\/"/);
   assert.match(home, /href="\/zh\/examples\/"/);
   assert.match(home, /href="tel:\+861012345678"/);
@@ -104,7 +87,10 @@ test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () 
     llms,
     /\[MDX Guide\]\(https:\/\/fixture\.example\.com\/markdown\/en\/guide\/advanced\.md\): Verifies Astro MDX content collection rendering\./,
   );
-  assert.match(llms, /\[Hello\]\(https:\/\/fixture\.example\.com\/en\/examples\/basic\/simple\/hello\/\)/);
+  assert.match(
+    llms,
+    /\[Hello\]\(https:\/\/fixture\.example\.com\/en\/examples\/basic\/simple\/hello\/\)/,
+  );
   assert.doesNotMatch(llms, /Private notes/);
 
   const llmsFull = await readFile(resolve(output, "llms-full.txt"), "utf8");
@@ -163,10 +149,7 @@ test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () 
     resolve(output, "zh/guide/advanced/index.html"),
     "utf8",
   );
-  assert.match(
-    mdxDocument,
-    /<p data-mdx-fixture(?:="true")?>计算结果：2<\/p>/,
-  );
+  assert.match(mdxDocument, /<p data-mdx-fixture(?:="true")?>计算结果：2<\/p>/);
   assert.match(mdxDocument, /href="#mdx-内容"/);
   assert.match(
     mdxDocument,
@@ -187,15 +170,18 @@ test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () 
     resolve(output, "zh/result/index.html"),
     "utf8",
   );
-  assert.match(result, /data-antv-result/);
-  assert.match(result, /data-new-conversation-trigger/);
-  assert.match(result, /data-new-conversation/);
-  assert.match(result, /data-antv-qa-entry/);
-  assert.match(result, /data-result-url="\/zh\/result\/"/);
-  assert.match(result, /data-qa-service-base="https:\/\/sive\.antv\.antgroup\.com"/);
+  assert.match(
+    result,
+    /data-sive-qa-sdk="https:\/\/sive\.antv\.antgroup\.com\/sdk\/qa\/sive-qa\.js"/,
+  );
+  assert.match(result, /id="sive-qa-root"/);
+  assert.match(result, /data-qa-sdk-error/);
+  assert.doesNotMatch(result, /data-antv-result/);
+  assert.doesNotMatch(result, /data-new-conversation/);
+  assert.doesNotMatch(result, /data-antv-qa-entry/);
   assert.match(result, /href="\/zh\/"/);
-  assert.match(await readStylesheets(output, result), /antv-result-page/);
-  assert.doesNotMatch(await readStylesheets(output, document), /antv-result-page/);
+  assert.match(result, /class="antv-result-page"/);
+  assert.doesNotMatch(document, /antv-result-page/);
 
   const runner = await readFile(
     resolve(output, "demos/basic/simple/hello/index.html"),
@@ -215,8 +201,8 @@ test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () 
   ).join("\n");
   assert.doesNotMatch(styles, /data-theme/);
   assert.doesNotMatch(styles, /prefers-color-scheme/);
-  const demoAssets = assets.filter((name) =>
-    name.includes("antv-site-demo-entry") && name.endsWith(".js"),
+  const demoAssets = assets.filter(
+    (name) => name.includes("antv-site-demo-entry") && name.endsWith(".js"),
   );
   assert.equal(
     demoAssets.length,
@@ -225,7 +211,9 @@ test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () 
   );
   const demoCode = (
     await Promise.all(
-      demoAssets.map((name) => readFile(resolve(output, "_assets", name), "utf8")),
+      demoAssets.map((name) =>
+        readFile(resolve(output, "_assets", name), "utf8"),
+      ),
     )
   ).join("\n");
   assert.match(demoCode, /hello from esm/);
@@ -233,12 +221,7 @@ test("builds consumer pages, Astro content, and TypeScript/TSX demos", async () 
   assert.doesNotMatch(demoCode, /: HTMLElement/);
   assert.doesNotMatch(demoCode, /querySelector<HTMLElement>/);
   assert.doesNotMatch(demoCode, /<section data-demo-kind=/);
-  const qaAsset = assets.find((name) => name.includes("QaResult"));
-  assert.ok(qaAsset, `Expected a QA Result asset; got ${assets.join(", ")}`);
-  assert.match(
-    await readFile(resolve(output, "_assets", qaAsset), "utf8"),
-    /fixture QA preview/,
-  );
+  assert.match(result, /SiveQA/);
 });
 
 test("prefixes generated URLs for an Astro base deployment", async () => {
@@ -265,7 +248,10 @@ test("prefixes generated URLs for an Astro base deployment", async () => {
     page,
     /<iframe[^>]+src="\/platform\/demos\/basic\/simple\/hello\/"/,
   );
-  assert.match(page, /data-search-module-url="\/platform\/pagefind\/pagefind\.js"/);
+  assert.match(
+    page,
+    /data-search-module-url="\/platform\/pagefind\/pagefind\.js"/,
+  );
   assert.match(page, /data-pagefind-base-path="\/platform\/pagefind\/"/);
   assert.match(page, /data-site-base-path="\/platform\/"/);
   assert.match(
@@ -312,9 +298,13 @@ test("prefixes generated URLs for an Astro base deployment", async () => {
     resolve(baseOutput, "zh/result/index.html"),
     "utf8",
   );
-  assert.match(result, /data-new-conversation-trigger/);
-  assert.match(result, /data-new-conversation/);
-  assert.match(result, /data-result-url="\/platform\/zh\/result\/"/);
+  assert.match(
+    result,
+    /data-sive-qa-sdk="https:\/\/sive\.antv\.antgroup\.com\/sdk\/qa\/sive-qa\.js"/,
+  );
+  assert.match(result, /id="sive-qa-root"/);
+  assert.doesNotMatch(result, /data-new-conversation/);
+  assert.doesNotMatch(result, /data-result-url/);
 
   const rootRedirect = await readFile(
     resolve(baseOutput, "index.html"),
@@ -323,10 +313,7 @@ test("prefixes generated URLs for an Astro base deployment", async () => {
   assert.match(rootRedirect, /url=\/platform\/zh\//);
   assert.match(rootRedirect, /href="\/platform\/zh\/"/);
 
-  const sitemap = await readFile(
-    resolve(baseOutput, "sitemap-0.xml"),
-    "utf8",
-  );
+  const sitemap = await readFile(resolve(baseOutput, "sitemap-0.xml"), "utf8");
   assert.match(
     sitemap,
     /https:\/\/fixture\.example\.com\/platform\/zh\/guide\/advanced\//,

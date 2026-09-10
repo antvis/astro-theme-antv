@@ -1,0 +1,190 @@
+---
+import githubIcon from '../assets/icons/github.svg?raw';
+import wechatIcon from '../assets/icons/wechat.svg?raw';
+
+interface Props {
+  locale: 'zh' | 'en';
+  repository: string;
+}
+
+const { locale, repository } = Astro.props;
+const isZh = locale === 'zh';
+---
+
+<div class="antv-header-actions">
+  <details class="antv-community" data-antv-community>
+    <summary>
+      <span class="antv-header-icon" aria-hidden="true" set:html={wechatIcon}></span>
+      <span>{isZh ? '社区' : 'Community'}</span>
+    </summary>
+    <div class="antv-community-popover">
+      <div class="antv-community-card">
+        <img
+          src="https://gw.alipayobjects.com/zos/antfincdn/ZKlx96dsfs/qrcode_for_gh_f52d8b6aa591_258.jpg"
+          width="180"
+          height="180"
+          alt={isZh ? 'AntV 微信公众号二维码' : 'AntV WeChat official account QR code'}
+          decoding="async"
+        />
+        <p>{isZh ? '微信扫一扫关注' : 'Scan with WeChat to follow'}</p>
+      </div>
+    </div>
+  </details>
+  <a class="antv-github" href={repository} target="_blank" rel="noreferrer">
+    <span class="antv-header-icon" aria-hidden="true" set:html={githubIcon}></span>
+    <span>GitHub</span>
+  </a>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLDetailsElement>('[data-antv-community]').forEach((community) => {
+    community.addEventListener('pointerenter', (event) => {
+      if (event.pointerType === 'mouse' && window.matchMedia('(hover: hover)').matches) community.open = true;
+    });
+    community.addEventListener('pointerleave', () => {
+      if (!community.matches(':focus-within')) community.open = false;
+    });
+    community.addEventListener('focusout', (event) => {
+      if (event.relatedTarget instanceof Node && community.contains(event.relatedTarget)) return;
+      community.open = false;
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') community.open = false;
+    });
+    document.addEventListener('pointerdown', (event) => {
+      if (event.target instanceof Node && !community.contains(event.target)) community.open = false;
+    });
+  });
+</script>
+
+<style>
+  .antv-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    margin-left: 16px;
+    color: var(--text-strong);
+    font-size: 16px;
+    font-weight: 400;
+  }
+
+  .antv-community {
+    position: relative;
+  }
+
+  .antv-community > summary,
+  .antv-github {
+    display: inline-flex;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 999px;
+    color: inherit;
+    cursor: pointer;
+    list-style: none;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .antv-community > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .antv-community > summary:hover {
+    color: var(--brand);
+  }
+
+  .antv-header-icon {
+    display: inline-flex;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+  }
+
+  .antv-header-icon :global(svg) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .antv-github {
+    padding: 0 14px;
+    background: linear-gradient(105deg, #5552f5, #8051df);
+    box-shadow: inset 0 1px 2px rgb(255 255 255 / 30%), 0 5px 12px rgb(105 76 230 / 22%);
+    color: #fff;
+    transition: transform .2s;
+  }
+
+  .antv-github:hover {
+    color: #fff;
+    transform: translateY(-1px);
+  }
+
+  .antv-github:active {
+    transform: scale(.98);
+  }
+
+  .antv-community > summary:focus-visible,
+  .antv-github:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 4px;
+  }
+
+  .antv-community-popover {
+    position: absolute;
+    top: 100%;
+    right: 50%;
+    width: 216px;
+    padding-top: 12px;
+    transform: translateX(50%);
+  }
+
+  .antv-community-card {
+    padding: 17px;
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    background: var(--surface-raised);
+    box-shadow: 0 12px 36px rgb(71 51 110 / 14%);
+    text-align: center;
+  }
+
+  .antv-community-card img {
+    display: block;
+    width: 180px;
+    height: 180px;
+    background: #fff;
+  }
+
+  .antv-community-card p {
+    margin: 12px 0 0;
+    color: var(--text-strong);
+    font-size: 13px;
+    line-height: 20px;
+  }
+
+  @media (max-width: 900px) {
+    .antv-header-actions {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 12px;
+      margin: 0;
+      padding: 0 24px;
+    }
+
+    .antv-community > summary {
+      min-height: 58px;
+    }
+
+    .antv-community-popover {
+      position: static;
+      padding: 0 0 12px;
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .antv-github {
+      transition: none;
+    }
+  }
+</style>

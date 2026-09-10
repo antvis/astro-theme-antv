@@ -65,8 +65,6 @@ export default defineConfig({
   },
   qa: {
     enabled: true,
-    defaultStack: "g2",
-    previewProducts: ["g2"],
   },
   examples: [
     {
@@ -137,22 +135,7 @@ export default defineConfig({
 
 Use this standard Astro composition whenever the site needs Astro-level options such as `base`, redirects, or additional integrations. Server adapters are intentionally unsupported because generated content, Demo runners, QA routes, and Pagefind indexing are owned as a static-site pipeline. `antvSite()` returns only the package-owned core integration; advanced consumers explicitly install and enable `@astrojs/mdx` and `@astrojs/sitemap` when needed. The package `defineConfig` facade enables both by default. Internal theme links, canonical URLs, Demo iframes, QA navigation, static assets, and search assets all honor Astro's `base` value.
 
-Set `qa.enabled` to `true` to enable the package-owned QA entry, Result route, Vite integration, and optional preview adapters. With the switch omitted or `false`, none of these QA capabilities are added to the downstream site. Each locale receives a Result route at /{locale}/result/ by default. `qa.defaultStack` selects the initial G2, S2, G6, F2, X6, or L7 stack. Change `qa.path` to use another route. The platform owns the Sive external QA facade. The QA entry owns stack selection, authentication, and session creation; Sive owns private sessions, messages, context, generation, and history. Site requests send the existing Sive session cookie with credentials; after a 401 or 403 response, the Sive authentication popup refreshes that session and signals Site to retry without exposing an access token to browser storage. The Result page reads history from Sive and owns authenticated conversation reads, streaming, follow-up questions, Markdown rendering, code highlighting, and optional visualization previews.
-
-G2, G6, S2, and X6 have package-owned preview adapters. Omitting `previewProducts` enables all four built-ins; set it to an explicit subset to reduce the resolved visualization runtimes, or to `[]` to disable every built-in preview. A custom adapter named `g2`, `g6`, `s2`, or `x6` replaces that built-in when `previewProducts` is omitted. The visualization packages remain consumer dependencies rather than `@antv/site` dependencies, so consumers must install every enabled product. Preview payloads are JSON-only; the X6 adapter uses `Graph.fromJSON` and never evaluates generated JavaScript. The built-ins currently target G2 5.x, G6 5.x, S2 2.x, and X6 3.x:
-
-```js
-qa: {
-  enabled: true,
-  defaultStack: "g2",
-  // Omit for G2 + S2 + G6 + X6, or choose a smaller installed subset.
-  previewProducts: ["g2"],
-  // Non-standard preview protocols can still provide custom adapters.
-  previewAdapters: {
-    custom: "./src/qa/custom-preview.ts",
-  },
-}
-```
+Set `qa.enabled` to `true` to enable the package-owned QA entry and Result route. With the switch omitted or `false`, neither is added to the downstream site. Each locale receives a Result route at /{locale}/result/ by default; change `qa.path` to use another route. The homepage stores the submitted text in `sessionStorage` and navigates without putting the question in the URL. The Result page only loads and mounts Sive's internal QA SDK. Sive reuses its existing session-cookie authentication, native QA session APIs, streaming conversation UI, follow-up composer, image upload, and visualization rendering; Site does not maintain an external QA protocol or its own Result runtime.
 
 ## Home slots
 
@@ -237,8 +220,7 @@ The public configuration covers:
 - document and example roots, and the docs Content Collection name;
 - navigation, versions, edit links, and static Markdown component transforms;
 - built-in Pagefind search, aliases, and path ranking boosts;
-- optional QA Result routes, built-in preview products, and custom preview adapters;
-- package-owned QA service endpoints, entry behavior, and configurable default stack;
+- optional QA Result routes and entry behavior backed by Sive's SDK;
 - home content, feature cards, and controlled Astro component slots;
 - CSS token overrides for consumer-defined branding and theme customization;
 - footer content;

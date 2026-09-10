@@ -20,13 +20,5 @@ export type {
   LocalizedText,
   SiteLocale,
 } from "./compiler/config.js";
-export type {
-  QaProduct,
-  QaPreviewProduct,
-  QaPreviewAdapter,
-  QaPreviewContainer,
-  QaPreviewInstance,
-} from "./qa.js";
-export { qaPreviewProducts, qaProducts } from "./qa.js";
 export type { HomeSlotProps } from "./slots.js";
 export default defineConfig;

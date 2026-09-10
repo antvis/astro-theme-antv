@@ -4,6 +4,7 @@ import type { LocalizedLink, LocalizedText } from '../lib/compiler';
 import githubIcon from '@tabler/icons/outline/brand-github.svg?raw';
 import languageIcon from '@tabler/icons/outline/language.svg?raw';
 import SiteSearch from '../components/SiteSearch.astro';
+import AntVHeaderActions from '../components/AntVHeaderActions.astro';
 import { withBase } from '../lib/paths';
 import { getGeneratedRoutes } from '../lib/routes';
 import { config } from '../lib/site';
@@ -244,17 +245,21 @@ const structuredData = {
               <span class="nav-icon-label">{localeSwitch.locale === 'en' ? 'English' : '中文'}</span>
             </a>
           )}
-          <a
-            class="nav-icon-action"
-            href={config.site.repository}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={locale === 'zh' ? '在 GitHub 查看' : 'View on GitHub'}
-            title={locale === 'zh' ? '在 GitHub 查看' : 'View on GitHub'}
-          >
-            <span class="nav-action-icon" aria-hidden="true" set:html={githubIcon}></span>
-            <span class="nav-icon-label">GitHub</span>
-          </a>
+          {isAntVHome ? (
+            <AntVHeaderActions locale={locale} repository={config.site.repository} />
+          ) : (
+            <a
+              class="nav-icon-action"
+              href={config.site.repository}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={locale === 'zh' ? '在 GitHub 查看' : 'View on GitHub'}
+              title={locale === 'zh' ? '在 GitHub 查看' : 'View on GitHub'}
+            >
+              <span class="nav-action-icon" aria-hidden="true" set:html={githubIcon}></span>
+              <span class="nav-icon-label">GitHub</span>
+            </a>
+          )}
         </nav>
       </div>
     </header>

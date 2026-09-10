@@ -52,14 +52,10 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration {
         });
         themeRestartRoots = theme.restartRoots;
 
-        for (const path of [...theme.watchFiles, ...qa.watchFiles]) {
+        for (const path of theme.watchFiles) {
           addWatchFile(path);
         }
-        for (const route of [
-          ...qa.routes,
-          ...theme.routes,
-          ...search.routes,
-        ]) {
+        for (const route of [...qa.routes, ...theme.routes, ...search.routes]) {
           injectRoute(route);
         }
 
@@ -72,13 +68,13 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration {
             define: {
               ...search.define,
               "import.meta.env.ANTV_SITE_DEVELOPMENT": JSON.stringify(
-                command === "dev",
+                command === "dev" ? "true" : "false",
               ),
             },
-            plugins: [...theme.plugins, ...qa.plugins],
+            plugins: theme.plugins,
             server: {
               fs: {
-                allow: [config.root, ...theme.fsAllow, ...qa.fsAllow],
+                allow: [config.root, ...theme.fsAllow],
               },
             },
           },

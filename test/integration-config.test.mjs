@@ -151,21 +151,22 @@ test("preserves Astro publicDir and injects QA as a dedicated route", async () =
   expect(update.vite.plugins.map((plugin) => plugin.name)).toEqual([
     "antv-site-slots",
     "antv-site-demos",
-    "antv-site-qa",
   ]);
-  expect(update.vite.define["import.meta.env.ANTV_SITE_DEVELOPMENT_SEARCH"]).toBe(
+  expect(
+    update.vite.define["import.meta.env.ANTV_SITE_DEVELOPMENT_SEARCH"],
+  ).toBe('"false"');
+  expect(update.vite.define["import.meta.env.ANTV_SITE_DEVELOPMENT"]).toBe(
     '"false"',
   );
-  expect(update.vite.define["import.meta.env.ANTV_SITE_DEVELOPMENT"]).toBe(
-    "false",
-  );
   expect(update.vite.server.fs.allow).toContain(resolve("dist/theme"));
-  expect(update.vite.server.fs.allow).toContain(resolve("dist/qa-adapters"));
 });
 
 test("does not add QA integration capabilities when the switch is disabled", async () => {
   const root = await mkdtemp(resolve(tmpdir(), "antv-site-integration-"));
-  await Promise.all([mkdir(resolve(root, "docs")), mkdir(resolve(root, "examples"))]);
+  await Promise.all([
+    mkdir(resolve(root, "docs")),
+    mkdir(resolve(root, "examples")),
+  ]);
   const injectedRoutes = [];
   let update;
   const integration = antvSite({ ...baseConfig(), qa: { enabled: false } });
@@ -192,7 +193,7 @@ test("does not add QA integration capabilities when the switch is disabled", asy
     },
   });
 
-  expect(injectedRoutes.some((route) => route.pattern === "/[locale]/result")).toBe(false);
-  expect(update.vite.plugins.some((plugin) => plugin.name === "antv-site-qa")).toBe(false);
-  expect(update.vite.server.fs.allow.includes(resolve("dist/qa-adapters"))).toBe(false);
+  expect(
+    injectedRoutes.some((route) => route.pattern === "/[locale]/result"),
+  ).toBe(false);
 });
