@@ -1,0 +1,7 @@
+---
+const { locale, slotName } = Astro.props;
+---
+
+<aside data-fixture-home-slot={slotName}>
+  {locale === 'zh' ? '自定义首页插槽' : 'Custom home slot'}
+</aside>

@@ -1,0 +1,178 @@
+---
+import { getAntvDocIdentity, localize } from '../../lib/compiler';
+import { getDocsCollection } from '../../lib/docs';
+import arrowRightIcon from '@tabler/icons/outline/arrow-right.svg?raw';
+import bracesIcon from '@tabler/icons/outline/braces.svg?raw';
+import codeIcon from '@tabler/icons/outline/code.svg?raw';
+import componentsIcon from '@tabler/icons/outline/components.svg?raw';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import QaEntry from '../../components/QaEntry.astro';
+import { withBase } from '../../lib/paths';
+import { config, registry } from '../../lib/site';
+import { homeSlots } from 'virtual:antv-site-home-slots';
+import '../../styles/home-font.css';
+
+export function getStaticPaths() {
+  return config.site.locales.map((locale) => ({ params: { locale } }));
+}
+
+const locale = String(Astro.params['locale']) as 'zh' | 'en';
+const documents = (await getDocsCollection())
+  .filter((entry) => config.site.locales.includes(getAntvDocIdentity(entry.id).locale));
+const home = config.home;
+const route = `/${locale}/`;
+const localHref = (href: string) => {
+  if (
+    href.startsWith('//') ||
+    /^[a-z][a-z\d+.-]*:/i.test(href) ||
+    href.startsWith('#')
+  ) return href;
+  if (href.startsWith(`/${locale}/`) || href === `/${locale}/`) return withBase(href);
+  return withBase(
+    `/${locale}${href.startsWith('/') ? href : `/${href}`}`.replace(/\/$/, '') + '/',
+  );
+};
+const homeStats = [
+  {
+    value: documents.length,
+    label: locale === 'zh' ? '篇本地化文档' : 'localized documents',
+  },
+  {
+    value: registry.counts.demos,
+    label: locale === 'zh' ? '个静态示例' : 'static examples',
+  },
+  {
+    value: registry.groups.length,
+    label: locale === 'zh' ? '个内容分组' : 'content groups',
+  },
+].filter((item) => item.value > 0);
+const featureIcons = [bracesIcon, componentsIcon, codeIcon];
+const imageAlt = localize(
+  home.imageAlt,
+  locale,
+  locale === 'zh'
+    ? `${config.site.title} 产品展示`
+    : `${config.site.title} product showcase`,
+);
+---
+
+<BaseLayout locale={locale} title={config.site.title} description={localize(config.site.description, locale)} route={route} pageType="home">
+  {homeSlots.beforeHero.map((SlotComponent) => (
+    <SlotComponent locale={locale} config={config} registry={registry} slotName="beforeHero" />
+  ))}
+
+  {homeSlots.hero.length > 0 ? (
+    homeSlots.hero.map((SlotComponent) => (
+      <SlotComponent locale={locale} config={config} registry={registry} slotName="hero" />
+    ))
+  ) : (
+    <section class="home-hero" aria-labelledby="home-title">
+      <div class="hero-copy">
+        <p class="eyebrow">{localize(home.eyebrow, locale, `AntV ${config.site.title}`)}</p>
+        <h1 id="home-title">
+          <span class="hero-title-line"><strong>{config.site.title}</strong></span>
+          <span class="hero-title-promise">{localize(home.title, locale)}</span>
+        </h1>
+        <p class="hero-description">{localize(home.description, locale)}</p>
+        {config.qa && <QaEntry locale={locale} />}
+        {home.actions.length > 0 && (
+          <div class="hero-actions">
+            {home.actions.map((action, index) => (
+              <a class:list={['button', index === 0 && 'button-primary']} href={localHref(action.href)}>
+                <span>{localize(action.text, locale)}</span>
+                {index === 0 && <span class="button-icon" aria-hidden="true" set:html={arrowRightIcon}></span>}
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div class="hero-showcase">
+        <div class="hero-showcase-frame">
+          {home.image ? (
+            <img class="hero-product-image" src={withBase(home.image)} alt={imageAlt} decoding="async" />
+          ) : (
+            <div class="hero-default-visual" aria-hidden="true">
+              <span class="hero-product-mark">{config.site.title}</span>
+              <svg viewBox="0 0 720 500">
+                <path d="M72 386 C154 316 208 348 278 250 S420 120 492 202 S586 294 650 104"></path>
+                <path d="M92 410 C180 374 222 294 318 320 S474 376 628 170"></path>
+                <g>
+                  <circle cx="72" cy="386" r="10"></circle>
+                  <circle cx="278" cy="250" r="12"></circle>
+                  <circle cx="492" cy="202" r="12"></circle>
+                  <circle cx="650" cy="104" r="10"></circle>
+                  <circle cx="92" cy="410" r="8"></circle>
+                  <circle cx="318" cy="320" r="11"></circle>
+                  <circle cx="628" cy="170" r="9"></circle>
+                </g>
+              </svg>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {homeSlots.afterHero.map((SlotComponent) => (
+    <SlotComponent locale={locale} config={config} registry={registry} slotName="afterHero" />
+  ))}
+
+  {home.showStats && homeStats.length > 0 && (
+    <section
+      class="home-proof"
+      aria-label={locale === 'zh' ? '站点内容统计' : 'Site content summary'}
+      style={`--home-stat-count: ${homeStats.length}`}
+    >
+      {homeStats.map((stat) => (
+        <div><strong>{stat.value}</strong><span>{stat.label}</span></div>
+      ))}
+    </section>
+  )}
+
+  {homeSlots.beforeFeatures.map((SlotComponent) => (
+    <SlotComponent locale={locale} config={config} registry={registry} slotName="beforeFeatures" />
+  ))}
+
+  {homeSlots.features.length > 0 ? (
+    homeSlots.features.map((SlotComponent) => (
+      <SlotComponent locale={locale} config={config} registry={registry} slotName="features" />
+    ))
+  ) : home.features.length > 0 && (
+    <section class="feature-section" aria-labelledby="feature-title">
+      <header class="feature-section-header">
+        <h2 id="feature-title">
+          {localize(
+            home.featuresTitle,
+            locale,
+            locale === 'zh' ? '文档与示例，保持简单' : 'Documentation and examples, kept simple',
+          )}
+        </h2>
+        <p>{localize(home.featuresDescription, locale, '')}</p>
+      </header>
+      <div class="feature-list">
+        {home.features.map((feature, index) => (
+          <article class={`feature-card feature-card-${index + 1}`}>
+            <span class="feature-symbol" aria-hidden="true">
+              {feature.icon ? (
+                <img src={withBase(feature.icon)} alt="" loading="lazy" decoding="async" />
+              ) : (
+                <span set:html={featureIcons[index % featureIcons.length]}></span>
+              )}
+            </span>
+            <h3>{localize(feature.title, locale)}</h3>
+            <p>{localize(feature.description, locale)}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  )}
+
+  {homeSlots.afterFeatures.map((SlotComponent) => (
+    <SlotComponent locale={locale} config={config} registry={registry} slotName="afterFeatures" />
+  ))}
+
+  {homeSlots.beforeFooter.map((SlotComponent) => (
+    <SlotComponent locale={locale} config={config} registry={registry} slotName="beforeFooter" />
+  ))}
+</BaseLayout>

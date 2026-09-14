@@ -1,0 +1,77 @@
+---
+interface Props {
+  locale: 'zh' | 'en';
+  label: string;
+  pageLabel?: string;
+  disabled?: boolean;
+  list?: boolean;
+}
+
+const { locale, label, pageLabel, disabled = false, list = false } = Astro.props;
+---
+
+<antv-carousel
+  disabled={disabled ? '' : undefined}
+  role="group"
+  aria-label={label}
+  aria-roledescription={locale === 'zh' ? '轮播图' : 'carousel'}
+  data-page-label={pageLabel ?? (locale === 'zh' ? '查看第 {page} 组' : 'View group {page}')}
+>
+  <div class="antv-carousel-track" data-antv-track role={list ? 'list' : undefined} tabindex={disabled ? -1 : 0}>
+    <slot />
+  </div>
+  <div class="antv-carousel-pagination" data-antv-pagination hidden></div>
+</antv-carousel>
+
+<script>
+  import { AntvCarousel } from '../features/carousel-element';
+  if (!customElements.get('antv-carousel')) customElements.define('antv-carousel', AntvCarousel);
+</script>
+
+<style>
+  antv-carousel {
+    display: flow-root;
+    min-width: 0;
+  }
+
+  .antv-carousel-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: calc((100% - (var(--carousel-columns, 3) - 1) * var(--carousel-gap, 20px)) / var(--carousel-columns, 3));
+    gap: var(--carousel-gap, 20px);
+    margin-block: calc(-1 * var(--carousel-track-padding, 20px));
+    padding-block: var(--carousel-track-padding, 20px);
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline mandatory;
+    scrollbar-width: none;
+  }
+
+  .antv-carousel-track > :global(*) { scroll-snap-align: start; min-width: 0; }
+  .antv-carousel-track::-webkit-scrollbar { display: none; }
+  [hidden] { display: none; }
+
+  .antv-carousel-pagination {
+    display: flex;
+    width: max-content;
+    min-width: 76px;
+    height: 10px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: var(--carousel-pagination-margin, 50px) auto 0;
+  }
+
+  @media (max-width: 1000px) {
+    .antv-carousel-track {
+      grid-auto-columns: calc((100% - (var(--carousel-columns, 2) - 1) * var(--carousel-gap, 20px)) / var(--carousel-columns, 2));
+    }
+  }
+
+  @media (max-width: 767px) {
+    .antv-carousel-track {
+      grid-auto-columns: calc((100% - (var(--carousel-columns, 1) - 1) * var(--carousel-gap, 14px)) / var(--carousel-columns, 1));
+      gap: var(--carousel-gap, 14px);
+    }
+  }
+</style>

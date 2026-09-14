@@ -1,0 +1,275 @@
+---
+import { localize } from '../lib/compiler';
+import type { ExampleCategory } from '../lib/compiler';
+import { withBase } from '../lib/paths';
+import SidebarMenu from './SidebarMenu.astro';
+
+interface Props {
+  categories: ExampleCategory[];
+  locale: 'zh' | 'en';
+  currentRoute: string;
+}
+const { categories, locale, currentRoute } = Astro.props;
+const catalogRoute = `/${locale}/examples/`;
+const isCatalog = currentRoute === catalogRoute;
+const isDemoRoute = categories.some((category) =>
+  category.groups.some((group) =>
+    group.demos.some(
+      (demo) => `/${locale}/examples/${demo.key}/` === currentRoute,
+    ),
+  ),
+);
+const groupAnchor = (categorySlug: string, groupSlug: string) =>
+  `group-${categorySlug}-${groupSlug.replaceAll('/', '-')}`;
+const categoryDemoCount = (category: ExampleCategory) =>
+  category.groups.reduce(
+    (sum, group) => sum + group.demos.length,
+    0,
+  );
+const navigationCategories = isCatalog
+  ? categories.filter((category) => categoryDemoCount(category) > 0)
+  : categories;
+const nodes = [
+  {
+    key: 'all-examples',
+    label: locale === 'zh' ? '全部示例' : 'All examples',
+    href: withBase(catalogRoute),
+    icon: 'other',
+    current: isCatalog,
+    children: [],
+  },
+  ...navigationCategories.map((category) => ({
+    key: category.slug,
+    label: localize(category.title, locale),
+    href: isCatalog
+      ? `#category-${category.slug}`
+      : withBase(`/${locale}/examples/${category.slug}/`),
+    icon: category.icon,
+    open: !isCatalog && currentRoute.includes(`/examples/${category.slug}/`),
+    children: category.groups.map((group) => {
+      const route = `/${locale}/examples/${category.slug}/${group.slug}/`;
+      const groupIsCurrent =
+        !isCatalog &&
+        (route === currentRoute || currentRoute.startsWith(route));
+      return {
+        key: `${category.slug}/${group.slug}`,
+        label: localize(group.title, locale),
+        href: isCatalog
+          ? `#${groupAnchor(category.slug, group.slug)}`
+          : withBase(route),
+        current: groupIsCurrent,
+        open: groupIsCurrent,
+        children:
+          isDemoRoute && groupIsCurrent
+            ? group.demos.map((demo) => {
+                const demoRoute = `/${locale}/examples/${demo.key}/`;
+                return {
+                  key: demo.key,
+                  label: localize(demo.title, locale, demo.slug),
+                  href: withBase(demoRoute),
+                  current: demoRoute === currentRoute,
+                  children: [],
+                };
+              })
+            : [],
+      };
+    }),
+  })),
+];
+---
+
+<aside
+  class="docs-sidebar examples-sidebar"
+  data-example-sidebar
+  data-example-catalog={isCatalog ? 'true' : undefined}
+>
+  <nav aria-label={locale === 'zh' ? '示例目录' : 'Examples'}>
+    <SidebarMenu nodes={nodes} variant="examples" />
+  </nav>
+</aside>
+
+<script>
+  const sidebars = document.querySelectorAll<HTMLElement>(
+    '[data-example-sidebar]',
+  );
+
+  for (const sidebar of sidebars) {
+    const ensureMenuItemVisible = (element: HTMLElement | null) => {
+      if (!element || sidebar.scrollHeight <= sidebar.clientHeight) return;
+      const sidebarBounds = sidebar.getBoundingClientRect();
+      const elementBounds = element.getBoundingClientRect();
+      const padding = 16;
+
+      if (elementBounds.top < sidebarBounds.top + padding) {
+        sidebar.scrollTop += elementBounds.top - sidebarBounds.top - padding;
+      } else if (elementBounds.bottom > sidebarBounds.bottom - padding) {
+        sidebar.scrollTop +=
+          elementBounds.bottom - sidebarBounds.bottom + padding;
+      }
+    };
+
+    if (sidebar.dataset.exampleCatalog !== 'true') {
+      requestAnimationFrame(() => {
+        ensureMenuItemVisible(
+          sidebar.querySelector<HTMLElement>('[aria-current="page"]'),
+        );
+      });
+      continue;
+    }
+
+    const rootMenu = sidebar.querySelector<HTMLElement>(
+      'nav > .sidebar-menu',
+    );
+    const rootItems = rootMenu
+      ? [...rootMenu.children].filter(
+          (item): item is HTMLElement => item instanceof HTMLElement,
+        )
+      : [];
+    const allExamplesItem = rootItems.find(
+      (item) => item.dataset.sidebarKey === 'all-examples',
+    );
+    const allExamplesLink =
+      allExamplesItem?.querySelector<HTMLAnchorElement>(
+        ':scope > .sidebar-menu__link',
+      ) || null;
+    const categoryItems = rootItems.filter(
+      (item) => item.dataset.sidebarKey !== 'all-examples',
+    );
+    const categorySections = [
+      ...document.querySelectorAll<HTMLElement>('[data-example-category]'),
+    ];
+    let selection = '';
+
+    const setSelection = (
+      categorySlug?: string,
+      groupHash?: string,
+      reveal = false,
+    ) => {
+      const nextSelection = `${categorySlug || 'all'}:${groupHash || ''}`;
+      if (nextSelection === selection) return;
+      selection = nextSelection;
+
+      if (allExamplesLink) {
+        if (categorySlug) allExamplesLink.removeAttribute('aria-current');
+        else allExamplesLink.setAttribute('aria-current', 'page');
+      }
+
+      let activeElement: HTMLElement | null = null;
+      categoryItems.forEach((item, index) => {
+        const selected = item.dataset.sidebarKey === categorySlug;
+        const details = item.querySelector<HTMLDetailsElement>(
+          ':scope > .sidebar-menu__details',
+        );
+        const summary = details?.querySelector<HTMLElement>(
+          ':scope > .sidebar-menu__summary',
+        );
+        const categoryLink = summary?.querySelector<HTMLAnchorElement>(
+          '.sidebar-menu__summary-link',
+        );
+        const groupLinks = [
+          ...item.querySelectorAll<HTMLAnchorElement>('a[href^="#group-"]'),
+        ];
+
+        if (details) details.open = selected || (!categorySlug && index === 0);
+        summary?.classList.toggle('is-current', selected);
+        if (categoryLink) {
+          if (selected) categoryLink.setAttribute('aria-current', 'location');
+          else categoryLink.removeAttribute('aria-current');
+        }
+
+        groupLinks.forEach((link) => {
+          const groupSelected = selected && link.hash === groupHash;
+          if (groupSelected) link.setAttribute('aria-current', 'location');
+          else link.removeAttribute('aria-current');
+          if (groupSelected) activeElement = link;
+        });
+
+        if (selected && !activeElement) {
+          activeElement = categoryLink || summary || null;
+        }
+      });
+
+      if (reveal) ensureMenuItemVisible(activeElement);
+    };
+
+    const targetFromHash = () => {
+      if (!location.hash) return null;
+      try {
+        return document.getElementById(decodeURIComponent(location.hash.slice(1)));
+      } catch {
+        return null;
+      }
+    };
+
+    const syncFromHash = () => {
+      const target = targetFromHash();
+      const category = target?.closest<HTMLElement>('[data-example-category]');
+      if (!category?.dataset.exampleCategory) {
+        setSelection(undefined, undefined, true);
+        return;
+      }
+      const group = target?.closest<HTMLElement>('[data-example-group]');
+      setSelection(
+        category.dataset.exampleCategory,
+        group ? `#${group.id}` : undefined,
+        true,
+      );
+    };
+
+    const syncFromScroll = () => {
+      if (!categorySections.length) return;
+      const headerHeight = Number.parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue(
+          '--header-height',
+        ),
+      );
+      const offset = (Number.isFinite(headerHeight) ? headerHeight : 64) + 32;
+      let activeCategory: HTMLElement | undefined;
+
+      for (const category of categorySections) {
+        if (category.getBoundingClientRect().top <= offset) {
+          activeCategory = category;
+        } else {
+          break;
+        }
+      }
+
+      if (!activeCategory?.dataset.exampleCategory) {
+        setSelection(undefined);
+        return;
+      }
+
+      let activeGroup: HTMLElement | undefined;
+      const groups = [
+        ...activeCategory.querySelectorAll<HTMLElement>('[data-example-group]'),
+      ];
+      for (const group of groups) {
+        if (group.getBoundingClientRect().top <= offset) activeGroup = group;
+        else break;
+      }
+      setSelection(
+        activeCategory.dataset.exampleCategory,
+        activeGroup ? `#${activeGroup.id}` : undefined,
+        true,
+      );
+    };
+
+    let scrollFrame = 0;
+    const scheduleScrollSync = () => {
+      if (scrollFrame) return;
+      scrollFrame = requestAnimationFrame(() => {
+        scrollFrame = 0;
+        syncFromScroll();
+      });
+    };
+
+    if (location.hash) syncFromHash();
+    else {
+      setSelection();
+      requestAnimationFrame(syncFromScroll);
+    }
+    addEventListener('hashchange', syncFromHash);
+    addEventListener('scroll', scheduleScrollSync, { passive: true });
+    addEventListener('resize', scheduleScrollSync);
+  }
+</script>

@@ -1,0 +1,124 @@
+---
+import { localize } from '../lib/compiler';
+import { withBase } from '../lib/paths';
+import SidebarMenu from './SidebarMenu.astro';
+
+interface Item {
+  route: string;
+  title: string;
+  slug: string;
+  order?: number;
+}
+interface Props {
+  items: Item[];
+  currentRoute: string;
+  locale: 'zh' | 'en';
+  labels?: Record<string, { zh: string; en: string; order?: number }>;
+}
+interface Node {
+  key: string;
+  label: string;
+  itemTitle?: string;
+  href?: string;
+  current?: boolean;
+  order?: number;
+  configuredIndex?: number;
+  discoveredIndex: number;
+  children: Node[];
+}
+
+const { items, currentRoute, locale, labels = {} } = Astro.props;
+const section = items[0]?.slug.split('/')[0] || '';
+const nodes: Node[] = [];
+const configuredIndexes = new Map(
+  Object.keys(labels).map((key, index) => [key, index]),
+);
+let discoveredIndex = 0;
+const humanize = (value: string) =>
+  value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+for (const item of items) {
+  const parts = item.slug.split('/');
+  const relativeParts = parts[0] === section ? parts.slice(1) : parts;
+  let children = nodes;
+  const path = parts[0] === section ? [section] : [];
+
+  if (relativeParts.length === 0) {
+    const key = path.join('/');
+    const configured = labels[key];
+    nodes.push({
+      key,
+      label: item.title,
+      itemTitle: item.title,
+      href: withBase(item.route),
+      current: item.route === currentRoute,
+      order: configured?.order ?? item.order,
+      configuredIndex: configuredIndexes.get(key),
+      discoveredIndex: discoveredIndex++,
+      children: [],
+    });
+    continue;
+  }
+
+  relativeParts.forEach((part, index) => {
+    path.push(part);
+    const key = path.join('/');
+    let node = children.find((entry) => entry.key === key);
+    if (!node) {
+      const configured = labels[key];
+      node = {
+        key,
+        label: configured
+          ? localize({ zh: configured.zh, en: configured.en }, locale)
+          : humanize(part),
+        order: configured?.order,
+        configuredIndex: configuredIndexes.get(key),
+        discoveredIndex: discoveredIndex++,
+        children: [],
+      };
+      children.push(node);
+    }
+    if (index === relativeParts.length - 1) {
+      node.href = withBase(item.route);
+      node.current = item.route === currentRoute;
+      node.itemTitle = item.title;
+      node.order ??= item.order;
+    }
+    children = node.children;
+  });
+}
+
+const prepareNodes = (entries: Node[]): number => {
+  for (const node of entries) {
+    const childOrder = node.children.length
+      ? prepareNodes(node.children)
+      : Number.POSITIVE_INFINITY;
+    if (!node.children.length && node.itemTitle) node.label = node.itemTitle;
+    node.order ??= childOrder;
+  }
+
+  entries.sort((left, right) => {
+    const order = (left.order ?? 0) - (right.order ?? 0);
+    if (order) return order;
+    if (
+      left.configuredIndex !== undefined &&
+      right.configuredIndex !== undefined &&
+      left.configuredIndex !== right.configuredIndex
+    ) {
+      return left.configuredIndex - right.configuredIndex;
+    }
+    return left.discoveredIndex - right.discoveredIndex;
+  });
+
+  return Math.min(
+    ...entries.map((node) => node.order ?? Number.POSITIVE_INFINITY),
+  );
+};
+prepareNodes(nodes);
+---
+
+<aside class="docs-sidebar">
+  <nav aria-label={locale === 'zh' ? '文档目录' : 'Documentation'}>
+    <SidebarMenu nodes={nodes} variant="docs" />
+  </nav>
+</aside>

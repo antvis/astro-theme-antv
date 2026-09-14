@@ -1,0 +1,67 @@
+{
+  "name": "@antv/site",
+  "version": "0.1.0",
+  "description": "Astro integration for static open-source documentation and examples",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/antvis/site.git"
+  },
+  "homepage": "https://github.com/antvis/site#readme",
+  "bugs": {
+    "url": "https://github.com/antvis/site/issues"
+  },
+  "type": "module",
+  "packageManager": "pnpm@10.34.5",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./content": {
+      "types": "./dist/content.d.ts",
+      "import": "./dist/content.js"
+    },
+    "./components": {
+      "types": "./dist/theme/components/index.ts",
+      "import": "./dist/theme/components/index.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "clean": "shx rm -rf dist",
+    "build": "pnpm run clean && tsc -p tsconfig.build.json && shx cp -r src/theme dist/",
+    "check:types": "tsc -p tsconfig.build.json --noEmit",
+    "check:theme": "astro check --root demos/basic-site",
+    "test": "vitest run test",
+    "prepack": "pnpm run build"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "7.0.8",
+    "@astrojs/sitemap": "3.7.3",
+    "@tabler/icons": "^3.46.0",
+    "gray-matter": "4.0.3",
+    "pagefind": "1.5.2",
+    "vite": "8.2.2",
+    "zod": "4.4.3"
+  },
+  "peerDependencies": {
+    "astro": ">=7.2.0 <8"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@types/node": "22.18.6",
+    "astro": "7.2.0",
+    "shx": "0.4.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.0"
+  }
+}

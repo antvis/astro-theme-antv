@@ -1,0 +1,83 @@
+---
+interface Props {
+  locale: 'zh' | 'en';
+  service: {
+    development: string;
+    production: string;
+  };
+}
+
+const { locale, service } = Astro.props;
+const isDevelopment = import.meta.env.ANTV_SITE_DEVELOPMENT === 'true';
+const serviceBaseUrl = isDevelopment
+  ? service.development
+  : service.production;
+const sdkUrl = new URL('/sdk/qa/sive-qa.js', serviceBaseUrl);
+if (isDevelopment) sdkUrl.searchParams.set('v', Date.now().toString());
+const loadError = locale === 'zh'
+  ? '问答模块加载失败，请刷新页面重试。'
+  : 'Unable to load the QA module. Please refresh and try again.';
+---
+
+<section
+  class="antv-result-page"
+  aria-label={locale === 'zh' ? '问答结果' : 'Conversation'}
+  data-sive-qa-sdk={sdkUrl.toString()}
+>
+  <div id="sive-qa-root" class="antv-result-root"></div>
+  <p class="antv-result-error" data-qa-sdk-error hidden>{loadError}</p>
+</section>
+
+<script>
+  import { mountQaResult } from '../features/qa/result';
+
+  mountQaResult();
+</script>
+
+<style>
+  :global(body.page-qa) {
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+
+  :global(body.page-qa .site-footer),
+  :global(body.page-qa .footer-meta) {
+    display: none;
+  }
+
+  :global(body.page-qa #main-content) {
+    height: calc(100dvh - var(--header-height));
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .antv-result-page,
+  .antv-result-root {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .antv-result-page {
+    position: relative;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .antv-result-error {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    margin: 0;
+    padding: 24px;
+    color: var(--text-muted);
+    font-size: 14px;
+    text-align: center;
+    place-items: center;
+  }
+
+  .antv-result-error[hidden] {
+    display: none;
+  }
+</style>

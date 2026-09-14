@@ -1,0 +1,19 @@
+---
+interface Props {
+  headings: Array<{ depth: number; slug: string; text: string }>;
+  locale: 'zh' | 'en';
+}
+const { headings, locale } = Astro.props;
+const visible = headings.filter((heading) => heading.depth >= 2 && heading.depth <= 3);
+---
+
+{visible.length > 0 && (
+  <aside class="page-toc">
+    <div class="sidebar-title">{locale === 'zh' ? '本页内容' : 'On this page'}</div>
+    <ol>
+      {visible.map((heading) => (
+        <li class:list={[`toc-depth-${heading.depth}`]}><a href={`#${heading.slug}`}>{heading.text}</a></li>
+      ))}
+    </ol>
+  </aside>
+)}
