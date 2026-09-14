@@ -1,71 +1,113 @@
 ---
-import arrowUpIcon from '@tabler/icons/outline/arrow-up.svg?raw';
+import sendIcon from '@tabler/icons/filled/send.svg?raw';
+import assistantIcon from '../assets/icons/qa-assistant.svg?url';
 import { withBase } from '../lib/paths';
 import { config } from '../lib/site';
 
 interface Props {
   locale: 'zh' | 'en';
+  placeholder?: string;
+  suggestions?: readonly string[];
 }
 
-const { locale } = Astro.props;
+const { locale, placeholder, suggestions = [] } = Astro.props;
 const qa = config.qa;
 const isZh = locale === 'zh';
-const prompt = isZh ? '今天，你想可视化什么？' : 'What would you like to visualize today?';
-const action = isZh ? '开始创作' : 'Create with AI';
+const prompt = placeholder ?? (isZh
+  ? '问问AI助手  帮我生成可交互柱形图'
+  : 'Ask AI to create an interactive bar chart');
+const label = isZh ? '向 AI 可视化助手提问' : 'Ask the AI visualization assistant';
+const action = isZh ? '发送问题' : 'Send question';
 const resultUrl = qa ? withBase(`/${locale}/${qa.path}/`.replace(/\/+/g, '/')) : '';
+const id = `antv-qa-${crypto.randomUUID()}`;
+const questions = [...new Set(suggestions.map((question) => question.trim()))]
+  .filter((question) => question.length > 0 && question.length <= 4000);
 ---
 
 {qa && (
-  <form class="antv-qa-entry" role="search" data-antv-qa-entry data-result-url={resultUrl}>
-    <label class="antv-qa-visually-hidden" for={`antv-qa-query-${locale}`}>{prompt}</label>
-    <textarea
-      id={`antv-qa-query-${locale}`}
-      class="antv-qa-prompt"
-      rows="2"
-      maxlength="4000"
-      placeholder={prompt}
-      autocomplete="off"
-      data-qa-prompt
-    ></textarea>
-    <div class="antv-qa-meta">
-      <span>{isZh ? 'AntV 智能可视化助手' : 'AntV visualization assistant'}</span>
-      <button class="antv-qa-action" type="submit" aria-label={action} disabled>
-        <span aria-hidden="true" set:html={arrowUpIcon}></span>
-      </button>
-    </div>
-  </form>
+  <antv-qa>
+    <form
+      class="antv-qa-entry"
+      role="search"
+      aria-label={label}
+      data-antv-qa-entry
+      data-result-url={resultUrl}
+      data-storage-error={isZh
+        ? '无法保存问题，请允许浏览器使用站点存储后重试。'
+        : 'Unable to save your question. Allow site storage in your browser and try again.'}
+    >
+      <div class="antv-qa-composer">
+        <label class="antv-qa-visually-hidden" for={`${id}-query`}>{label}</label>
+        <div class="antv-qa-input-row">
+          <img class="antv-qa-icon" src={assistantIcon} alt="" width="20" height="20" aria-hidden="true" />
+          <textarea
+            id={`${id}-query`}
+            class="antv-qa-prompt"
+            rows="3"
+            maxlength="4000"
+            placeholder={prompt}
+            autocomplete="off"
+            aria-describedby={`${id}-hint ${id}-error`}
+            data-qa-prompt
+          ></textarea>
+        </div>
+        <div class="antv-qa-meta">
+          <span class="antv-qa-hint" id={`${id}-hint`}>{isZh ? 'Enter 发送，Shift + Enter 换行' : 'Enter to send, Shift + Enter for a new line'}</span>
+          <button class="antv-qa-action" type="submit" aria-label={action} title={action} disabled>
+            <span aria-hidden="true" set:html={sendIcon}></span>
+          </button>
+        </div>
+      </div>
+      <p class="antv-qa-error" id={`${id}-error`} data-qa-error role="alert" hidden></p>
+      {questions.length > 0 && (
+        <div class="antv-qa-suggestions" role="group" aria-label={isZh ? '快捷提问' : 'Suggested questions'}>
+          {questions.map((question) => (
+            <button class="antv-qa-suggestion" type="submit" data-qa-suggestion={question} disabled>
+              <img class="antv-qa-icon" src={assistantIcon} alt="" width="20" height="20" aria-hidden="true" />
+              <span>{question}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      <noscript><p class="antv-qa-error">{isZh ? '请启用 JavaScript 以使用 AI 问答。' : 'Enable JavaScript to ask AI a question.'}</p></noscript>
+    </form>
+  </antv-qa>
 )}
 
 <script>
-  import { mountQaEntries } from '../features/qa/entry';
-
-  mountQaEntries();
+  import { AntvQaEntry } from '../features/qa/entry';
+  if (!customElements.get('antv-qa')) customElements.define('antv-qa', AntvQaEntry);
 </script>
 
 <style>
-  .antv-qa-entry {
-    display: flex;
+  antv-qa {
+    display: block;
     width: min(750px, 100%);
-    min-height: 168px;
-    flex-direction: column;
-    justify-content: space-between;
     margin-top: 26px;
-    padding: 24px 24px 18px;
-    border: 1px solid rgb(111 55 215 / 12%);
-    border-radius: 16px;
-    background: rgb(255 255 255 / 88%);
-    box-shadow: 0 20px 56px rgb(77 37 143 / 13%);
-    color: #211b2b;
-    cursor: text;
     text-align: left;
-    backdrop-filter: blur(16px);
-    transition: border-color .25s, box-shadow .25s, transform .25s;
   }
 
-  .antv-qa-entry:hover {
-    border-color: rgb(105 30 255 / 32%);
-    box-shadow: 0 22px 56px rgb(77 37 143 / 20%);
-    transform: translateY(-3px);
+  .antv-qa-entry { margin: 0; }
+
+  .antv-qa-composer {
+    display: flex;
+    height: 170px;
+    flex-direction: column;
+    gap: 14px;
+    padding: 19px;
+    border: 1px solid #fff;
+    border-radius: 20px;
+    background: linear-gradient(180deg, #fff, rgb(255 255 255 / 57%));
+    box-shadow: 0 10px 30px #dfdaef;
+    color: #211b2b;
+    cursor: text;
+    backdrop-filter: blur(12px);
+    transition: border-color .2s, box-shadow .2s;
+  }
+
+  .antv-qa-composer:focus-within {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 2px rgb(105 30 255 / 12%), 0 10px 30px #dfdaef;
   }
 
   .antv-qa-visually-hidden {
@@ -73,75 +115,114 @@ const resultUrl = qa ? withBase(`/${locale}/${qa.path}/`.replace(/\/+/g, '/')) :
     width: 1px;
     height: 1px;
     overflow: hidden;
-    clip: rect(0 0 0 0);
     clip-path: inset(50%);
     white-space: nowrap;
   }
 
+  .antv-qa-input-row {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .antv-qa-icon { display: block; width: 20px; height: 20px; flex: none; }
+  .antv-qa-input-row > .antv-qa-icon { margin-top: 2px; }
+
   .antv-qa-prompt {
     width: 100%;
-    min-height: 56px;
-    flex: 1 1 auto;
+    height: 100%;
+    min-width: 0;
     padding: 0;
     border: 0;
     outline: 0;
     appearance: none;
     background: transparent;
-    color: #211b2b;
-    cursor: text;
+    color: inherit;
     font: inherit;
-    font-size: 15px;
-    line-height: 1.6;
+    font-family: var(--antv-copy-font, var(--font-sans, sans-serif));
+    font-size: 16px;
+    font-weight: 300;
+    line-height: 24px;
     resize: none;
+    scrollbar-width: thin;
   }
 
-  .antv-qa-prompt::placeholder {
-    color: #736d7d;
-    opacity: 1;
-  }
+  .antv-qa-prompt::placeholder { color: #666; opacity: 1; }
 
-  .antv-qa-meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    color: #837b8c;
-    font-size: 12px;
-  }
+  .antv-qa-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .antv-qa-hint { color: #666; font-size: 12px; opacity: 0; }
+  .antv-qa-composer:focus-within .antv-qa-hint { opacity: 1; }
 
   .antv-qa-action {
     display: grid;
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
+    flex: none;
     padding: 0;
-    border: 0;
-    border-radius: 12px;
-    background: var(--brand);
+    margin-left: auto;
+    border: 1px solid rgb(124 92 249 / 30%);
+    border-radius: 50%;
+    background: linear-gradient(125deg, #505ef8, #946ffb);
+    box-shadow: inset 0 2px 5px rgb(255 255 255 / 16%), 0 7px 9px rgb(130 131 249 / 46%);
     color: #fff;
     cursor: pointer;
     place-items: center;
     transition: opacity .2s, transform .2s;
   }
 
-  .antv-qa-action:hover:not(:disabled) {
-    transform: translateY(-1px);
+  .antv-qa-action > span { display: flex; }
+  .antv-qa-action :global(svg) { width: 20px; height: 20px; }
+  .antv-qa-action:hover:not(:disabled) { transform: translateY(-2px); }
+  .antv-qa-action:disabled { cursor: not-allowed; opacity: .55; }
+
+  .antv-qa-suggestions { display: flex; flex-wrap: wrap; gap: 12px 20px; margin-top: 24px; }
+
+  .antv-qa-suggestion {
+    display: inline-flex;
+    max-width: 100%;
+    min-height: 38px;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 15px 5px 9px;
+    border: 2px solid #fff;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #fff, #fafafa);
+    box-shadow: 0 10px 30px #f0ebf6;
+    color: var(--brand);
+    cursor: pointer;
+    font: inherit;
+    font-family: var(--antv-copy-font, var(--font-sans, sans-serif));
+    font-size: 16px;
+    font-weight: 300;
+    line-height: 24px;
+    text-align: left;
+    overflow-wrap: anywhere;
+    transition: border-color .2s, transform .2s;
   }
 
-  .antv-qa-action:disabled {
-    cursor: not-allowed;
-    opacity: .4;
-  }
-
-  .antv-qa-action :global(svg) {
-    width: 18px;
-    height: 18px;
-    stroke-width: 2;
-  }
+  .antv-qa-suggestion:hover:not(:disabled) { transform: translateY(-2px); }
+  .antv-qa-suggestion:disabled { cursor: wait; opacity: .6; }
+  .antv-qa-action:active:not(:disabled),
+  .antv-qa-suggestion:active:not(:disabled) { transform: scale(.98); }
+  .antv-qa-action:focus-visible,
+  .antv-qa-suggestion:focus-visible { outline: 2px solid var(--brand); outline-offset: 4px; }
+  .antv-qa-error { margin: 12px 0 0; color: #a32142; font-size: 13px; }
+  [hidden] { display: none; }
 
   @media (max-width: 640px) {
-    .antv-qa-entry {
-      min-height: 150px;
-      padding: 20px;
-    }
+    .antv-qa-composer { padding: 15px; }
+    .antv-qa-suggestions { gap: 10px; margin-top: 16px; }
+    .antv-qa-suggestion { min-height: 44px; padding-inline: 10px; font-size: 14px; }
+    .antv-qa-hint { display: none; }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .antv-qa-composer { background: #fff; backdrop-filter: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .antv-qa-composer, .antv-qa-action, .antv-qa-suggestion { transition: none; }
   }
 </style>

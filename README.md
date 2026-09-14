@@ -186,6 +186,22 @@ and autoplay pauses on hover/focus, manual interaction, hidden pages and reduced
 ## Shared components
 
 Import supported UI from `@antv/site/components`: `QaEntry`, `Updates`, and `Carousel`.
+`QaEntry` accepts `locale`, an optional `placeholder`, and optional `suggestions`
+(an array of question strings in the current locale). Keep product-specific questions
+in consumer data rather than branching on product names inside the shared component:
+
+```astro
+<QaEntry locale={locale} suggestions={questions.map((question) => question[locale])} />
+```
+
+Clicking a suggestion submits that question directly through the same Result flow
+as the composer. Enter sends, Shift+Enter adds a line, and IME confirmation does not
+submit. Blank questions are disabled; prompts are limited to 4,000 characters and
+never added to URLs. Storage failures leave the question editable with an inline
+retry hint. Reconnecting the component and returning via browser history restore
+its controls without duplicate listeners. Omitting `suggestions` hides the shortcuts;
+`qa.enabled` still gates the entire component and Result route.
+
 Keep site-specific content and layout in the existing home slots. For a custom card
 carousel, pass cards through the default slot:
 
