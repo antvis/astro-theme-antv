@@ -260,4 +260,17 @@ export function mountProductMenu(): void {
   productMenu.addEventListener('toggle', () => {
     if (productMenu.matches(':open')) void loadProducts();
   });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && productMenu.hasAttribute('open')) {
+      if (productCloseTimer !== undefined) window.clearTimeout(productCloseTimer);
+      productMenu.removeAttribute('open');
+      if (productMenu.contains(document.activeElement)) productMenu.querySelector('summary')?.focus();
+    }
+  });
+  document.addEventListener('pointerdown', (event) => {
+    if (event.target instanceof Node && !productMenu.contains(event.target)) {
+      if (productCloseTimer !== undefined) window.clearTimeout(productCloseTimer);
+      productMenu.removeAttribute('open');
+    }
+  });
 }

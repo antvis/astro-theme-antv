@@ -1,8 +1,9 @@
 ---
 import { alternateRoute, localize } from '../lib/compiler';
-import type { LocalizedLink, LocalizedText } from '../lib/compiler';
-import githubIcon from '@tabler/icons/outline/brand-github.svg?raw';
-import languageIcon from '@tabler/icons/outline/language.svg?raw';
+import languageIcon from '../assets/icons/language.svg?raw';
+import menuIcon from '@tabler/icons/outline/menu-2.svg?raw';
+import SiteFooter from '../components/SiteFooter.astro';
+import { defaultFooterGroups } from '../lib/footer';
 import SiteSearch from '../components/SiteSearch.astro';
 import AntVHeaderActions from '../components/AntVHeaderActions.astro';
 import { withBase } from '../lib/paths';
@@ -65,73 +66,32 @@ const navigation = config.navigation.map((item) => {
 });
 const versionEntries = Object.entries(config.versions || {}) as [string, string][];
 const currentVersion = versionEntries[0]?.[0];
-const isAntVHome = config.site.title.trim().toLocaleLowerCase() === 'antv';
+const isAntVSite = config.site.title.trim().toLocaleLowerCase() === 'antv';
 const searchEnabled = config.search.enabled;
-const repositoryUrl = config.site.repository.replace(/\.git$/, '').replace(/\/$/, '');
-type FooterLink = LocalizedLink & { download?: string };
-const footerGroups: Array<{ title: LocalizedText; links: FooterLink[] }> =
-  config.footer.groups !== null
+const footerGroups = config.footer.groups !== null
   ? config.footer.groups.map((group) => ({
       ...group,
       links: group.links.map((link) => ({ ...link, href: localHref(link.href) })),
     }))
-  : [
-      {
-        title: { zh: '核心产品', en: 'Core products' },
-        links: [
-          { text: { zh: 'G2', en: 'G2' }, href: 'https://g2.antv.antgroup.com/' },
-          { text: { zh: 'G6', en: 'G6' }, href: 'https://g6.antv.antgroup.com/' },
-          { text: { zh: 'X6', en: 'X6' }, href: 'https://x6.antv.antgroup.com/' },
-          { text: { zh: 'L7', en: 'L7' }, href: 'https://l7.antv.antgroup.com/' },
-        ],
-      },
-      {
-        title: { zh: '设计', en: 'Design' },
-        links: [
-          {
-            text: { zh: '设计价值观', en: 'Design values' },
-            href: `https://antv.antgroup.com/${locale}/specification/principles/basic/`,
-          },
-          {
-            text: { zh: '设计语言', en: 'Visual language' },
-            href: `https://antv.antgroup.com/${locale}/specification/language/basic/`,
-          },
-          {
-            text: { zh: '资源下载', en: 'Resources' },
-            href: `https://antv.antgroup.com/${locale}/specification/resources/`,
-          },
-        ],
-      },
-      {
-        title: { zh: '社区', en: 'Community' },
-        links: [
-          { text: { zh: 'GitHub', en: 'GitHub' }, href: 'https://github.com/antvis' },
-          { text: { zh: '问题反馈', en: 'Issues' }, href: `${repositoryUrl}/issues` },
-          { text: { zh: 'Ant Design', en: 'Ant Design' }, href: 'https://ant.design/' },
-          {
-            text: { zh: 'llms.txt', en: 'llms.txt' },
-            href: withBase('/llms.txt'),
-            download: 'llms.txt',
-          },
-        ],
-      },
-    ];
+  : defaultFooterGroups.map((group) => ({
+      ...group,
+      links: group.links.map((link) => ({ ...link, href: withBase(link.href) })),
+    }));
 const serializeTokens = (tokens: Record<string, string>) =>
   Object.entries(tokens)
     .map(([name, value]) => `${name}:${value}`)
     .join(';');
 const serializedTokens = serializeTokens(config.theme.tokens);
 const themeOverrides = serializedTokens && `:root{${serializedTokens}}`;
-const footerName = isAntVHome ? 'AntV' : `AntV ${config.site.title}`;
 const copyright = localize(
   config.footer.copyright,
   locale,
-  '© Copyright 2026 Ant Group Co., Ltd..备案号：京ICP备15032932号-38',
+  `© Copyright ${new Date().getFullYear()} Ant Group Co., Ltd..备案号：京ICP备15032932号-38`,
 );
 const footerTagline = localize(
   config.footer.tagline,
   locale,
-  locale === 'zh' ? '让数据栩栩如生' : 'Make data come alive',
+  '',
 );
 const structuredData = {
   '@context': 'https://schema.org',
@@ -172,12 +132,12 @@ const structuredData = {
     {themeOverrides && <style is:inline set:html={themeOverrides} />}
     <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
   </head>
-  <body class={`page-${pageType}`}>
+  <body class:list={[`page-${pageType}`, isAntVSite && 'antv-site']}>
     <a class="skip-link" href="#main-content">
       {locale === 'zh' ? '跳到主要内容' : 'Skip to content'}
     </a>
     <div class="site-canvas">
-    <header class:list={['site-header', pageType === 'home' && 'home-header']} data-pagefind-ignore>
+    <header class:list={['site-header', pageType === 'home' && 'home-header', isAntVSite && 'antv-site-header']} data-pagefind-ignore>
       <div class="header-inner">
         <a class="brand" href={withBase(`/${locale}/`)} aria-label={`${config.site.title} home`}>
           {config.site.logo ? (
@@ -185,11 +145,11 @@ const structuredData = {
           ) : (
             <span class="brand-wordmark" aria-hidden="true">AntV</span>
           )}
-          {!isAntVHome && <span class="brand-divider" aria-hidden="true"></span>}
-          {!isAntVHome && <span class="brand-product">{config.site.title}</span>}
+          {!isAntVSite && <span class="brand-divider" aria-hidden="true"></span>}
+          {!isAntVSite && <span class="brand-product">{config.site.title}</span>}
         </a>
-        <button class="mobile-nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav">
-          {locale === 'zh' ? '菜单' : 'Menu'}
+        <button class="mobile-nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label={locale === 'zh' ? '菜单' : 'Menu'}>
+          <span aria-hidden="true" set:html={menuIcon}></span>
         </button>
         <nav id="primary-nav" class="primary-nav" aria-label={navLabel}>
           {navigation.map((item) => (
@@ -245,45 +205,20 @@ const structuredData = {
               <span class="nav-icon-label">{localeSwitch.locale === 'en' ? 'English' : '中文'}</span>
             </a>
           )}
-          {isAntVHome ? (
-            <AntVHeaderActions locale={locale} repository={config.site.repository} />
-          ) : (
-            <a
-              class="nav-icon-action"
-              href={config.site.repository}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={locale === 'zh' ? '在 GitHub 查看' : 'View on GitHub'}
-              title={locale === 'zh' ? '在 GitHub 查看' : 'View on GitHub'}
-            >
-              <span class="nav-action-icon" aria-hidden="true" set:html={githubIcon}></span>
-              <span class="nav-icon-label">GitHub</span>
-            </a>
-          )}
+          <AntVHeaderActions locale={locale} repository={config.site.repository} />
         </nav>
       </div>
     </header>
     <main id="main-content" data-pagefind-body>
       <slot />
     </main>
-    <footer class="site-footer" data-pagefind-ignore>
-      <div class="footer-intro">
-        <strong>{footerName}</strong>
-        <p>{localize(config.footer.description, locale, localize(config.site.description, locale))}</p>
-      </div>
-      {footerGroups.map((group) => (
-        <div class="footer-group">
-          <strong>{localize(group.title, locale)}</strong>
-          {group.links.map((link) => (
-            <a href={link.href} download={link.download}>{localize(link.text, locale)}</a>
-          ))}
-        </div>
-      ))}
-    </footer>
-    <div class="footer-meta" data-pagefind-ignore>
-      <span>{copyright}</span>
-      <span>{footerTagline}</span>
-    </div>
+    <SiteFooter
+      locale={locale}
+      groups={footerGroups}
+      description={localize(config.footer.description, locale)}
+      copyright={copyright}
+      tagline={footerTagline}
+    />
     </div>
     {searchEnabled && (
       <SiteSearch
@@ -302,10 +237,27 @@ const structuredData = {
       (() => {
         const navButton = document.querySelector('.mobile-nav-toggle');
         const nav = document.querySelector('#primary-nav');
+        const setNavOpen = (open) => {
+          navButton?.setAttribute('aria-expanded', String(open));
+          nav?.toggleAttribute('data-open', open);
+          document.body.classList.toggle('mobile-nav-open', open);
+          if (!open) nav?.querySelectorAll('details[open]').forEach((menu) => menu.removeAttribute('open'));
+        };
         navButton?.addEventListener('click', () => {
           const open = navButton.getAttribute('aria-expanded') === 'true';
-          navButton.setAttribute('aria-expanded', String(!open));
-          nav?.toggleAttribute('data-open', !open);
+          setNavOpen(!open);
+        });
+        nav?.addEventListener('click', (event) => {
+          if (event.target instanceof Element && event.target.closest('a')) setNavOpen(false);
+        });
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape' && nav?.hasAttribute('data-open')) {
+            setNavOpen(false);
+            navButton?.focus();
+          }
+        });
+        window.matchMedia('(max-width: 900px)').addEventListener('change', () => {
+          setNavOpen(false);
         });
 
         const copyText = async (value) => {

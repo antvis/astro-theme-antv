@@ -1,0 +1,182 @@
+---
+import { localize } from '../lib/compiler';
+import type { LocalizedText, LocalizedLink } from '../lib/compiler';
+import zhihuIcon from '../assets/icons/zhihu.svg?raw';
+import githubIcon from '../assets/icons/github.svg?raw';
+import questionIcon from '@tabler/icons/outline/help-circle.svg?raw';
+
+interface FooterLink extends LocalizedLink {
+  description?: LocalizedText;
+  icon?: string;
+  download?: string;
+}
+interface Props {
+  locale: 'zh' | 'en';
+  groups: { title: LocalizedText; icon?: string; links: FooterLink[] }[];
+  description: string;
+  copyright: string;
+  tagline: string;
+}
+const { locale, groups, description, copyright, tagline } = Astro.props;
+---
+
+<footer class="site-footer" data-pagefind-ignore>
+  <div class="footer-columns">
+    {groups.map((group) => (
+      <section class="footer-group">
+        <h2>
+          {group.icon && <img class="footer-heading-icon" src={group.icon} width="22" height="22" alt="" loading="lazy" />}
+          {localize(group.title, locale)}
+        </h2>
+        <ul>
+          {group.links.map((link) => (
+            <li>
+              <a href={link.href} download={link.download} target={/^https?:\/\//.test(link.href) ? '_blank' : undefined} rel={/^https?:\/\//.test(link.href) ? 'noopener noreferrer' : undefined}>
+                {link.icon === 'github' ? <span class="footer-icon" aria-hidden="true" set:html={githubIcon} />
+                  : link.icon === 'help' ? <span class="footer-icon" aria-hidden="true" set:html={questionIcon} />
+                  : link.icon === 'zhihu' ? <span class="footer-icon footer-zhihu" aria-hidden="true" set:html={zhihuIcon} />
+                  : link.icon && <img class="footer-icon" src={link.icon} width="16" height="16" alt="" loading="lazy" />}
+                <span>{localize(link.text, locale)}</span>
+                {link.description && <span class="footer-description">{localize(link.description, locale)}</span>}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </div>
+  {description && <p class="footer-site-description">{description}</p>}
+</footer>
+<div class="footer-meta" data-pagefind-ignore>
+  <span>{copyright}</span>
+  {tagline && <span>{tagline}</span>}
+</div>
+
+<style>
+  .site-footer,
+  .footer-meta {
+    width: min(1440px, calc(100% - 80px));
+    margin: 0 auto;
+    color: rgb(0 0 0 / 85%);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .site-footer {
+    padding: 80px 0 20px;
+  }
+  .footer-columns {
+    display: flex;
+    justify-content: space-around;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .footer-group {
+    min-width: 0;
+    margin-bottom: 60px;
+  }
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 24px;
+  }
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  li {
+    margin: 12px 0;
+  }
+  a {
+    color: inherit;
+    font-size: 16px;
+    text-decoration: none;
+    transition: color 0.2s;
+    overflow-wrap: anywhere;
+  }
+  a:hover {
+    color: #691eff;
+  }
+  a:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 4px;
+  }
+  .footer-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-right: 0.4em;
+    vertical-align: -2px;
+    object-fit: contain;
+  }
+  .footer-icon :global(svg) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .footer-zhihu {
+    color: #0084ff;
+    font-weight: 600;
+    line-height: 16px;
+  }
+  .footer-heading-icon {
+    object-fit: contain;
+  }
+  .footer-description {
+    margin-left: 0.5em;
+    opacity: 0.6;
+    font-weight: 400;
+  }
+  .footer-site-description {
+    margin: 0 0 20px;
+    text-align: center;
+    color: #697b8c;
+  }
+  .footer-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0 24px;
+    padding: 16px 0;
+    border-top: 4px solid #e8e8e8;
+    line-height: 32px;
+    text-align: center;
+  }
+  @media (max-width: 1100px) and (min-width: 768px) {
+    .footer-group {
+      flex-basis: calc(50% - 32px);
+    }
+  }
+  @media (max-width: 767px) {
+    .site-footer,
+    .footer-meta {
+      width: calc(100% - 32px);
+    }
+    .site-footer {
+      padding: 40px 0;
+    }
+    .footer-columns {
+      display: block;
+      text-align: center;
+    }
+    .footer-group {
+      margin-bottom: 40px;
+    }
+    .footer-group:last-child {
+      margin-bottom: 0;
+    }
+    h2 {
+      justify-content: center;
+    }
+    .footer-meta {
+      flex-direction: column;
+    }
+    .footer-site-description {
+      margin: 32px 0 0;
+    }
+  }
+</style>

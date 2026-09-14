@@ -1,5 +1,4 @@
 ---
-import arrowUpRightIcon from '@tabler/icons/outline/arrow-up-right.svg?raw';
 import Carousel from './Carousel.astro';
 
 interface Props { locale: 'zh' | 'en'; }
@@ -38,7 +37,6 @@ const isZh = locale === 'zh';
         <strong></strong>
         <span data-update-description></span>
       </span>
-      <span class="antv-update-arrow" aria-hidden="true" set:html={arrowUpRightIcon}></span>
     </a>
   </template>
   <noscript>{isZh ? '启用 JavaScript 以查看最新动态。' : 'Enable JavaScript to view updates.'}</noscript>
@@ -73,21 +71,22 @@ const isZh = locale === 'zh';
     column-gap: 16px;
     row-gap: 10px;
     padding: 17px 18px;
-    border: 2px solid #fff;
-    border-radius: 20px;
-    background: linear-gradient(180deg, #fff 0%, #fafafa 100%);
-    box-shadow: 0 10px 30px #f0ebf6;
+    border: 1px solid #e5e8ef;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 8px 28px rgb(0 0 0 / 5%);
     scroll-snap-align: start;
   }
 
-  .antv-update-card:hover {
-    background:
-      linear-gradient(180deg, #b39aff 0%, rgb(255 255 255 / 0%) 100%),
-      linear-gradient(180deg, #fff 0%, #fafafa 100%);
+  .antv-update-card:hover,
+  .antv-update-card:focus-visible {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 20px rgb(0 0 0 / 10%);
   }
 
-  .antv-update-card:active {
-    transform: translateY(-1px) scale(.99);
+  .antv-update-card:hover .antv-update-copy strong,
+  .antv-update-card:focus-visible .antv-update-copy strong {
+    color: #691eff;
   }
 
   .antv-update-visual {
@@ -115,8 +114,7 @@ const isZh = locale === 'zh';
     grid-column: 2;
     grid-row: 1;
     align-self: center;
-    padding-right: 33px;
-    color: #000;
+    color: #1d2129;
     font-size: 18px;
     font-weight: 600;
     line-height: 26px;
@@ -136,28 +134,6 @@ const isZh = locale === 'zh';
     -webkit-line-clamp: 2;
   }
 
-  .antv-update-arrow {
-    position: absolute;
-    top: 20px;
-    right: 17px;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateX(-3px);
-    transition: opacity .2s ease, transform .2s ease;
-  }
-
-  .antv-update-card:hover .antv-update-arrow,
-  .antv-update-card:focus-visible .antv-update-arrow {
-    opacity: 1;
-    transform: translateX(0);
-  }
-
-  .antv-update-arrow :global(svg) {
-    width: 14px;
-    height: 14px;
-  }
-
-
   .antv-update-carousel {
     min-width: 0;
     min-height: 210px;
@@ -174,13 +150,6 @@ const isZh = locale === 'zh';
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
-
-  .antv-update-arrow {
-    display: inline-grid;
-    color: color-mix(in srgb, var(--brand) 72%, var(--muted));
-  }
-
-  .antv-update-arrow :global(svg) { stroke-width: 1.7; }
 
   .antv-update-card:focus-visible,
   [data-updates-retry]:focus-visible {
@@ -237,7 +206,8 @@ const isZh = locale === 'zh';
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .antv-update-card, .antv-update-arrow { transition: none; }
+    .antv-update-card { transition: none; }
+    .antv-update-card:hover, .antv-update-card:focus-visible { transform: none; }
   }
 
   @media (prefers-reduced-transparency: reduce) {

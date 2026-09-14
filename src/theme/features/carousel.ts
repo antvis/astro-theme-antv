@@ -48,8 +48,7 @@ export function mountCarousel(carousel: HTMLElement): () => void {
     autoTimer = window.setInterval(() => goTo((activePage + 1) % destinations.length), 5200);
   };
   const renderPagination = () => {
-    // Keep the design's indicators visible but disabled when every card fits.
-    const count = canScroll() ? destinations.length : cards.length;
+    const count = canScroll() ? destinations.length : 0;
     const fragment = document.createDocumentFragment();
     for (let index = 0; index < count; index += 1) {
       const button = document.createElement('button');
