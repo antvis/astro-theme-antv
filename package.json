@@ -25,18 +25,6 @@
     "./components": {
       "types": "./dist/theme/components/index.ts",
       "import": "./dist/theme/components/index.ts"
-    },
-    "./qa-entry": {
-      "types": "./dist/theme/components/QaEntry.astro",
-      "import": "./dist/theme/components/QaEntry.astro"
-    },
-    "./updates": {
-      "types": "./dist/theme/components/Updates.astro",
-      "import": "./dist/theme/components/Updates.astro"
-    },
-    "./carousel": {
-      "types": "./dist/theme/features/carousel.ts",
-      "import": "./dist/theme/features/carousel.ts"
     }
   },
   "files": [
@@ -49,13 +37,11 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "clean": "rimraf dist",
-    "build": "pnpm run clean && tsc -p tsconfig.build.json && node scripts/copy-theme.mjs",
+    "clean": "shx rm -rf dist",
+    "build": "pnpm run clean && tsc -p tsconfig.build.json && shx cp -r src/theme dist/",
     "check:types": "tsc -p tsconfig.build.json --noEmit",
     "check:theme": "astro check --root demos/basic-site",
-    "test:unit": "vitest run test --exclude test/integration-build.test.mjs",
-    "test:integration": "node --test test/integration-build.test.mjs",
-    "test": "pnpm run build && pnpm run test:unit && pnpm run test:integration",
+    "test": "vitest run test",
     "prepack": "pnpm run build"
   },
   "dependencies": {
@@ -74,7 +60,7 @@
     "@astrojs/check": "0.9.10",
     "@types/node": "22.18.6",
     "astro": "7.2.0",
-    "rimraf": "6.1.3",
+    "shx": "0.4.0",
     "typescript": "5.9.3",
     "vitest": "5.0.0"
   }

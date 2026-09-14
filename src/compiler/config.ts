@@ -3,12 +3,11 @@ import {
   basename,
   dirname,
   isAbsolute,
-  relative,
   resolve,
-  sep,
 } from "node:path";
 import { z } from "zod";
 import { qaServiceEndpoints } from "../qa.js";
+import { isWithin } from "../util.js";
 
 export type SiteLocale = "zh" | "en";
 
@@ -452,14 +451,6 @@ const configSchema = z
 
 export const resolveFromRoot = (root: string, path: string) =>
   isAbsolute(path) ? path : resolve(root, path);
-
-const isWithin = (parent: string, child: string) => {
-  const path = relative(parent, child);
-  return (
-    path === "" ||
-    (path !== ".." && !path.startsWith(`..${sep}`) && !isAbsolute(path))
-  );
-};
 
 const errorCode = (error: unknown) =>
   error instanceof Error && "code" in error

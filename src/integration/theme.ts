@@ -1,5 +1,5 @@
 import { access } from "node:fs/promises";
-import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type { InjectedRoute } from "astro";
 import type { MarkdownProcessor } from "astro/markdown";
@@ -9,6 +9,7 @@ import { scanSite } from "../compiler/content.js";
 import { createLegacyContentMarkdownProcessor } from "../markdown.js";
 import { createDemoPlugin } from "../vite/demo-plugin.js";
 import { createSlotsPlugin } from "../vite/slots-plugin.js";
+import { isWithin } from "../util.js";
 
 const runtimeRoot = fileURLToPath(new URL("../", import.meta.url));
 const themeRoot = resolve(runtimeRoot, "theme");
@@ -41,14 +42,6 @@ export interface ThemeIntegrationContribution {
   watchFiles: string[];
 }
 
-const isWithin = (parent: string, child: string) => {
-  const path = relative(parent, child);
-  return (
-    path === "" ||
-    (path !== ".." && !path.startsWith(`..${sep}`) && !isAbsolute(path))
-  );
-};
-
 async function validateHomeSlots(config: ResolvedSiteConfig): Promise<void> {
   await Promise.all(
     Object.entries(config.slots.home).flatMap(([slotName, components]) =>
@@ -77,6 +70,18 @@ export async function prepareThemeIntegration({
   const examplePaths = config.content.examples
     ? [config.content.examples]
     : [];
+  const routes: InjectedRoute[] = themeRoutes.map(([pattern, entrypoint]) => ({
+    pattern,
+    entrypoint: pathToFileURL(resolve(themeRoot, entrypoint)),
+    prerender: true,
+  }));
+  if (config.qa) {
+    routes.unshift({
+      pattern: `/[locale]/${config.qa.path}`,
+      entrypoint: pathToFileURL(resolve(themeRoot, "pages/[locale]/qa.astro")),
+      prerender: true,
+    });
+  }
   return {
     markdownProcessor: createLegacyContentMarkdownProcessor(
       markdownProcessor,
@@ -85,7 +90,7 @@ export async function prepareThemeIntegration({
     ),
     plugins: [
       createSlotsPlugin(() => config),
-      createDemoPlugin(() => registry),
+      createDemoPlugin(registry),
     ],
     fsAllow: [
       themeRoot,
@@ -94,11 +99,7 @@ export async function prepareThemeIntegration({
       ...slotPaths.map(dirname),
     ],
     restartRoots: [...examplePaths, ...slotPaths],
-    routes: themeRoutes.map(([pattern, entrypoint]) => ({
-      pattern,
-      entrypoint: pathToFileURL(resolve(themeRoot, entrypoint)),
-      prerender: true,
-    })),
+    routes,
     watchFiles: [...examplePaths, ...slotPaths],
   };
 }

@@ -62,8 +62,7 @@ const productLinks = (item: ProductItem, locale: string): ProductLink[] => {
 
 const createProductCard = (
   item: ProductItem,
-  locale: string,
-  currentProduct: string
+  locale: string
 ) => {
   const links = productLinks(item, locale);
   const name = String(item.title || '').trim();
@@ -71,9 +70,6 @@ const createProductCard = (
 
   const card = document.createElement('article');
   card.className = 'product-card';
-  const isCurrent = name.toLocaleLowerCase() === currentProduct;
-  card.classList.toggle('is-current', isCurrent);
-  if (isCurrent) card.dataset.currentProduct = '';
 
   const mark = document.createElement('span');
   mark.className = 'product-mark';
@@ -125,7 +121,6 @@ const createProductCard = (
 };
 
 export function mountProductMenu(): void {
-  const root = document.documentElement;
   const productMenu = document.querySelector<HTMLElement>(
     '[data-products-menu]'
   );
@@ -140,9 +135,6 @@ export function mountProductMenu(): void {
     ai: locale === 'zh' ? 'AI 可视化方案' : 'AI Visualization Solutions',
     ecology: locale === 'zh' ? '周边生态' : 'Ecosystem'
   };
-  const currentProduct = String(
-    root.dataset.siteTitle || ''
-  ).toLocaleLowerCase();
   let productsPromise: Promise<void> | undefined;
   let productCloseTimer: number | undefined;
 
@@ -160,7 +152,7 @@ export function mountProductMenu(): void {
       heading.textContent = label;
       const cards = document.createElement('div');
       products.forEach((item) => {
-        const card = createProductCard(item, locale, currentProduct);
+        const card = createProductCard(item, locale);
         if (card) cards.append(card);
       });
       if (cards.childElementCount) {
@@ -246,8 +238,6 @@ export function mountProductMenu(): void {
   if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
     productMenu.addEventListener('pointerenter', openProducts);
     productMenu.addEventListener('pointerleave', closeProducts);
-    productMenu.addEventListener('mouseenter', openProducts);
-    productMenu.addEventListener('mouseleave', closeProducts);
   }
   productMenu.addEventListener('focusout', (event) => {
     if (

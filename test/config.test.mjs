@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { expect, test } from "vitest";
-import { resolveConfig } from "../dist/compiler/config.js";
+import { resolveConfig } from "../src/compiler/config.ts";
 
 const baseConfig = () => ({
   site: {

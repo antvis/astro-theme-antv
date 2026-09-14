@@ -1,6 +1,6 @@
-import { dirname, extname } from "node:path";
+import { extname } from "node:path";
 import type { Plugin } from "vite";
-import type { SiteRegistry } from "../compiler/content.js";
+import type { DemoRecord, SiteRegistry } from "../compiler/content.js";
 
 const publicModuleId = "virtual:antv-site-demos";
 const resolvedModuleId = `\0${publicModuleId}`;
@@ -9,21 +9,7 @@ const resolvedRegistryModuleId = `\0${registryModuleId}`;
 const publicEntryPrefix = "virtual:antv-site-demo-entry:";
 const resolvedEntryPrefix = `\0${publicEntryPrefix}`;
 
-export interface DemoModule {
-  key: string;
-  source: string;
-  sourcePath: string;
-}
-
-const moduleMap = (registry: SiteRegistry) =>
-  new Map<string, DemoModule>(
-    registry.demos.map((demo) => [
-      demo.key,
-      { key: demo.key, source: demo.source, sourcePath: demo.sourcePath },
-    ]),
-  );
-
-const entryId = (prefix: string, demo: DemoModule) =>
+const entryId = (prefix: string, demo: DemoRecord) =>
   `${prefix}${encodeURIComponent(demo.key)}${extname(demo.sourcePath)}`;
 
 const entryKey = (id: string, prefix: string) => {
@@ -35,7 +21,8 @@ const entryKey = (id: string, prefix: string) => {
   return decodeURIComponent(encodedKey);
 };
 
-export function createDemoPlugin(getRegistry: () => SiteRegistry): Plugin {
+export function createDemoPlugin(registry: SiteRegistry): Plugin {
+  const demos = new Map(registry.demos.map((demo) => [demo.key, demo]));
   return {
     name: "antv-site-demos",
     enforce: "pre",
@@ -48,14 +35,13 @@ export function createDemoPlugin(getRegistry: () => SiteRegistry): Plugin {
       if (!importer?.startsWith(resolvedEntryPrefix)) return;
 
       const key = entryKey(importer, resolvedEntryPrefix);
-      const demo = moduleMap(getRegistry()).get(key);
+      const demo = demos.get(key);
       if (!demo) throw new Error(`Unknown demo entry: ${key}`);
       return this.resolve(source, demo.sourcePath, { skipSelf: true });
     },
     load(id) {
-      const demos = moduleMap(getRegistry());
       if (id === resolvedRegistryModuleId) {
-        return `export default ${JSON.stringify(getRegistry())};`;
+        return `export default ${JSON.stringify(registry)};`;
       }
       if (id === resolvedModuleId) {
         const entries = [...demos.values()].map(
@@ -74,12 +60,6 @@ export function createDemoPlugin(getRegistry: () => SiteRegistry): Plugin {
       return {
         code: demo.source,
         map: null,
-        meta: {
-          antvSite: {
-            sourcePath: demo.sourcePath,
-            resolveDir: dirname(demo.sourcePath),
-          },
-        },
       };
     },
   };

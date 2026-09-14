@@ -2,7 +2,7 @@ import { defineCollection } from "astro:content";
 import {
   antvDocsLoader,
   antvDocsSchema,
-} from "../../../dist/content.js";
+} from "@antv/site/content";
 
 export const collections = {
   docs: defineCollection({

@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { expect, test } from "vitest";
-import { antvSite } from "../dist/integration.js";
+import { antvSite } from "../src/integration.ts";
 
 const baseConfig = () => ({
   site: {
@@ -152,13 +152,10 @@ test("preserves Astro publicDir and injects QA as a dedicated route", async () =
     "antv-site-slots",
     "antv-site-demos",
   ]);
-  expect(
-    update.vite.define["import.meta.env.ANTV_SITE_DEVELOPMENT_SEARCH"],
-  ).toBe('"false"');
   expect(update.vite.define["import.meta.env.ANTV_SITE_DEVELOPMENT"]).toBe(
     '"false"',
   );
-  expect(update.vite.server.fs.allow).toContain(resolve("dist/theme"));
+  expect(update.vite.server.fs.allow).toContain(resolve("src/theme"));
 });
 
 test("does not add QA integration capabilities when the switch is disabled", async () => {

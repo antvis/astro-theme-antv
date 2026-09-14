@@ -2,12 +2,11 @@
 
 A focused Astro integration for static open-source documentation and repository-authored examples.
 
-The package relies on Astro and Vite for development, static rendering, asset emission, module resolution, code splitting, and preview. It retains the shared capabilities product sites need—Pagefind search and a QA Result flow—without restoring the parallel CLI, browser compiler, online playground, IIFE vendor runtime, or custom dependency-graph analyzer.
-
 ## Install
 
 ```sh
 pnpm add @antv/site astro
+pnpm add -D @astrojs/check typescript
 ```
 
 Node.js 22.12 or newer and Astro 7.2 are required.
@@ -28,9 +27,9 @@ export const collections = {
 };
 ```
 
-The collection key (`docs` above) is the Astro Content Collection name the theme resolves documents through. It defaults to `docs`; match it to `content.collectionName` if you register the collection under a different name.
+The collection name defaults to `docs`. If you use another name, set `content.collectionName` to match.
 
-Then create `astro.config.mjs` in the consuming repository. The facade remains the shortest setup:
+Then create `astro.config.mjs`. Unknown configuration keys are rejected:
 
 ```js
 import { defineConfig } from "@antv/site";
@@ -96,9 +95,9 @@ export default defineConfig({
 });
 ```
 
-`theme.tokens` is a single CSS custom-property map applied to `:root`. It keeps product branding and theme customization in the consuming repository without exposing Astro internals or adding a package-owned color-mode switch.
+Use `theme.tokens` to override global CSS custom properties.
 
-The shared theme self-hosts Alibaba PuHuiTi 2.0 in the 400, 500, 600, 700, and 900 weights. All sites use it through `--font-sans`, while shared home-page headings use `--font-heading-weight: 900`. Consumers can override either token through `theme.tokens` when a product has a deliberate typography exception.
+The default font is Alibaba PuHuiTi 2.0. Override `--font-sans` to change the font or `--font-heading-weight` to change the home-page heading weight (default: `900`).
 
 `site.origin` must be a bare HTTP(S) origin without credentials, a path, query, or fragment. Navigation, footer, home-action, and version links accept relative URLs plus HTTP(S), `mailto:`, and `tel:` schemes; unsafe schemes and control characters are rejected during configuration.
 
@@ -115,9 +114,9 @@ Use normal Astro commands:
 }
 ```
 
-The public `defineConfig` facade installs the integration and configures the bundled theme, sitemap, Demo ESM entries, and Pagefind indexing. `@antv/site` supports Astro's static output only and fails during configuration when non-static output is requested. It does not replace Astro's `srcDir` or `publicDir`: consumer pages, components, middleware, content configuration, and static assets remain in the standard Astro project tree.
+`@antv/site` supports static sites only; server adapters are not supported. Keep custom pages and components in `src/` and static assets in `public/` as in a standard Astro project.
 
-The default footer also links to a downloadable `/llms.txt`. It is a compact Agent-oriented index of the configured site identity, version, localized public documents, runnable examples, repository, and `/llms-full.txt`. The full file combines the published document Markdown and Demo source, while `/markdown/{locale}/{slug}.md` exposes individual documents with canonical metadata. Draft and sidebar-hidden documents are excluded, localized document links are rewritten to their Agent-readable Markdown endpoints, and deployment `base` paths are included in every absolute URL. Supplying custom footer groups replaces the default groups, including the footer link.
+The site provides `/llms.txt` as an AI-readable index, `/llms-full.txt` for full document content and example source, and `/markdown/{locale}/{slug}.md` for individual documents. Draft and sidebar-hidden documents are excluded. Custom footer groups replace the default groups, including the `/llms.txt` link.
 
 Advanced Astro configurations can compose the same integration directly:
 
@@ -133,9 +132,9 @@ export default defineConfig({
 });
 ```
 
-Use this standard Astro composition whenever the site needs Astro-level options such as `base`, redirects, or additional integrations. Server adapters are intentionally unsupported because generated content, Demo runners, QA routes, and Pagefind indexing are owned as a static-site pipeline. `antvSite()` returns only the package-owned core integration; advanced consumers explicitly install and enable `@astrojs/mdx` and `@astrojs/sitemap` when needed. The package `defineConfig` facade enables both by default. Internal theme links, canonical URLs, Demo iframes, QA navigation, static assets, and search assets all honor Astro's `base` value.
+Use this form for Astro options such as `base`, redirects, or additional integrations. Pass the site settings shown above as `siteConfig`. Install `@astrojs/mdx` and `@astrojs/sitemap` separately when using these integrations directly; the package's `defineConfig` enables both by default. Set `base` when deploying under a subpath.
 
-Set `qa.enabled` to `true` to enable the package-owned QA entry and Result route. With the switch omitted or `false`, neither is added to the downstream site. Each locale receives a Result route at /{locale}/result/ by default; change `qa.path` to use another route. The homepage stores the submitted text in `sessionStorage` and navigates without putting the question in the URL. The Result page only loads and mounts Sive's internal QA SDK. Sive reuses its existing session-cookie authentication, native QA session APIs, streaming conversation UI, follow-up composer, image upload, and visualization rendering; Site does not maintain an external QA protocol or its own Result runtime.
+Set `qa.enabled` to `true` to enable the QA entry and result page at `/{locale}/result/`. Change `qa.path` to customize the route. QA is disabled by default and requires access to Sive's QA service and authentication.
 
 ## Home slots
 
@@ -155,7 +154,7 @@ slots: {
 }
 ```
 
-Slot components receive `locale`, `slotName`, the resolved `config`, and the in-memory `registry`; the public `HomeSlotProps` type describes that contract. Slot paths are consumer-relative, validated before startup, watched by Astro, and compiled by Vite.
+Slot paths are relative to your project root. Components receive `locale`, `slotName`, `config`, and `registry`; import `HomeSlotProps` from `@antv/site` for their types.
 
 ## Shared updates
 
@@ -170,37 +169,26 @@ const { locale } = Astro.props;
 <Updates locale={locale} />
 ```
 
-The component fetches `https://assets.antv.antgroup.com/antv/banner-messages.json`
-in the browser, so announcements can change without rebuilding a static site.
-It renders localized `title`/`subTitle`, `img` and `link` directly from the feed;
-missing translations fall back to the other locale. It does not rewrite upstream
-copy or use a bundled announcement snapshot. Links and images accept only absolute
-HTTP(S) URLs. Failed requests time out after 10 seconds and offer a retry; empty
-feeds show an empty state. JavaScript is required to load announcements.
+Announcements come from `https://assets.antv.antgroup.com/antv/banner-messages.json`
+and update without rebuilding the site. JavaScript and access to this feed are
+required. Missing translations fall back to the other locale.
 
-The component owns its card styles and responsive 3/2/1-card track; the host owns
-section spacing and surrounding content. It is not inserted into layouts by default.
-Pagination follows actual scroll destinations, is disabled when every card fits,
-and autoplay pauses on hover/focus, manual interaction, hidden pages and reduced motion.
+The component is not added by default. It includes responsive card styles;
+set section spacing in your own layout.
 
 ## Shared components
 
 Import supported UI from `@antv/site/components`: `QaEntry`, `Updates`, and `Carousel`.
 `QaEntry` accepts `locale`, an optional `placeholder`, and optional `suggestions`
-(an array of question strings in the current locale). Keep product-specific questions
-in consumer data rather than branching on product names inside the shared component:
+(an array of question strings in the current locale):
 
 ```astro
 <QaEntry locale={locale} suggestions={questions.map((question) => question[locale])} />
 ```
 
-Clicking a suggestion submits that question directly through the same Result flow
-as the composer. Enter sends, Shift+Enter adds a line, and IME confirmation does not
-submit. Blank questions are disabled; prompts are limited to 4,000 characters and
-never added to URLs. Storage failures leave the question editable with an inline
-retry hint. Reconnecting the component and returning via browser history restore
-its controls without duplicate listeners. Omitting `suggestions` hides the shortcuts;
-`qa.enabled` still gates the entire component and Result route.
+Clicking a suggestion submits it immediately. Enter sends; Shift+Enter adds a line.
+Questions are limited to 4,000 characters and are not included in URLs.
+Omit `suggestions` to hide the shortcuts. The component requires `qa.enabled: true`.
 
 Keep site-specific content and layout in the existing home slots. For a custom card
 carousel, pass cards through the default slot:
@@ -217,8 +205,7 @@ const { locale } = Astro.props;
 </Carousel>
 ```
 
-`Carousel` owns track markup, scroll-snap, pagination, autoplay and lifecycle cleanup.
-It refreshes when direct slot children change and reconnects safely after removal.
+`Carousel` includes pagination and autoplay.
 Set `disabled` while asynchronous content is loading; remove the `disabled` attribute
 from the rendered `antv-carousel` element once cards are ready. Optional `pageLabel`
 accepts a `{page}` placeholder; `list` gives the track list semantics (provide
@@ -228,11 +215,6 @@ Customize geometry through inherited CSS properties on a wrapper:
 `--carousel-columns`, `--carousel-gap`, `--carousel-track-padding`, and
 `--carousel-pagination-margin`. Defaults show 3/2/1 cards at desktop/1000px/767px;
 when setting `--carousel-columns`, supply your own responsive overrides as needed.
-Consumer pages do not need browser mounting scripts or internal DOM selectors.
-
-The old `@antv/site/qa-entry`, `@antv/site/updates`, and `@antv/site/carousel`
-entry points remain available for compatibility. Use the shared components entry
-for new code; the DOM-level carousel helper is no longer the recommended integration.
 
 ## Content conventions
 
@@ -247,7 +229,7 @@ docs/
     advanced.en.mdx
 ```
 
-Each `.md` or `.mdx` file is an Astro content entry. Frontmatter must contain `title`; `description`, `order`, `draft`, and `sidebar.label` / `sidebar.hidden` are optional. Routes and the theme consume entries through `getCollection()` and `render()`, and MDX is enabled through the official `@astrojs/mdx` integration. The package keeps compatibility transforms for localized `.md` links, configured static components, link cards, and `<code src="...">`; new MDX should use normal Astro/MDX syntax rather than those legacy string transforms. Astro owns Markdown/MDX rendering, headings, content watching, and the collection data store.
+Frontmatter must contain `title`; `description`, `order`, `draft`, and `sidebar.label` / `sidebar.hidden` are optional. Use standard Astro/MDX syntax for components in `.mdx` files.
 
 Examples keep source in the consuming repository:
 
@@ -277,38 +259,10 @@ A minimal metadata file is:
 }
 ```
 
-`meta.json` is validated before routes are generated. Demo filenames must reference JavaScript or TypeScript modules inside their own `demo` directory, and duplicate route keys are rejected. Group Markdown frontmatter is parsed strictly; malformed or unclosed frontmatter fails the build with the source path instead of being repaired heuristically.
+Demo filenames must reference JavaScript or TypeScript files inside their own `demo` directory. Route keys must be unique.
 
-Relative imports in Demo source resolve from the original source file. Vite emits standard ESM chunks and automatically shares common chunks where beneficial.
+Use relative imports to reference other files from a Demo source file.
 
-## Demo trust boundary
+## Demo safety
 
-Demo code is repository-authored application code. It runs in a same-origin iframe so normal ESM imports, assets, Canvas, WebGL, workers, and library behavior work without a second runtime system.
-
-This package does not execute untrusted user submissions. If a site needs a public code sandbox or arbitrary online editing, integrate a dedicated sandbox service as a separate product boundary.
-
-The parent page contains the static source and a reload action. There is no browser-side compiler, editable playground, IIFE format, custom vendor grouping, or package-owned dependency graph.
-
-## Supported configuration
-
-The public configuration covers:
-
-- site identity, locales, repository, logo, and favicon;
-- document and example roots, and the docs Content Collection name;
-- navigation, versions, edit links, and static Markdown component transforms;
-- built-in Pagefind search, aliases, and path ranking boosts;
-- optional QA Result routes and entry behavior backed by Sive's SDK;
-- home content, feature cards, and controlled Astro component slots;
-- CSS token overrides for consumer-defined branding and theme customization;
-- footer content;
-- Demo height.
-
-Unknown keys are rejected. Removed features therefore fail fast instead of being silently ignored.
-
-## Package boundary
-
-Consumers import `defineConfig`, `antvSite`, and configuration types from the package root. The `@antv/site/content` subpath exports the Astro Content Loader and schema; `@antv/site/components` exports supported Astro UI components. UI is deliberately separate from the Node-loaded configuration facade, and adding a shared component does not require a new package subpath. QA has no consumer-facing browser-helper subpath. The package build emits NodeNext-compatible ESM directly, without a regex-based post-build import rewrite, then copies the consumer-compiled Astro theme source into `dist/theme`. npm publishes only `dist`; `src/theme` is a repository source directory, not a separate package path. Astro remains the peer build engine; Vite, Pagefind, and the sitemap integration are implementation dependencies.
-
-## Repository demo
-
-`demos/basic-site` is the smallest runnable consumer site and the fixture used by the targeted integration tests. Build the package first so the demo can import `dist/index.js` and `dist/content.js`, then run it with normal Astro commands from that directory.
+Only include trusted Demo code: examples run with the same origin as your site, not in an isolated security sandbox. For untrusted submissions or public online editing, use a dedicated sandbox service.

@@ -2,7 +2,6 @@ import { fileURLToPath } from "node:url";
 import type { AstroIntegration } from "astro";
 import type { AntVSiteConfig, ResolvedSiteConfig } from "../compiler/config.js";
 import { resolveConfig } from "../compiler/config.js";
-import { prepareQaIntegration } from "../integration/qa.js";
 import {
   prepareSearchIntegration,
   writeProductionSearch,
@@ -40,7 +39,6 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration {
           cacheDir: fileURLToPath(astroConfig.cacheDir),
         });
 
-        const qa = await prepareQaIntegration(config);
         const theme = await prepareThemeIntegration({
           config,
           markdownProcessor: astroConfig.markdown.processor,
@@ -55,7 +53,7 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration {
         for (const path of theme.watchFiles) {
           addWatchFile(path);
         }
-        for (const route of [...qa.routes, ...theme.routes, ...search.routes]) {
+        for (const route of [...theme.routes, ...search.routes]) {
           injectRoute(route);
         }
 
@@ -66,7 +64,6 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration {
           markdown: { processor: theme.markdownProcessor },
           vite: {
             define: {
-              ...search.define,
               "import.meta.env.ANTV_SITE_DEVELOPMENT": JSON.stringify(
                 command === "dev" ? "true" : "false",
               ),

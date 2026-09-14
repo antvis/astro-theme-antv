@@ -10,7 +10,7 @@ interface Props {
 }
 
 const { locale, siteTitle, aliases = {}, pathBoosts = [] } = Astro.props;
-const developmentSearch = import.meta.env.ANTV_SITE_DEVELOPMENT_SEARCH === 'true';
+const developmentSearch = import.meta.env.ANTV_SITE_DEVELOPMENT === 'true';
 ---
 
 <dialog

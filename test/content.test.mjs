@@ -3,9 +3,9 @@ import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { expect, test } from "vitest";
-import { resolveConfig } from "../dist/compiler/config.js";
-import { scanSite } from "../dist/compiler/content.js";
-import { createLegacyContentMarkdownProcessor } from "../dist/markdown.js";
+import { resolveConfig } from "../src/compiler/config.ts";
+import { scanSite } from "../src/compiler/content.ts";
+import { createLegacyContentMarkdownProcessor } from "../src/markdown.ts";
 
 const baseConfig = () => ({
   site: {

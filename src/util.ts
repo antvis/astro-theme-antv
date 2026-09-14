@@ -4,13 +4,17 @@ import { isAbsolute, relative, sep } from "node:path";
 /** Normalize a platform path to forward-slashes for slug/route keys. */
 export const pathKey = (value: string) => value.split(sep).join("/");
 
+export const isWithin = (parent: string, child: string) => {
+  const path = relative(parent, child);
+  return path !== ".." && !path.startsWith(`..${sep}`) && !isAbsolute(path);
+};
+
 /**
  * Assert that `target` is equal to or nested beneath `root`. Used to keep
  * resolved content references from escaping their configured roots.
  */
 export const assertWithin = (root: string, target: string) => {
-  const path = relative(root, target);
-  if (path === ".." || path.startsWith(`..${sep}`) || isAbsolute(path)) {
+  if (!isWithin(root, target)) {
     throw new Error(`Content reference escaped its root: ${target}`);
   }
 };
