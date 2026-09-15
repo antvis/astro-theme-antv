@@ -1,4 +1,4 @@
-import { defineConfig } from "@antv/site";
+import { defineConfig } from "@antv/astro-theme-antv";
 
 export default defineConfig({
   site: {

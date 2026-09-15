@@ -16,7 +16,7 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration {
   let themeRestartRoots: string[] = [];
 
   return {
-    name: "@antv/site",
+    name: "@antv/astro-theme-antv",
     hooks: {
       async "astro:config:setup"({
         addWatchFile,
@@ -28,7 +28,7 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration {
         const consumerRoot = fileURLToPath(astroConfig.root);
         if (astroConfig.output !== "static") {
           throw new Error(
-            "@antv/site supports Astro static output only. Remove the server output or adapter configuration.",
+            "@antv/astro-theme-antv supports Astro static output only. Remove the server output or adapter configuration.",
           );
         }
 
