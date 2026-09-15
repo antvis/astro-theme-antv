@@ -148,10 +148,13 @@ test("preserves Astro publicDir and injects QA as a dedicated route", async () =
   await Promise.all(
     injectedRoutes.map((route) => access(new URL(route.entrypoint))),
   );
-  expect(update.vite.plugins.map((plugin) => plugin.name)).toEqual([
-    "antv-site-slots",
-    "antv-site-demos",
-  ]);
+  expect(update.vite.plugins.map((plugin) => plugin.name)).toEqual(
+    expect.arrayContaining([
+      "@tailwindcss/vite:scan",
+      "antv-site-slots",
+      "antv-site-demos",
+    ]),
+  );
   expect(update.vite.define["import.meta.env.ANTV_SITE_DEVELOPMENT"]).toBe(
     '"false"',
   );

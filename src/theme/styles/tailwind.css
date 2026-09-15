@@ -1,0 +1,10 @@
+/* The theme owns the reset; utilities override its unlayered styles. */
+@layer theme, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) important;
+
+/* Consumer sources are scanned automatically; include the installed theme too. */
+@source "../";
+
+@custom-variant tablet (@media (max-width: 1200px));
+@custom-variant mobile (@media (max-width: 640px));

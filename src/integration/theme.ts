@@ -1,6 +1,7 @@
 import { access } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import tailwindcss from "@tailwindcss/vite";
 import type { InjectedRoute } from "astro";
 import type { MarkdownProcessor } from "astro/markdown";
 import type { Plugin, ViteDevServer } from "vite";
@@ -89,6 +90,7 @@ export async function prepareThemeIntegration({
       getBase,
     ),
     plugins: [
+      ...tailwindcss(),
       createSlotsPlugin(() => config),
       createDemoPlugin(registry),
     ],
