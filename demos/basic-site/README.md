@@ -1,18 +1,16 @@
 # Basic site
 
-A standalone Astro documentation site using the public `@antv/site` package API.
+A standalone documentation site using `@antv/astro-theme-antv`.
 Requires Node.js >=22.12.0 and pnpm 10.34.5.
 
-## Run independently
-
-Copy this directory to its own location, then run:
+Copy this directory to a new project, then run:
 
 ```sh
 pnpm install
 pnpm dev
 ```
 
-The demo requires `@antv/site@0.1.0` to be available in your npm registry.
+The demo requires `@antv/astro-theme-antv@0.1.0` to be available in your npm registry.
 
 Use `pnpm check`, `pnpm build`, and `pnpm preview` to check, build, and preview the
 site.

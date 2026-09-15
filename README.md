@@ -1,23 +1,23 @@
-# @antv/site
+# @antv/astro-theme-antv
 
-A focused Astro integration for static open-source documentation and repository-authored examples.
+An Astro theme for bilingual documentation and runnable examples.
 
 ## Install
 
 ```sh
-pnpm add @antv/site astro
+pnpm add @antv/astro-theme-antv astro@^7.2.0
 pnpm add -D @astrojs/check typescript
 ```
 
-Node.js 22.12 or newer and Astro 7.2 are required.
+Requires Node.js 22.12+ and Astro 7.2–7.x. Static sites only; server adapters are not supported.
 
 ## Configure the site
 
-First register the localized documents as a normal Astro Content Collection in `src/content.config.ts`:
+Register documents in `src/content.config.ts`:
 
 ```ts
 import { defineCollection } from "astro:content";
-import { antvDocsLoader, antvDocsSchema } from "@antv/site/content";
+import { antvDocsLoader, antvDocsSchema } from "@antv/astro-theme-antv/content";
 
 export const collections = {
   docs: defineCollection({
@@ -29,10 +29,10 @@ export const collections = {
 
 The collection name defaults to `docs`. If you use another name, set `content.collectionName` to match.
 
-Then create `astro.config.mjs`. Unknown configuration keys are rejected:
+Create `astro.config.mjs`:
 
 ```js
-import { defineConfig } from "@antv/site";
+import { defineConfig } from "@antv/astro-theme-antv";
 
 export default defineConfig({
   site: {
@@ -46,29 +46,12 @@ export default defineConfig({
   },
   content: {
     docs: "./docs",
-    examples: "./examples",
+    examples: null,
   },
   navigation: [
     {
       text: { zh: "文档", en: "Docs" },
       href: "/guide/",
-    },
-    {
-      text: { zh: "示例", en: "Examples" },
-      href: "/examples/",
-    },
-  ],
-  search: {
-    aliases: { graph: ["chart"] },
-    pathBoosts: [{ prefix: "/guide/", weight: 500 }],
-  },
-  qa: {
-    enabled: true,
-  },
-  examples: [
-    {
-      slug: "basic",
-      title: { zh: "基础", en: "Basic" },
     },
   ],
   home: {
@@ -81,27 +64,12 @@ export default defineConfig({
       en: "Built with Astro.",
     },
   },
-  slots: {
-    home: {
-      beforeFooter: ["./site/HomeFooter.astro"],
-    },
-  },
-  theme: {
-    tokens: {
-      "--brand": "#5b5bd6",
-      "--brand-strong": "#4a4ac7",
-    },
-  },
 });
 ```
 
-Use `theme.tokens` to override global CSS custom properties.
+`site.origin` must be an HTTP(S) origin, such as `https://example.com`, without a path, query, or fragment.
 
-The default font is Alibaba PuHuiTi 2.0. Override `--font-sans` to change the font or `--font-heading-weight` to change the home-page heading weight (default: `900`).
-
-`site.origin` must be a bare HTTP(S) origin without credentials, a path, query, or fragment. Navigation, footer, home-action, and version links accept relative URLs plus HTTP(S), `mailto:`, and `tel:` schemes; unsafe schemes and control characters are rejected during configuration.
-
-Use normal Astro commands:
+Add these scripts to `package.json`:
 
 ```json
 {
@@ -114,107 +82,7 @@ Use normal Astro commands:
 }
 ```
 
-`@antv/site` supports static sites only; server adapters are not supported. Keep custom pages and components in `src/` and static assets in `public/` as in a standard Astro project.
-
-The site provides `/llms.txt` as an AI-readable index, `/llms-full.txt` for full document content and example source, and `/markdown/{locale}/{slug}.md` for individual documents. Draft and sidebar-hidden documents are excluded. Custom footer groups replace the default groups, including the `/llms.txt` link.
-
-Advanced Astro configurations can compose the same integration directly:
-
-```js
-import mdx from "@astrojs/mdx";
-import sitemap from "@astrojs/sitemap";
-import { defineConfig } from "astro/config";
-import { antvSite } from "@antv/site";
-
-export default defineConfig({
-  base: "/my-library/",
-  integrations: [antvSite(siteConfig), mdx(), sitemap()],
-});
-```
-
-Use this form for Astro options such as `base`, redirects, or additional integrations. Pass the site settings shown above as `siteConfig`. Install `@astrojs/mdx` and `@astrojs/sitemap` separately when using these integrations directly; the package's `defineConfig` enables both by default. Set `base` when deploying under a subpath.
-
-Set `qa.enabled` to `true` to enable the QA entry and result page at `/{locale}/result/`. Change `qa.path` to customize the route. QA is disabled by default and requires access to Sive's QA service and authentication.
-
-## Home slots
-
-Consumers can add trusted Astro components around the shared home sections. The `hero` and `features` slots replace the corresponding default section when non-empty; the other slots insert content around them.
-
-```js
-slots: {
-  home: {
-    beforeHero: ["./site/Announcement.astro"],
-    hero: ["./site/ProductHero.astro"],
-    afterHero: [],
-    beforeFeatures: [],
-    features: [],
-    afterFeatures: [],
-    beforeFooter: ["./site/Community.astro"],
-  },
-}
-```
-
-Slot paths are relative to your project root. Components receive `locale`, `slotName`, `config`, and `registry`; import `HomeSlotProps` from `@antv/site` for their types.
-
-## Shared updates
-
-Import the opt-in announcement carousel in a home slot or another Astro component:
-
-```astro
----
-import { Updates } from '@antv/site/components';
-const { locale } = Astro.props;
----
-
-<Updates locale={locale} />
-```
-
-Announcements come from `https://assets.antv.antgroup.com/antv/banner-messages.json`
-and update without rebuilding the site. JavaScript and access to this feed are
-required. Missing translations fall back to the other locale.
-
-The component is not added by default. It includes responsive card styles;
-set section spacing in your own layout.
-
-## Shared components
-
-Import supported UI from `@antv/site/components`: `QaEntry`, `Updates`, and `Carousel`.
-`QaEntry` accepts `locale`, an optional `placeholder`, and optional `suggestions`
-(an array of question strings in the current locale):
-
-```astro
-<QaEntry locale={locale} suggestions={questions.map((question) => question[locale])} />
-```
-
-Clicking a suggestion submits it immediately. Enter sends; Shift+Enter adds a line.
-Questions are limited to 4,000 characters and are not included in URLs.
-Omit `suggestions` to hide the shortcuts. The component requires `qa.enabled: true`.
-
-Keep site-specific content and layout in the existing home slots. For a custom card
-carousel, pass cards through the default slot:
-
-```astro
----
-import { Carousel } from '@antv/site/components';
-const { locale } = Astro.props;
----
-
-<Carousel locale={locale} label="Featured projects" list>
-  <article role="listitem">First project</article>
-  <article role="listitem">Second project</article>
-</Carousel>
-```
-
-`Carousel` includes pagination and autoplay.
-Set `disabled` while asynchronous content is loading; remove the `disabled` attribute
-from the rendered `antv-carousel` element once cards are ready. Optional `pageLabel`
-accepts a `{page}` placeholder; `list` gives the track list semantics (provide
-`role="listitem"` on each card).
-
-Customize geometry through inherited CSS properties on a wrapper:
-`--carousel-columns`, `--carousel-gap`, `--carousel-track-padding`, and
-`--carousel-pagination-margin`. Defaults show 3/2/1 cards at desktop/1000px/767px;
-when setting `--carousel-columns`, supply your own responsive overrides as needed.
+After adding documents below, run `pnpm dev` and open `/zh/` or `/en/`. Use `pnpm build` and `pnpm preview` to build and preview the site.
 
 ## Content conventions
 
@@ -231,7 +99,9 @@ docs/
 
 Frontmatter must contain `title`; `description`, `order`, `draft`, and `sidebar.label` / `sidebar.hidden` are optional. Use standard Astro/MDX syntax for components in `.mdx` files.
 
-Examples keep source in the consuming repository:
+## Examples
+
+To enable examples, set `content.examples` to `"./examples"` and add the following files:
 
 ```text
 examples/
@@ -242,7 +112,6 @@ examples/
       demo/
         meta.json
         hello.ts
-        message.ts
 ```
 
 A minimal metadata file is:
@@ -261,8 +130,27 @@ A minimal metadata file is:
 
 Demo filenames must reference JavaScript or TypeScript files inside their own `demo` directory. Route keys must be unique.
 
-Use relative imports to reference other files from a Demo source file.
+Only include trusted Demo code: examples run with the same origin as your site, not in an isolated security sandbox.
 
-## Demo safety
+## Customize
 
-Only include trusted Demo code: examples run with the same origin as your site, not in an isolated security sandbox. For untrusted submissions or public online editing, use a dedicated sandbox service.
+Set `theme.tokens` to override CSS variables, for example `{ "--brand": "#5b5bd6" }`.
+
+Use `slots.home` to add your own Astro components. Paths are relative to the project root:
+
+```js
+slots: {
+  home: {
+    hero: ["./site/ProductHero.astro"],
+    beforeFooter: ["./site/Community.astro"],
+  },
+}
+```
+
+`hero` and `features` replace the default sections. Other slots insert content around them. Components receive the props described by `HomeSlotProps`, available from the package root.
+
+Optional components `QaEntry`, `Updates`, and `Carousel` are available from `@antv/astro-theme-antv/components`. QA requires `qa.enabled: true` and access to Sive's QA service and authentication.
+
+For Astro options such as `base` or additional integrations, use Astro's `defineConfig` with `antvSite(siteConfig)` in `integrations`. Install and add `@astrojs/mdx` and `@astrojs/sitemap` if needed; the package's `defineConfig` includes both by default.
+
+See [the basic site](./demos/basic-site) for a complete example.

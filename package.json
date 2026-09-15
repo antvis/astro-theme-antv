@@ -1,15 +1,15 @@
 {
-  "name": "@antv/site",
+  "name": "@antv/astro-theme-antv",
   "version": "0.1.0",
   "description": "Astro integration for static open-source documentation and examples",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/antvis/site.git"
+    "url": "https://github.com/antvis/astro-theme-antv.git"
   },
-  "homepage": "https://github.com/antvis/site#readme",
+  "homepage": "https://github.com/antvis/astro-theme-antv#readme",
   "bugs": {
-    "url": "https://github.com/antvis/site/issues"
+    "url": "https://github.com/antvis/astro-theme-antv/issues"
   },
   "type": "module",
   "packageManager": "pnpm@10.34.5",
