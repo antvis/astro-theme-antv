@@ -69,6 +69,18 @@ export default defineConfig({
 
 `site.origin` must be an HTTP(S) origin, such as `https://example.com`, without a path, query, or fragment.
 
+Configure analytics using component names exported by [astro-analytics](https://github.com/Destiner/astro-analytics). Each value is passed directly as that component's props. Include only the services you use:
+
+```js
+analytics: {
+  GoogleAnalytics: { id: "G-XXXXXXXXXX" },
+  SimpleAnalytics: {},
+  Matomo: { id: "1", url: "https://analytics.example.com/" },
+},
+```
+
+Configured components render at the end of the body on all theme pages in production builds, including any `noscript` fallback they provide. Omit `analytics` to disable tracking; development builds never enable it. Unknown component names fail the build.
+
 Add these scripts to `package.json`:
 
 ```json

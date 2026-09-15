@@ -23,6 +23,8 @@ export interface LocalizedLink {
 
 export type ContentComponent = string | { type: "link-card" };
 
+export type AnalyticsConfig = Record<string, Record<string, unknown>>;
+
 export const homeSlotNames = [
   "beforeHero",
   "hero",
@@ -61,6 +63,7 @@ export interface AntVSiteConfig {
   };
   navigation?: LocalizedLink[];
   versions?: Record<string, string>;
+  analytics?: AnalyticsConfig;
   search?: {
     enabled?: boolean;
     aliases?: Record<string, string[]>;
@@ -146,6 +149,7 @@ export interface ResolvedSiteConfig {
   };
   navigation: LocalizedLink[];
   versions: Record<string, string>;
+  analytics: AnalyticsConfig;
   search: {
     enabled: boolean;
     aliases: Record<string, string[]>;
@@ -325,6 +329,9 @@ const configSchema = z
     }),
     navigation: z.array(linkSchema).default([]),
     versions: z.record(z.string(), safeHrefSchema).default({}),
+    analytics: z
+      .record(z.string().min(1), z.record(z.string(), z.unknown()))
+      .default({}),
     search: z
       .strictObject({
         enabled: z.boolean().default(true),

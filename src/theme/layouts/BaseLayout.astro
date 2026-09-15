@@ -1,5 +1,7 @@
 ---
+import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
 import { alternateRoute, localize } from '../lib/compiler';
+import * as Analytics from 'astro-analytics';
 import languageIcon from '../assets/icons/language.svg?raw';
 import menuIcon from '@tabler/icons/outline/menu-2.svg?raw';
 import SiteFooter from '../components/SiteFooter.astro';
@@ -345,5 +347,12 @@ const structuredData = {
 
       })();
     </script>
+    {import.meta.env.PROD && Object.entries(config.analytics).map(([name, props]) => {
+      if (!Object.hasOwn(Analytics, name)) {
+        throw new Error(`Unknown analytics component "${name}". Use an export from astro-analytics.`);
+      }
+      const Component = Analytics[name as keyof typeof Analytics] as AstroComponentFactory;
+      return <Component {...props} />;
+    })}
   </body>
 </html>
