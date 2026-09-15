@@ -10,8 +10,6 @@ pnpm install
 pnpm dev
 ```
 
-The demo requires `@antv/astro-theme-antv@0.1.0` to be available in your npm registry.
-
 Use `pnpm check`, `pnpm build`, and `pnpm preview` to check, build, and preview the
 site.
 
