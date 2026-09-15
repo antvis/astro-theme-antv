@@ -1,6 +1,5 @@
 ---
-import { getAntvDocIdentity, localize } from '../../lib/compiler';
-import { getDocsCollection } from '../../lib/docs';
+import { localize } from '../../lib/compiler';
 import arrowRightIcon from '@tabler/icons/outline/arrow-right.svg?raw';
 import bracesIcon from '@tabler/icons/outline/braces.svg?raw';
 import codeIcon from '@tabler/icons/outline/code.svg?raw';
@@ -17,8 +16,6 @@ export function getStaticPaths() {
 }
 
 const locale = String(Astro.params['locale']) as 'zh' | 'en';
-const documents = (await getDocsCollection())
-  .filter((entry) => config.site.locales.includes(getAntvDocIdentity(entry.id).locale));
 const home = config.home;
 const route = `/${locale}/`;
 const localHref = (href: string) => {
@@ -32,20 +29,6 @@ const localHref = (href: string) => {
     `/${locale}${href.startsWith('/') ? href : `/${href}`}`.replace(/\/$/, '') + '/',
   );
 };
-const homeStats = [
-  {
-    value: documents.length,
-    label: locale === 'zh' ? '篇本地化文档' : 'localized documents',
-  },
-  {
-    value: registry.counts.demos,
-    label: locale === 'zh' ? '个静态示例' : 'static examples',
-  },
-  {
-    value: registry.groups.length,
-    label: locale === 'zh' ? '个内容分组' : 'content groups',
-  },
-].filter((item) => item.value > 0);
 const featureIcons = [bracesIcon, componentsIcon, codeIcon];
 const imageAlt = localize(
   home.imageAlt,
@@ -117,18 +100,6 @@ const imageAlt = localize(
   {homeSlots.afterHero.map((SlotComponent) => (
     <SlotComponent locale={locale} config={config} registry={registry} slotName="afterHero" />
   ))}
-
-  {home.showStats && homeStats.length > 0 && (
-    <section
-      class="home-proof"
-      aria-label={locale === 'zh' ? '站点内容统计' : 'Site content summary'}
-      style={`--home-stat-count: ${homeStats.length}`}
-    >
-      {homeStats.map((stat) => (
-        <div><strong>{stat.value}</strong><span>{stat.label}</span></div>
-      ))}
-    </section>
-  )}
 
   {homeSlots.beforeFeatures.map((SlotComponent) => (
     <SlotComponent locale={locale} config={config} registry={registry} slotName="beforeFeatures" />

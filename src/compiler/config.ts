@@ -82,7 +82,6 @@ export interface AntVSiteConfig {
     description: LocalizedText;
     image?: string;
     imageAlt?: LocalizedText;
-    showStats?: boolean;
     featuresTitle?: LocalizedText;
     featuresDescription?: LocalizedText;
     actions?: LocalizedLink[];
@@ -166,7 +165,6 @@ export interface ResolvedSiteConfig {
     description: LocalizedText;
     image?: string;
     imageAlt?: LocalizedText;
-    showStats: boolean;
     featuresTitle?: LocalizedText;
     featuresDescription?: LocalizedText;
     actions: LocalizedLink[];
@@ -365,7 +363,6 @@ const configSchema = z
       description: localizedTextSchema,
       image: z.string().optional(),
       imageAlt: localizedTextSchema.optional(),
-      showStats: z.boolean().default(true),
       featuresTitle: localizedTextSchema.optional(),
       featuresDescription: localizedTextSchema.optional(),
       actions: z.array(linkSchema).default([]),
