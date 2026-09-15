@@ -143,12 +143,12 @@ if (page.type === 'document') {
           <h1>{title}</h1>
           <p>{isZh ? `共 ${registry.counts.demos} 个示例。通过左侧分类快速定位，点击缩略图直接查看运行结果和完整源码。` : `${registry.counts.demos} examples. Use the categories to navigate, then select a thumbnail to open its live result and complete source.`}</p>
         </header>
-        <div class="example-catalog-content grid gap-16 [@media(width<=700px)]:gap-y-12 [@media(width<=700px)]:gap-x-12">
+        <div class="grid gap-16 [@media(width<=700px)]:gap-y-12 [@media(width<=700px)]:gap-x-12">
           {registry.categories.map((item) => {
             const demoCount = item.groups.reduce((sum, entry) => sum + entry.demos.length, 0);
             if (!demoCount) return null;
             return (
-              <section class="catalog-category [scroll-margin-top:calc(var(--header-height)_+_24px)]" id={`category-${item.slug}`} data-example-category={item.slug}>
+              <section class="[scroll-margin-top:calc(var(--header-height)_+_24px)]" id={`category-${item.slug}`} data-example-category={item.slug}>
                 <header class="catalog-category-header flex items-baseline justify-between gap-6 mb-7 pb-3.5 [border-bottom:1px_solid_var(--border-soft)] [@media(width<=700px)]:gap-y-4 [@media(width<=700px)]:gap-x-4 [&_h2]:text-[var(--text-strong)] [&_h2]:font-medium [&_h2]:text-[24px] [&_h2]:m-0 [&_span]:[flex:none] [&_span]:text-[var(--muted-light)] [&_span]:text-[11px]">
                   <h2>{localize(item.title, locale)}</h2>
                   <span>{demoCount} {isZh ? '个示例' : 'examples'}</span>

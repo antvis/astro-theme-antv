@@ -11,10 +11,10 @@ const resolvedIcon = isImage ? undefined : resolveExampleCategoryIcon(icon);
 ---
 
 {isImage ? (
-  <img class="example-category-icon [flex:0_0_16px] w-4 h-4 mr-2 object-contain [fill:currentColor] opacity-60" src={icon} alt="" aria-hidden="true" data-example-category-icon />
+  <img class="[flex:0_0_16px] w-4 h-4 mr-2 object-contain [fill:currentColor] opacity-60" src={icon} alt="" aria-hidden="true" data-example-category-icon />
 ) : (
   <svg
-    class="example-category-icon [flex:0_0_16px] w-4 h-4 mr-2 object-contain [fill:currentColor] opacity-60"
+    class="[flex:0_0_16px] w-4 h-4 mr-2 object-contain [fill:currentColor] opacity-60"
     viewBox={resolvedIcon!.definition.viewBox}
     aria-hidden="true"
     data-example-category-icon

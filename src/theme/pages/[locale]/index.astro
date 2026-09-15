@@ -49,20 +49,20 @@ const imageAlt = localize(
     ))
   ) : (
     <section class="home-hero relative isolate grid [grid-template-columns:minmax(360px,_0.78fr)_minmax(560px,_1.22fr)] w-[var(--home-content-width)] min-h-[calc(100dvh_-_var(--header-height))] items-center gap-[clamp(36px,_5vw,_78px)] pt-[clamp(46px,_7vh,_78px)] pb-[clamp(72px,_9vh,_100px)] text-left mx-auto my-0 px-0 [@media(width<=1080px)]:grid-cols-1 [@media(width<=1080px)]:min-h-auto [@media(width<=1080px)]:text-center [@media(width<=1080px)]:justify-items-center [@media(width<=700px)]:w-[calc(100%_-_24px)] [@media(width<=700px)]:gap-y-8.5 [@media(width<=700px)]:gap-x-8.5 [@media(width<=700px)]:pt-11 [@media(width<=700px)]:pb-18 [@media(700px<width<=1080px)]:gap-y-11 [@media(700px<width<=1080px)]:gap-x-11 [@media(700px<width<=1080px)]:pt-18 [@media(700px<width<=1080px)]:pb-24 [&_.eyebrow]:mb-4 [&_.eyebrow]:text-[color-mix(in_srgb,_var(--brand-strong)_88%,_#5f78df)] [&_.eyebrow]:text-[11px] [&_.eyebrow]:font-semibold [&_.eyebrow]:tracking-[0.14em] [&_.eyebrow]:uppercase" aria-labelledby="home-title">
-      <div class="hero-copy relative z-2 grid max-w-160 justify-items-start pl-[clamp(0px,_1.2vw,_18px)] [@media(width<=1080px)]:max-w-190 [@media(width<=1080px)]:justify-items-center">
+      <div class="relative z-2 grid max-w-160 justify-items-start pl-[clamp(0px,_1.2vw,_18px)] [@media(width<=1080px)]:max-w-190 [@media(width<=1080px)]:justify-items-center">
         <p class="eyebrow">{localize(home.eyebrow, locale, `AntV ${config.site.title}`)}</p>
         <h1 id="home-title" class="grid gap-2.5 text-[var(--text-strong)] text-[clamp(46px,_4.2vw,_66px)] [font-weight:var(--font-heading-weight)] leading-[1.02] tracking-[-0.06em] m-0 [@media(700px<width<=900px)]:text-[48px] [@media(700px<width<=900px)]:max-w-170 [@media(width<=700px)]:text-[clamp(34px,_10vw,_40px)] [@media(width<=700px)]:leading-[1.05] [@media(width<=700px)]:max-w-115">
-          <span class="hero-title-line flex items-baseline gap-[0.18em] whitespace-nowrap [@media(width<=700px)]:justify-center"><strong class="text-[var(--brand-strong)] [font:inherit]">{config.site.title}</strong></span>
-          <span class="hero-title-promise block max-w-[11em] text-[var(--text-strong)] text-[clamp(42px,_3.5vw,_56px)] whitespace-normal [@media(width<=700px)]:[font-size:inherit]">{localize(home.title, locale)}</span>
+          <span class="flex items-baseline gap-[0.18em] whitespace-nowrap [@media(width<=700px)]:justify-center"><strong class="text-[var(--brand-strong)] [font:inherit]">{config.site.title}</strong></span>
+          <span class="block max-w-[11em] text-[var(--text-strong)] text-[clamp(42px,_3.5vw,_56px)] whitespace-normal [@media(width<=700px)]:[font-size:inherit]">{localize(home.title, locale)}</span>
         </h1>
-        <p class="hero-description max-w-127.5 mt-6 mb-0 text-[var(--muted)] text-[17px] leading-[1.72] mx-0 [@media(width<=900px)]:max-w-160 [@media(width<=900px)]:text-[16px]">{localize(home.description, locale)}</p>
+        <p class="max-w-127.5 mt-6 mb-0 text-[var(--muted)] text-[17px] leading-[1.72] mx-0 [@media(width<=900px)]:max-w-160 [@media(width<=900px)]:text-[16px]">{localize(home.description, locale)}</p>
         {config.qa && <QaEntry locale={locale} />}
         {home.actions.length > 0 && (
-          <div class="hero-actions flex flex-wrap gap-3.5 justify-start mt-7.5 [@media(width<=700px)]:grid [@media(width<=700px)]:grid-cols-1 [@media(width<=700px)]:w-[min(100%,_360px)] [@media(width<=1080px)]:justify-center [@media(width<=700px)]:[&_.button]:w-full">
+          <div class="flex flex-wrap gap-3.5 justify-start mt-7.5 [@media(width<=700px)]:grid [@media(width<=700px)]:grid-cols-1 [@media(width<=700px)]:w-[min(100%,_360px)] [@media(width<=1080px)]:justify-center [@media(width<=700px)]:[&_.button]:w-full">
             {home.actions.map((action, index) => (
               <a class:list={['button', index === 0 && 'button-primary']} href={localHref(action.href)}>
                 <span>{localize(action.text, locale)}</span>
-                {index === 0 && <span class="button-icon block w-4 h-4 [&_svg]:block [&_svg]:w-full [&_svg]:h-full [&_svg]:[stroke-width:1.8]" aria-hidden="true" set:html={arrowRightIcon}></span>}
+                {index === 0 && <span class="block w-4 h-4 [&_svg]:block [&_svg]:w-full [&_svg]:h-full [&_svg]:[stroke-width:1.8]" aria-hidden="true" set:html={arrowRightIcon}></span>}
               </a>
             ))}
           </div>
@@ -72,7 +72,7 @@ const imageAlt = localize(
       <div class="hero-showcase relative z-1 block w-full max-w-190 [justify-self:end] [text-decoration:none] [@media(900px<width<=1080px)]:w-[min(100%,_780px)] [@media(700px<width<=900px)]:w-[min(100%,_760px)] [@media(width<=1080px)]:[justify-self:center] [@media(width<=700px)]:mt-0 [&:hover]:[transform:translateY(-5px)]">
         <div class="hero-showcase-frame relative block overflow-hidden [border:1px_solid_var(--home-border)] rounded-[24px] p-[clamp(18px,_2.2vw,_28px)] [@media(width<=700px)]:rounded-[18px] [@media(width<=700px)]:p-3.5">
           {home.image ? (
-            <img class="hero-product-image relative z-1 block w-full min-h-105 max-h-140 object-contain [@media(width<=700px)]:min-h-70" src={withBase(home.image)} alt={imageAlt} decoding="async" />
+            <img class="relative z-1 block w-full min-h-105 max-h-140 object-contain [@media(width<=700px)]:min-h-70" src={withBase(home.image)} alt={imageAlt} decoding="async" />
           ) : (
             <div class="hero-default-visual relative z-1 grid min-h-115 place-items-center overflow-hidden text-[var(--brand)] [@media(width<=700px)]:min-h-70 [&_svg]:absolute [&_svg]:[inset:0] [&_svg]:w-full [&_svg]:h-full [&_svg]:[fill:var(--surface-raised)] [&_svg]:[stroke:var(--brand)] [&_svg]:[stroke-linecap:round] [&_svg]:[stroke-linejoin:round] [&_svg]:[stroke-width:5] [&_circle]:[stroke:var(--brand)] [&_circle]:[stroke-width:5]" aria-hidden="true">
               <span class="hero-product-mark relative z-2 grid min-w-31 min-h-31 place-items-center [border:1px_solid_color-mix(in_srgb,_var(--brand)_24%,_var(--border))] rounded-[34px] text-[var(--brand-strong)] text-[clamp(28px,_4vw,_48px)] font-bold tracking-[-0.06em] p-5 [@media(width<=700px)]:min-w-23 [@media(width<=700px)]:min-h-23 [@media(width<=700px)]:rounded-[24px]">{config.site.title}</span>
@@ -110,7 +110,7 @@ const imageAlt = localize(
     ))
   ) : home.features.length > 0 && (
     <section class="feature-section relative w-full mt-18 mb-0 pt-29.5 pb-32 overflow-hidden mx-auto px-7 [@media(width<=700px)]:mt-13 [@media(width<=700px)]:pt-18 [@media(width<=700px)]:pb-21 [@media(width<=700px)]:px-3" aria-labelledby="feature-title">
-      <header class="feature-section-header relative z-1 max-w-180 mt-0 mb-14 text-center mx-auto [@media(width<=700px)]:mb-7.5 [&_p]:max-w-140 [&_p]:mt-4.5 [&_p]:mb-0 [&_p]:text-[var(--muted)] [&_p]:text-[16px] [&_p]:leading-[1.7] [&_p]:mx-auto">
+      <header class="relative z-1 max-w-180 mt-0 mb-14 text-center mx-auto [@media(width<=700px)]:mb-7.5 [&_p]:max-w-140 [&_p]:mt-4.5 [&_p]:mb-0 [&_p]:text-[var(--muted)] [&_p]:text-[16px] [&_p]:leading-[1.7] [&_p]:mx-auto">
         <h2 id="feature-title" class="text-[var(--text-strong)] text-[clamp(36px,_3.3vw,_48px)] [font-weight:var(--font-heading-weight)] leading-[1.18] tracking-[-0.045em] m-0 [@media(width<=700px)]:text-[32px]">
           {localize(
             home.featuresTitle,
@@ -122,7 +122,7 @@ const imageAlt = localize(
       </header>
       <div class="feature-list relative z-1 grid grid-cols-2 [grid-template-rows:auto] w-[var(--home-content-width)] gap-5 mx-auto my-0 [@media(width<=700px)]:grid-cols-1 [@media(width<=700px)]:w-full [&_h3]:mt-6.5 [&_h3]:mb-3 [&_h3]:text-[var(--text-strong)] [&_h3]:text-[clamp(22px,_2vw,_28px)] [&_h3]:font-bold [&_h3]:tracking-[-0.035em] [&_h3]:mx-0 [&_p]:max-w-[40ch] [&_p]:text-[var(--muted)] [&_p]:text-[15px] [&_p]:leading-[1.78] [&_p]:m-0">
         {home.features.map((feature, index) => (
-          <article class={`feature-card feature-card-${index + 1}`}>
+          <article class={`feature-card-${index + 1}`}>
             <span class="feature-symbol grid w-12 h-12 place-items-center [border:1px_solid_color-mix(in_srgb,_var(--brand)_20%,_var(--border))] rounded-[14px] text-[var(--brand-strong)] [&_svg]:block [&_svg]:w-5.5 [&_svg]:h-5.5 [&_svg]:[stroke-width:1.7] [&_>_span]:grid [&_>_span]:place-items-center [&_img]:block [&_img]:w-7 [&_img]:h-7 [&_img]:object-contain" aria-hidden="true">
               {feature.icon ? (
                 <img src={withBase(feature.icon)} alt="" loading="lazy" decoding="async" />

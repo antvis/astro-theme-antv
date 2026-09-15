@@ -31,13 +31,13 @@ const developmentSearch = import.meta.env.ANTV_SITE_DEVELOPMENT === 'true';
   data-pagefind-base-path={withBase('/pagefind/')}
   data-site-base-path={withBase('/')}
 >
-  <div class="search-panel">
-    <header class="search-dialog-header flex items-center justify-between min-h-12 pt-2.5 pr-3.5 pb-2 pl-4.5 [@media(width<=700px)]:pl-3.5">
-      <div class="search-dialog-brand flex items-center gap-[9px] text-[var(--muted)] text-[13px] font-semibold tracking-[0.01em]">
-        <span class="search-brand-mark inline-grid w-[25px] h-[25px] place-items-center rounded-[7px] [background:var(--brand-strong)] text-[white] text-[11px] font-bold tracking-[-0.04em]" aria-hidden="true">{siteTitle.slice(0, 3)}</span>
+  <div>
+    <header class="flex items-center justify-between min-h-12 pt-2.5 pr-3.5 pb-2 pl-4.5 [@media(width<=700px)]:pl-3.5">
+      <div class="flex items-center gap-[9px] text-[var(--muted)] text-[13px] font-semibold tracking-[0.01em]">
+        <span class="inline-grid w-[25px] h-[25px] place-items-center rounded-[7px] [background:var(--brand-strong)] text-[white] text-[11px] font-bold tracking-[-0.04em]" aria-hidden="true">{siteTitle.slice(0, 3)}</span>
         <span>{locale === 'zh' ? '全站搜索' : 'Site search'}</span>
       </div>
-      <button class="search-close inline-flex [border:0] rounded-[var(--radius-small)] [background:transparent] text-[var(--muted)] cursor-pointer p-1 [&:hover]:[background:var(--menu-hover)] [&_kbd]:[background:var(--surface-subtle)] [&_kbd]:px-[7px] [&_kbd]:py-0.5" type="button" data-search-close aria-label={locale === 'zh' ? '关闭搜索' : 'Close search'}>
+      <button class="inline-flex [border:0] rounded-[var(--radius-small)] [background:transparent] text-[var(--muted)] cursor-pointer p-1 [&:hover]:[background:var(--menu-hover)] [&_kbd]:[background:var(--surface-subtle)] [&_kbd]:px-[7px] [&_kbd]:py-0.5" type="button" data-search-close aria-label={locale === 'zh' ? '关闭搜索' : 'Close search'}>
         <kbd>Esc</kbd>
       </button>
     </header>
@@ -59,19 +59,19 @@ const developmentSearch = import.meta.env.ANTV_SITE_DEVELOPMENT === 'true';
         placeholder={locale === 'zh' ? '搜索本站内容…' : 'Search this site…'}
         data-search-input
       />
-      <button class="search-clear grid w-6.5 h-6.5 place-items-center [border:0] rounded-[50%] [background:var(--border)] text-[var(--muted)] text-[19px] leading-[1] cursor-pointer p-0 [&:hover]:[background:var(--border-strong)] [&:hover]:text-[var(--text-strong)] [&[hidden]]:hidden" type="button" data-search-clear hidden aria-label={locale === 'zh' ? '清空搜索' : 'Clear search'}>×</button>
+      <button class="grid w-6.5 h-6.5 place-items-center [border:0] rounded-[50%] [background:var(--border)] text-[var(--muted)] text-[19px] leading-[1] cursor-pointer p-0 [&:hover]:[background:var(--border-strong)] [&:hover]:text-[var(--text-strong)] [&[hidden]]:hidden" type="button" data-search-clear hidden aria-label={locale === 'zh' ? '清空搜索' : 'Clear search'}>×</button>
     </div>
-    <div class="search-meta flex items-center justify-between min-h-[39px] pt-2 pb-[7px] text-[var(--muted-light)] text-[12px] px-5 [@media(width<=700px)]:px-3.5 [&_>_:first-child]:text-[var(--muted)] [&_>_:first-child]:font-semibold" aria-live="polite">
+    <div class="flex items-center justify-between min-h-[39px] pt-2 pb-[7px] text-[var(--muted-light)] text-[12px] px-5 [@media(width<=700px)]:px-3.5 [&_>_:first-child]:text-[var(--muted)] [&_>_:first-child]:font-semibold" aria-live="polite">
       <span>{locale === 'zh' ? '文档与示例' : 'Documentation and examples'}</span>
       <span data-search-status>{locale === 'zh' ? '输入关键词开始搜索' : 'Type to start searching'}</span>
     </div>
-    <div class="search-results min-h-68 max-h-[min(480px,_calc(100dvh_-_280px))] pt-0 pb-2 overflow-y-auto [border-top:1px_solid_var(--border-soft)] [background:var(--surface-raised)] px-2 [@media(width<=700px)]:max-h-[calc(100dvh_-_230px)] [&[aria-busy=true]]:opacity-62" id="site-search-results" role="listbox" data-search-results>
-      <div class="search-state grid min-h-68 place-content-center justify-items-center gap-2 text-[var(--muted-light)] text-center [&_p]:m-0" data-search-state>
-        <span class="search-state-symbol grid w-10 h-10 place-items-center [border:1px_solid_var(--border)] rounded-[12px] [background:var(--surface-subtle)] text-[var(--brand)] text-[21px]" aria-hidden="true">⌕</span>
+    <div class="min-h-68 max-h-[min(480px,_calc(100dvh_-_280px))] pt-0 pb-2 overflow-y-auto [border-top:1px_solid_var(--border-soft)] [background:var(--surface-raised)] px-2 [@media(width<=700px)]:max-h-[calc(100dvh_-_230px)] [&[aria-busy=true]]:opacity-62" id="site-search-results" role="listbox" data-search-results>
+      <div class="grid min-h-68 place-content-center justify-items-center gap-2 text-[var(--muted-light)] text-center [&_p]:m-0" data-search-state>
+        <span class="grid w-10 h-10 place-items-center [border:1px_solid_var(--border)] rounded-[12px] [background:var(--surface-subtle)] text-[var(--brand)] text-[21px]" aria-hidden="true">⌕</span>
         <p>{locale === 'zh' ? '输入关键词，查找文档、API 与示例' : 'Search documentation, APIs, and examples'}</p>
       </div>
     </div>
-    <footer class="search-dialog-footer flex items-center justify-end gap-4.5 min-h-10.5 [border-top:1px_solid_var(--border-soft)] [background:var(--surface-subtle)] text-[var(--muted-light)] text-[11px] px-4 py-2 [@media(width<=700px)]:justify-start [@media(width<=700px)]:gap-y-3 [@media(width<=700px)]:gap-x-3 [@media(width<=700px)]:overflow-hidden [@media(width<=700px)]:whitespace-nowrap [&_span]:inline-flex [&_span]:items-center [&_span]:gap-y-[5px] [&_span]:gap-x-[5px] [&_kbd]:min-w-5 [&_kbd]:[background:var(--surface-raised)] [&_kbd]:text-center [&_kbd]:px-1 [&_kbd]:py-[1px]" aria-hidden="true">
+    <footer class="flex items-center justify-end gap-4.5 min-h-10.5 [border-top:1px_solid_var(--border-soft)] [background:var(--surface-subtle)] text-[var(--muted-light)] text-[11px] px-4 py-2 [@media(width<=700px)]:justify-start [@media(width<=700px)]:gap-y-3 [@media(width<=700px)]:gap-x-3 [@media(width<=700px)]:overflow-hidden [@media(width<=700px)]:whitespace-nowrap [&_span]:inline-flex [&_span]:items-center [&_span]:gap-y-[5px] [&_span]:gap-x-[5px] [&_kbd]:min-w-5 [&_kbd]:[background:var(--surface-raised)] [&_kbd]:text-center [&_kbd]:px-1 [&_kbd]:py-[1px]" aria-hidden="true">
       <span><kbd>↑</kbd><kbd>↓</kbd>{locale === 'zh' ? '选择' : 'Select'}</span>
       <span><kbd>↵</kbd>{locale === 'zh' ? '打开' : 'Open'}</span>
       <span><kbd>Esc</kbd>{locale === 'zh' ? '关闭' : 'Close'}</span>

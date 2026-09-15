@@ -62,66 +62,46 @@ const productLinks = (item: ProductItem, locale: string): ProductLink[] => {
 
 const createProductCard = (
   item: ProductItem,
-  locale: string
+  locale: string,
+  cardTemplate: HTMLTemplateElement,
+  linkTemplate: HTMLTemplateElement
 ) => {
   const links = productLinks(item, locale);
   const name = String(item.title || '').trim();
   if (!links.length || !name) return null;
 
-  const card = document.createElement('article');
-  card.className = 'product-card grid [grid-template-columns:32px_minmax(0,_1fr)] [align-items:start] gap-3 min-w-0 min-h-23 text-[var(--text)] px-0 py-[3px] [@media(width<=700px)]:min-h-0';
-
-  const mark = document.createElement('span');
-  mark.className = 'product-mark relative grid w-8 h-8 place-items-center mt-[1px] overflow-hidden rounded-none [background:transparent] text-[var(--brand-strong)] text-[10px] font-bold';
-  mark.setAttribute('aria-hidden', 'true');
+  const card = cardTemplate.content.firstElementChild!.cloneNode(
+    true
+  ) as HTMLElement;
+  const mark = card.querySelector<HTMLElement>('[data-product-mark]')!;
+  const icon = mark.querySelector('img')!;
   const iconUrl = safeRemoteUrl(item.icon);
-  if (iconUrl) {
-    const icon = document.createElement('img');
-  icon.className = 'absolute [inset:0] w-full h-full object-contain';
-    icon.src = iconUrl;
-    icon.alt = '';
-    icon.loading = 'lazy';
-    icon.decoding = 'async';
-    icon.addEventListener(
-      'error',
-      () => {
-        icon.remove();
-        mark.textContent = name.slice(0, 3);
-      },
-      { once: true }
-    );
-    mark.append(icon);
-  } else {
+  const showFallback = () => {
     mark.textContent = name.slice(0, 3);
+  };
+  if (iconUrl) {
+    icon.addEventListener('error', showFallback, { once: true });
+    icon.src = iconUrl;
+  } else {
+    showFallback();
   }
 
-  const copy = document.createElement('div');
-  copy.className = 'product-card-copy flex min-w-0 flex-col';
-  const titleLine = document.createElement('div');
-  titleLine.className = 'product-card-title flex min-w-0 items-baseline gap-[9px] text-[var(--text-strong)] leading-[22px]';
-  const title = document.createElement('strong');
-  title.className = 'flex-none text-[14px] font-semibold';
-  title.textContent = name;
-  const slogan = document.createElement('span');
-  slogan.className = 'min-w-0 overflow-hidden text-[14px] font-semibold text-ellipsis whitespace-nowrap';
-  slogan.textContent = String(item.slogan || '').trim();
-  titleLine.append(title, slogan);
-  const description = document.createElement('p');
-  description.className = '[display:-webkit-box] min-h-5 mt-[3px] mb-0 overflow-hidden text-[var(--muted-light)] text-[12px] leading-[20px] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] mx-0';
-  description.textContent = String(
+  card.querySelector('strong')!.textContent = name;
+  card.querySelector('[data-product-slogan]')!.textContent = String(
+    item.slogan || ''
+  ).trim();
+  card.querySelector('p')!.textContent = String(
     item.description || item.slogan || ''
   ).trim();
-  const actions = document.createElement('div');
-  actions.className = 'product-card-actions flex flex-wrap gap-4 mt-[9px]';
-  links.forEach((link) => {
-    const anchor = document.createElement('a');
-    anchor.className = 'rounded-none [background:transparent] text-[color-mix(in_srgb,_var(--brand)_72%,_#4f7cff)] text-[12px] font-medium leading-[18px] [text-decoration:none] p-0 hover:[background:transparent] hover:text-[var(--brand-strong)] hover:[text-decoration:underline] hover:[text-underline-offset:3px] focus-visible:[background:transparent] focus-visible:text-[var(--brand-strong)] focus-visible:[text-decoration:underline] focus-visible:[text-underline-offset:3px]';
+  const actions = card.querySelector('[data-product-actions]')!;
+  for (const link of links) {
+    const anchor = linkTemplate.content.firstElementChild!.cloneNode(
+      true
+    ) as HTMLAnchorElement;
     anchor.href = link.href;
     anchor.textContent = link.label;
     actions.append(anchor);
-  });
-  copy.append(titleLine, description, actions);
-  card.append(mark, copy);
+  }
   return card;
 };
 
@@ -133,6 +113,22 @@ export function mountProductMenu(): void {
     '[data-products-list]'
   );
   if (!productMenu || !productList) return;
+
+  const groupTemplate = productMenu.querySelector<HTMLTemplateElement>(
+    '[data-product-group-template]'
+  )!;
+  const cardTemplate = productMenu.querySelector<HTMLTemplateElement>(
+    '[data-product-card-template]'
+  )!;
+  const linkTemplate = productMenu.querySelector<HTMLTemplateElement>(
+    '[data-product-link-template]'
+  )!;
+  const errorTemplate = productMenu.querySelector<HTMLTemplateElement>(
+    '[data-product-error-template]'
+  )!;
+  const loading = productList
+    .querySelector('[data-products-loading]')!
+    .cloneNode(true);
 
   const locale = productList.dataset.locale || 'en';
   const categoryTitles: Record<string, string> = {
@@ -151,19 +147,16 @@ export function mountProductMenu(): void {
         (item) => item?.category === category
       );
       if (!products.length) return;
-      const section = document.createElement('section');
-      section.className = `product-group min-w-0 pt-6 pb-7 px-0 [@media(width<=900px)]:pt-5 [@media(width<=900px)]:pb-6 [&:last-child]:pb-2 product-group-${category}`;
-      const heading = document.createElement('h2');
-  heading.className = 'mt-0 mb-6 pt-0 pb-[13px] [border-bottom:1px_solid_var(--border-soft)] text-[var(--muted-light)] text-[14px] font-medium leading-[20px] mx-0 px-0 [@media(width<=900px)]:mb-4.5';
-      heading.textContent = label;
-      const cards = document.createElement('div');
-  cards.className = 'grid grid-cols-4 gap-x-[clamp(28px,_4vw,_76px)] gap-y-7.5 [@media(700px<width<=900px)]:grid-cols-2 [@media(700px<width<=900px)]:gap-y-6 [@media(width<=700px)]:grid-cols-1 [@media(width<=700px)]:gap-y-5.5 [@media(900px<width<=1320px)]:gap-x-8 [@media(width<=900px)]:gap-x-7';
+      const section = groupTemplate.content.firstElementChild!.cloneNode(
+        true
+      ) as HTMLElement;
+      section.querySelector('h2')!.textContent = label;
+      const cards = section.querySelector('[data-product-cards]')!;
       products.forEach((item) => {
-        const card = createProductCard(item, locale);
+        const card = createProductCard(item, locale, cardTemplate, linkTemplate);
         if (card) cards.append(card);
       });
       if (cards.childElementCount) {
-        section.append(heading, cards);
         fragment.append(section);
       }
     });
@@ -175,18 +168,12 @@ export function mountProductMenu(): void {
   };
 
   const renderProductsError = () => {
-    const state = document.createElement('div');
-    state.className = 'product-error flex items-center justify-center gap-2.5 min-h-31 text-[var(--muted)] text-[12px] [&_button]:[border:1px_solid_color-mix(in_srgb,_var(--brand)_30%,_var(--border))] [&_button]:rounded-[var(--radius-small)] [&_button]:[background:var(--brand-soft)] [&_button]:text-[var(--brand-strong)] [&_button]:cursor-pointer [&_button]:font-semibold [&_button]:px-2.5 [&_button]:py-[5px] [&_button:hover]:[border-color:var(--brand)] [&_button:focus-visible]:[border-color:var(--brand)]';
-    const message = document.createElement('span');
-    message.textContent =
-      locale === 'zh'
-        ? '产品数据暂时无法加载'
-        : 'Products are temporarily unavailable';
-    const retry = document.createElement('button');
-    retry.type = 'button';
-    retry.textContent = locale === 'zh' ? '重新加载' : 'Try again';
-    retry.addEventListener('click', () => void loadProducts(true));
-    state.append(message, retry);
+    const state = errorTemplate.content.firstElementChild!.cloneNode(
+      true
+    ) as HTMLElement;
+    state
+      .querySelector('button')!
+      .addEventListener('click', () => void loadProducts(true));
     productList.replaceChildren(state);
     productList.removeAttribute('aria-busy');
   };
@@ -195,15 +182,7 @@ export function mountProductMenu(): void {
     if (productsPromise && !retry) return productsPromise;
     if (retry) {
       productList.setAttribute('aria-busy', 'true');
-      const loading = document.createElement('div');
-      loading.className = 'product-loading flex items-center justify-center gap-2.5 min-h-31 text-[var(--muted)] text-[12px] [&_>_span]:w-3.5 [&_>_span]:h-3.5 [&_>_span]:[border:2px_solid_var(--border)] [&_>_span]:[border-top-color:var(--brand)] [&_>_span]:rounded-[50%]';
-      const spinner = document.createElement('span');
-      spinner.setAttribute('aria-hidden', 'true');
-      loading.append(
-        spinner,
-        locale === 'zh' ? '正在加载产品…' : 'Loading products…'
-      );
-      productList.replaceChildren(loading);
+      productList.replaceChildren(loading.cloneNode(true));
     }
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 8000);
