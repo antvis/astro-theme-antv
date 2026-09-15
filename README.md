@@ -146,6 +146,17 @@ Only include trusted Demo code: examples run with the same origin as your site, 
 
 ## Customize
 
+Tailwind CSS 4 is included: the theme registers the Vite plugin and loads the
+shared stylesheet. Sites can use utility classes directly in their components
+without installing Tailwind or adding a CSS entry point. Site sources are scanned
+automatically, and the installed theme directory is included explicitly.
+
+Use `tablet:` (up to 1200px) and `mobile:` (up to 640px) for responsive styles.
+The theme keeps its existing reset instead of enabling Preflight; utilities use
+`!important` to override the theme's unlayered styles. Site-specific CSS stays in
+the site, and brand values remain available through the theme's CSS variables,
+for example `text-[var(--brand)]`.
+
 Set `theme.tokens` to override CSS variables, for example `{ "--brand": "#5b5bd6" }`.
 
 Use `slots.home` to add your own Astro components. Paths are relative to the project root:

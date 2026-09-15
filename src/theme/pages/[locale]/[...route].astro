@@ -121,7 +121,7 @@ if (page.type === 'document') {
       <DocsSidebar items={documentItems} currentRoute={page.route} locale={locale} labels={config.content.sidebar} />
       <article class="markdown-body">
         <h1 class="document-title" data-pagefind-meta="title">{page.title}</h1>
-        <div class="document-meta">
+        <div class="document-meta flex justify-between gap-6 mb-6 pb-3 [border-bottom:1px_solid_var(--border-soft)] text-[var(--muted-light)] text-[12px] leading-[1.5] [@media(width<=700px)]:items-start [@media(width<=700px)]:flex-col">
           <span>{page.slug}</span>
           {editHref && (
             <a href={editHref}>
@@ -143,19 +143,19 @@ if (page.type === 'document') {
           <h1>{title}</h1>
           <p>{isZh ? `共 ${registry.counts.demos} 个示例。通过左侧分类快速定位，点击缩略图直接查看运行结果和完整源码。` : `${registry.counts.demos} examples. Use the categories to navigate, then select a thumbnail to open its live result and complete source.`}</p>
         </header>
-        <div class="example-catalog-content">
+        <div class="example-catalog-content grid gap-16 [@media(width<=700px)]:gap-y-12 [@media(width<=700px)]:gap-x-12">
           {registry.categories.map((item) => {
             const demoCount = item.groups.reduce((sum, entry) => sum + entry.demos.length, 0);
             if (!demoCount) return null;
             return (
-              <section class="catalog-category" id={`category-${item.slug}`} data-example-category={item.slug}>
-                <header class="catalog-category-header">
+              <section class="catalog-category [scroll-margin-top:calc(var(--header-height)_+_24px)]" id={`category-${item.slug}`} data-example-category={item.slug}>
+                <header class="catalog-category-header flex items-baseline justify-between gap-6 mb-7 pb-3.5 [border-bottom:1px_solid_var(--border-soft)] [@media(width<=700px)]:gap-y-4 [@media(width<=700px)]:gap-x-4 [&_h2]:text-[var(--text-strong)] [&_h2]:font-medium [&_h2]:text-[24px] [&_h2]:m-0 [&_span]:[flex:none] [&_span]:text-[var(--muted-light)] [&_span]:text-[11px]">
                   <h2>{localize(item.title, locale)}</h2>
                   <span>{demoCount} {isZh ? '个示例' : 'examples'}</span>
                 </header>
                 {item.groups.map((entry) => (
-                  <section class="catalog-group" id={groupAnchor(item.slug, entry.slug)} data-example-group={`${item.slug}/${entry.slug}`}>
-                    <header class="catalog-group-header">
+                  <section class="catalog-group [scroll-margin-top:calc(var(--header-height)_+_24px)] [&_+_.catalog-group]:mt-11" id={groupAnchor(item.slug, entry.slug)} data-example-group={`${item.slug}/${entry.slug}`}>
+                    <header class="catalog-group-header flex items-baseline justify-between gap-6 mb-4.5 [@media(width<=700px)]:gap-y-4 [@media(width<=700px)]:gap-x-4 [&_h3]:text-[var(--text-strong)] [&_h3]:font-medium [&_h3]:text-[20px] [&_h3]:leading-[30px] [&_h3]:m-0 [&_a]:[flex:none] [&_a]:text-[var(--muted-light)] [&_a]:text-[11px] [&_a:hover]:text-[var(--brand)]">
                       <h3>{localize(entry.title, locale)}</h3>
                       <a href={withBase(`/${locale}/examples/${item.slug}/${entry.slug}/`)}>
                         {entry.demos.length} {isZh ? '个示例' : 'examples'}
@@ -166,7 +166,7 @@ if (page.type === 'document') {
                         const demoTitle = localize(demoItem.title, locale, demoItem.slug);
                         return (
                           <a href={withBase(`/${locale}/examples/${demoItem.key}/`)} aria-label={demoTitle}>
-                            <div class="demo-image">
+                            <div class="demo-image flex [aspect-ratio:16_/_10] items-center justify-center mb-3.5 overflow-hidden [border:1px_solid_var(--border-soft)] rounded-[var(--radius-small)] [&_img]:w-full [&_img]:h-full [&_img]:[object-fit:scale-down] [.demo-grid_a:hover_&]:border-[var(--brand)] [.demo-grid_a:hover_&]:[box-shadow:var(--shadow-hover)] [.demo-grid_a:hover_&]:[transform:translateY(-4px)]">
                               {demoItem.screenshot && (
                                 <img src={withBase(demoItem.screenshot)} alt={`${demoTitle}${isZh ? '缩略图' : ' thumbnail'}`} loading="lazy" decoding="async" />
                               )}
@@ -195,7 +195,7 @@ if (page.type === 'document') {
           <h1>{localize(category.title, locale)}</h1>
           <p>{category.groups.reduce((sum, item) => sum + item.demos.length, 0)} {isZh ? '个示例，按图表与能力分组。' : 'examples grouped by chart and capability.'}</p>
         </header>
-        <div class="group-list">
+        <div class="group-list [border-top:1px_solid_var(--border-soft)] [&_a]:flex [&_a]:items-center [&_a]:justify-between [&_a]:gap-y-6 [&_a]:gap-x-6 [&_a]:[border-bottom:1px_solid_var(--border-soft)] [&_a]:text-[var(--text-strong)] [&_a]:px-1 [&_a]:py-4.5 [&_a:hover_strong]:text-[var(--brand)] [&_div]:flex [&_div]:flex-col [&_div]:gap-y-1 [&_div]:gap-x-1 [&_small]:text-[var(--muted-light)] [&_small]:text-[12px] [&_span]:text-[var(--muted-light)] [&_span]:text-[12px]">
           {category.groups.map((item) => (
             <a href={withBase(`/${locale}/examples/${category.slug}/${item.slug}/`)}>
               <div><strong>{localize(item.title, locale)}</strong><small>{item.slug}</small></div>
@@ -219,7 +219,7 @@ if (page.type === 'document') {
         <div class="demo-grid">
           {group.demos.map((item) => (
             <a href={withBase(`/${locale}/examples/${item.key}/`)}>
-              <div class="demo-image">
+              <div class="demo-image flex [aspect-ratio:16_/_10] items-center justify-center mb-3.5 overflow-hidden [border:1px_solid_var(--border-soft)] rounded-[var(--radius-small)] [&_img]:w-full [&_img]:h-full [&_img]:[object-fit:scale-down] [.demo-grid_a:hover_&]:border-[var(--brand)] [.demo-grid_a:hover_&]:[box-shadow:var(--shadow-hover)] [.demo-grid_a:hover_&]:[transform:translateY(-4px)]">
                 {item.screenshot && (
                   <img src={withBase(item.screenshot)} alt={`${localize(item.title, locale, item.slug)}${isZh ? '缩略图' : ' thumbnail'}`} loading="lazy" decoding="async" />
                 )}

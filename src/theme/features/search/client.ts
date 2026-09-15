@@ -112,10 +112,10 @@ export function mountSiteSearch(): void {
 
     const setState = (message: string | undefined, symbol = '⌕') => {
       const state = document.createElement('div');
-      state.className = 'search-state';
+      state.className = 'search-state grid min-h-68 place-content-center justify-items-center gap-2 text-[var(--muted-light)] text-center [&_p]:m-0';
       state.dataset.searchState = '';
       const icon = document.createElement('span');
-      icon.className = 'search-state-symbol';
+      icon.className = 'search-state-symbol grid w-10 h-10 place-items-center [border:1px_solid_var(--border)] rounded-[12px] [background:var(--surface-subtle)] text-[var(--brand)] text-[21px]';
       icon.setAttribute('aria-hidden', 'true');
       icon.textContent = symbol;
       const text = document.createElement('p');
@@ -180,28 +180,28 @@ export function mountSiteSearch(): void {
         const isExample = withoutSiteBase(parsedUrl.pathname).includes('/examples/');
         const option = document.createElement('a');
         option.id = `site-search-result-${index}`;
-        option.className = 'search-result';
+        option.className = 'search-result relative block pt-[13px] pr-4 pb-3 pl-4.5 [border-bottom:1px_solid_var(--border-soft)] rounded-[8px] text-[var(--text)] [@media(width<=700px)]:pr-3 [@media(width<=700px)]:pl-3.5 [&::before]:absolute [&::before]:top-3 [&::before]:bottom-3 [&::before]:left-0 [&::before]:w-0.5 [&::before]:rounded-[2px] [&::before]:[background:var(--brand)] [&::before]:opacity-0 [&[data-selected]]:[background:var(--brand-soft)] [&[data-selected]]:text-[var(--text)] [&[data-selected]::before]:opacity-100 [&_mark]:[background:transparent] [&_mark]:text-[var(--brand-strong)] [&_mark]:p-0';
         option.href = href;
         option.setAttribute('role', 'option');
         option.setAttribute('aria-selected', String(index === 0));
         option.toggleAttribute('data-selected', index === 0);
 
         const heading = document.createElement('div');
-        heading.className = 'search-result-heading';
+        heading.className = 'search-result-heading flex items-center gap-2.5 [&_strong]:overflow-hidden [&_strong]:text-[var(--text-strong)] [&_strong]:text-[15px] [&_strong]:font-semibold [&_strong]:leading-[1.45] [&_strong]:text-ellipsis [&_strong]:whitespace-nowrap';
         const title = document.createElement('strong');
         appendHighlightedText(title, data.meta?.title || displayPath(data.url), query);
         const badge = document.createElement('span');
-        badge.className = `search-result-type${isExample ? ' is-example' : ''}`;
+        badge.className = `search-result-type [flex:none] [border:1px_solid_color-mix(in_srgb,_var(--brand)_20%,_var(--border))] rounded-[999px] [background:color-mix(in_srgb,_var(--brand-soft)_48%,_transparent)] text-[var(--brand-strong)] text-[10px] font-semibold leading-[17px] px-1.5 py-[1px] [&.is-example]:[border-color:color-mix(in_srgb,_var(--success)_24%,_var(--border))] [&.is-example]:[background:color-mix(in_srgb,_var(--success)_8%,_transparent)] [&.is-example]:text-[var(--success)]${isExample ? ' is-example' : ''}`;
         badge.textContent = isExample
           ? dialog.dataset.exampleLabel ?? ''
           : dialog.dataset.documentLabel ?? '';
         heading.append(title, badge);
 
         const path = document.createElement('span');
-        path.className = 'search-result-path';
+        path.className = 'search-result-path block mt-0.5 overflow-hidden text-[var(--muted-light)] text-[11px] text-ellipsis whitespace-nowrap';
         path.textContent = displayPath(data.url);
         const excerpt = document.createElement('p');
-        excerpt.className = 'search-result-excerpt';
+        excerpt.className = 'search-result-excerpt [display:-webkit-box] mt-1.5 mb-0 overflow-hidden text-[var(--muted)] text-[12px] leading-[1.55] [-webkit-box-orient:vertical] [-webkit-line-clamp:1] mx-0';
         appendHighlightedText(excerpt, data.plain_excerpt || '', query);
         option.append(heading, path, excerpt);
         option.addEventListener('pointermove', () => updateSelection(index));

@@ -14,20 +14,20 @@ const { demo, locale, height } = Astro.props;
 const title = localize(demo.title, locale, demo.slug);
 ---
 
-<section class="demo-workbench" aria-labelledby="demo-title" data-static-demo>
-  <header class="demo-static-header">
+<section class="demo-workbench overflow-hidden [border:1px_solid_var(--border-soft)] rounded-[var(--radius-medium)] [&_>_iframe]:block [&_>_iframe]:w-full [&_>_iframe]:min-h-80 [&_>_iframe]:[border:0]" aria-labelledby="demo-title" data-static-demo>
+  <header class="demo-static-header flex min-h-16 items-center justify-between gap-4 pr-4 pl-5 [border-bottom:1px_solid_var(--border-soft)] py-3 [&_h1]:text-[var(--text-strong)] [&_h1]:text-[20px] [&_h1]:font-semibold [&_h1]:m-0 [&_span]:text-[var(--muted-light)] [&_span]:text-[10px]">
     <div>
       <h1 id="demo-title">{title}</h1>
       <span>examples / {demo.key}</span>
     </div>
     <button
-      class="demo-secondary-action demo-icon-action"
+      class="demo-secondary-action min-h-7.5 [border:1px_solid_var(--border)] rounded-[var(--radius-small)] text-[var(--text)] cursor-pointer [&:hover]:[border-color:var(--brand)] [&:hover]:text-[var(--brand-strong)] demo-icon-action inline-grid w-7.5 min-w-7.5 h-7.5 place-items-center p-0"
       type="button"
       data-demo-reload
       aria-label={locale === 'zh' ? '重新加载预览' : 'Reload preview'}
       title={locale === 'zh' ? '重新加载预览' : 'Reload preview'}
     >
-      <span class="demo-action-icon" aria-hidden="true" set:html={reloadIcon}></span>
+      <span class="demo-action-icon block w-[15px] h-[15px] [&_svg]:block [&_svg]:w-[15px] [&_svg]:h-[15px]" aria-hidden="true" set:html={reloadIcon}></span>
     </button>
   </header>
   <iframe
@@ -37,7 +37,7 @@ const title = localize(demo.title, locale, demo.slug);
     loading="eager"
     data-demo-frame
   ></iframe>
-  <details class="demo-source" open>
+  <details class="demo-source [border-top:1px_solid_var(--border-soft)] [&_summary]:text-[var(--muted)] [&_summary]:text-[12px] [&_summary]:cursor-pointer [&_summary]:px-4 [&_summary]:py-2.5 [&_pre]:max-h-130 [&_pre]:overflow-auto [&_pre]:[border:0] [&_pre]:rounded-none [&_pre]:text-[var(--code-text)] [&_pre]:text-[12px] [&_pre]:leading-[1.7] [&_pre]:m-0 [&_pre]:px-5 [&_pre]:py-4.5" open>
     <summary>{locale === 'zh' ? '源码' : 'Source'}</summary>
     <pre><code class="language-ts">{demo.source}</code></pre>
   </details>
