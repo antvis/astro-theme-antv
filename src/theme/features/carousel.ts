@@ -1,5 +1,3 @@
-import '../styles/carousel.css';
-
 export function mountCarousel(carousel: HTMLElement): () => void {
   const track = carousel.querySelector('[data-antv-track]');
   const pagination = carousel.querySelector('[data-antv-pagination]');
@@ -53,7 +51,7 @@ export function mountCarousel(carousel: HTMLElement): () => void {
     for (let index = 0; index < count; index += 1) {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'antv-carousel-dot';
+      button.className = 'antv-carousel-dot size-2.5 p-0 border-0 rounded-[50%] bg-[var(--brand)] cursor-pointer opacity-20 enabled:hover:opacity-55 focus-visible:opacity-55 focus-visible:outline-2 focus-visible:[outline-style:solid] focus-visible:outline-[color-mix(in_srgb,var(--brand)_65%,white)] focus-visible:[outline-offset:4px] [&[aria-current=true]]:opacity-100 [&[aria-current=true]]:[transform:scale(1.08)] disabled:cursor-not-allowed';
       button.setAttribute('aria-label', pageLabel.replace('{page}', String(index + 1)));
       button.addEventListener('click', () => {
         if (!canScroll()) return;

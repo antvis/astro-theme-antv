@@ -20,7 +20,7 @@ const { locale, label, pageLabel, disabled = false, list = false } = Astro.props
   <div class="antv-carousel-track" data-antv-track role={list ? 'list' : undefined} tabindex={disabled ? -1 : 0}>
     <slot />
   </div>
-  <div class="antv-carousel-pagination" data-antv-pagination hidden></div>
+  <div class="antv-carousel-pagination [&[hidden]]:hidden" data-antv-pagination hidden></div>
 </antv-carousel>
 
 <script>

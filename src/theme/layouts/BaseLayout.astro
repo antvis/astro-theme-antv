@@ -11,9 +11,7 @@ import AntVHeaderActions from '../components/AntVHeaderActions.astro';
 import { withBase } from '../lib/paths';
 import { getGeneratedRoutes } from '../lib/routes';
 import { config } from '../lib/site';
-import '../styles/fonts.css';
 import '../styles/global.css';
-import '../styles/product.css';
 import '../styles/tailwind.css';
 
 interface Props {
@@ -142,14 +140,14 @@ const structuredData = {
     <div class="site-canvas">
     <header class:list={['site-header', pageType === 'home' && 'home-header', isAntVSite && 'antv-site-header']} data-pagefind-ignore>
       <div class="header-inner">
-        <a class="brand" href={withBase(`/${locale}/`)} aria-label={`${config.site.title} home`}>
+        <a class="brand inline-flex items-center h-full text-[var(--text-strong)] whitespace-nowrap" href={withBase(`/${locale}/`)} aria-label={`${config.site.title} home`}>
           {config.site.logo ? (
-            <img class="brand-logo" src={withBase(config.site.logo)} alt="AntV" />
+            <img class="brand-logo w-auto h-7.5 object-contain" src={withBase(config.site.logo)} alt="AntV" />
           ) : (
-            <span class="brand-wordmark" aria-hidden="true">AntV</span>
+            <span class="brand-wordmark text-[var(--text-strong)] text-[20px] font-bold" aria-hidden="true">AntV</span>
           )}
-          {!isAntVSite && <span class="brand-divider" aria-hidden="true"></span>}
-          {!isAntVSite && <span class="brand-product">{config.site.title}</span>}
+          {!isAntVSite && <span class="brand-divider w-[1px] h-6 mx-5 my-0 [@media(width<=700px)]:mx-3" aria-hidden="true"></span>}
+          {!isAntVSite && <span class="brand-product text-[var(--text-strong)] text-[18px] font-medium [@media(width<=700px)]:text-[16px]">{config.site.title}</span>}
         </a>
         <button class="mobile-nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label={locale === 'zh' ? '菜单' : 'Menu'}>
           <span aria-hidden="true" set:html={menuIcon}></span>
@@ -158,20 +156,20 @@ const structuredData = {
           {navigation.map((item) => (
             <a href={item.href} aria-current={item.active ? 'page' : undefined}>{localize(item.text, locale)}</a>
           ))}
-          <details class="header-menu product-menu" data-products-menu>
+          <details class="header-menu product-menu static [&_>_summary]:relative" data-products-menu>
             <summary aria-label={locale === 'zh' ? '所有产品' : 'All products'}>
               <span>{locale === 'zh' ? '所有产品' : 'Products'}</span>
               <span class="nav-chevron" aria-hidden="true"></span>
             </summary>
-            <div class="product-panel">
+            <div class="product-panel absolute top-[var(--header-height)] right-0 left-0 block w-auto max-h-[calc(100dvh_-_var(--header-height)_-_12px)] overflow-auto [border-width:1px_0] [border-style:solid] [border-color:var(--border-soft)_transparent_var(--border)] rounded-none [background:var(--surface-raised)] [box-shadow:inset_0_2px_8px_#f0f1f2,_0_8px_16px_rgb(29_33_41_/_6%)] p-0 [@media(width<=900px)]:static [@media(width<=900px)]:max-h-[none] [@media(width<=900px)]:[box-shadow:none] [@media(width<=900px)]:[border-width:1px_0]">
               <div
-                class="product-groups"
+                class="product-groups w-[min(100%,_1520px)] min-h-60 pt-2 pb-9.5 mx-auto my-0 px-10 [@media(width<=900px)]:pt-1 [@media(width<=900px)]:pb-6 [@media(900px<width<=1320px)]:px-7 [@media(700px<width<=900px)]:px-6 [@media(width<=700px)]:px-4.5"
                 data-products-list
                 data-locale={locale}
                 aria-live="polite"
                 aria-busy="true"
               >
-                <div class="product-loading" data-products-loading>
+                <div class="product-loading flex items-center justify-center gap-2.5 min-h-31 text-[var(--muted)] text-[12px] [&_>_span]:w-3.5 [&_>_span]:h-3.5 [&_>_span]:[border:2px_solid_var(--border)] [&_>_span]:[border-top-color:var(--brand)] [&_>_span]:rounded-[50%]" data-products-loading>
                   <span aria-hidden="true"></span>
                   {locale === 'zh' ? '正在加载产品…' : 'Loading products…'}
                 </div>
@@ -204,8 +202,8 @@ const structuredData = {
               aria-label={localeSwitch.locale === 'en' ? 'Switch to English' : '切换到中文'}
               title={localeSwitch.locale === 'en' ? 'Switch to English' : '切换到中文'}
             >
-              <span class="nav-action-icon" aria-hidden="true" set:html={languageIcon}></span>
-              <span class="nav-icon-label">{localeSwitch.locale === 'en' ? 'English' : '中文'}</span>
+              <span class="nav-action-icon block w-5 h-5 [flex:0_0_20px] [&_svg]:block [&_svg]:w-full [&_svg]:h-full [&_svg]:[stroke-width:1.8]" aria-hidden="true" set:html={languageIcon}></span>
+              <span class="nav-icon-label hidden [@media(width<=900px)]:inline">{localeSwitch.locale === 'en' ? 'English' : '中文'}</span>
             </a>
           )}
           <AntVHeaderActions locale={locale} repository={config.site.repository} />
