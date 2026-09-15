@@ -45,6 +45,7 @@ export interface AntVSiteConfig {
     locales?: SiteLocale[];
     favicon?: string;
     logo?: string;
+    googleAnalyticsId?: string;
   };
   content: {
     docs?: string;
@@ -131,6 +132,7 @@ export interface ResolvedSiteConfig {
     locales: SiteLocale[];
     favicon?: string;
     logo?: string;
+    googleAnalyticsId?: string;
   };
   content: {
     docs: string;
@@ -301,6 +303,7 @@ const configSchema = z
         .default(["zh", "en"]),
       favicon: z.string().optional(),
       logo: z.string().optional(),
+      googleAnalyticsId: z.string().min(1).optional(),
     }),
     content: z.strictObject({
       docs: z.string().default("./docs"),

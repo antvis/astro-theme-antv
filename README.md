@@ -69,6 +69,8 @@ export default defineConfig({
 
 `site.origin` must be an HTTP(S) origin, such as `https://example.com`, without a path, query, or fragment.
 
+Set `site.googleAnalyticsId` to your GA4 measurement ID (for example, `G-XXXXXXXXXX`) to enable analytics on all theme pages in production builds. Analytics is disabled during development and when the ID is omitted.
+
 Add these scripts to `package.json`:
 
 ```json

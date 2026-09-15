@@ -48,6 +48,7 @@
     "@astrojs/mdx": "7.0.8",
     "@astrojs/sitemap": "3.7.3",
     "@tabler/icons": "^3.46.0",
+    "astro-analytics": "2.7.0",
     "gray-matter": "4.0.3",
     "pagefind": "1.5.2",
     "vite": "8.2.2",
