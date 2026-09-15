@@ -1,0 +1,65 @@
+---
+interface Props {
+  locale: 'zh' | 'en';
+}
+
+const { locale } = Astro.props;
+---
+
+<details class="header-menu static [&_>_summary]:relative" data-products-menu>
+  <summary aria-label={locale === 'zh' ? '所有产品' : 'All products'}>
+    <span>{locale === 'zh' ? '所有产品' : 'Products'}</span>
+    <span class="nav-chevron" aria-hidden="true"></span>
+  </summary>
+  <div class="absolute top-[var(--header-height)] right-0 left-0 block w-auto max-h-[calc(100dvh_-_var(--header-height)_-_12px)] overflow-auto [border-width:1px_0] [border-style:solid] [border-color:var(--border-soft)_transparent_var(--border)] rounded-none [background:var(--surface-raised)] [box-shadow:inset_0_2px_8px_#f0f1f2,_0_8px_16px_rgb(29_33_41_/_6%)] p-0 [@media(width<=900px)]:static [@media(width<=900px)]:max-h-[none] [@media(width<=900px)]:[box-shadow:none] [@media(width<=900px)]:[border-width:1px_0]">
+    <div
+      class="w-[min(100%,_1520px)] min-h-60 pt-2 pb-9.5 mx-auto my-0 px-10 [@media(width<=900px)]:pt-1 [@media(width<=900px)]:pb-6 [@media(900px<width<=1320px)]:px-7 [@media(700px<width<=900px)]:px-6 [@media(width<=700px)]:px-4.5"
+      data-products-list
+      data-locale={locale}
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <div class="product-loading flex items-center justify-center gap-2.5 min-h-31 text-[var(--muted)] text-[12px] [&_>_span]:w-3.5 [&_>_span]:h-3.5 [&_>_span]:[border:2px_solid_var(--border)] [&_>_span]:[border-top-color:var(--brand)] [&_>_span]:rounded-[50%]" data-products-loading>
+        <span aria-hidden="true"></span>
+        {locale === 'zh' ? '正在加载产品…' : 'Loading products…'}
+      </div>
+    </div>
+  </div>
+
+  <template data-product-group-template>
+    <section class="min-w-0 pt-6 pb-7 px-0 [@media(width<=900px)]:pt-5 [@media(width<=900px)]:pb-6 [&:last-child]:pb-2">
+      <h2 class="mt-0 mb-6 pt-0 pb-[13px] [border-bottom:1px_solid_var(--border-soft)] text-[var(--muted-light)] text-[14px] font-medium leading-[20px] mx-0 px-0 [@media(width<=900px)]:mb-4.5"></h2>
+      <div class="grid grid-cols-4 gap-x-[clamp(28px,_4vw,_76px)] gap-y-7.5 [@media(700px<width<=900px)]:grid-cols-2 [@media(700px<width<=900px)]:gap-y-6 [@media(width<=700px)]:grid-cols-1 [@media(width<=700px)]:gap-y-5.5 [@media(900px<width<=1320px)]:gap-x-8 [@media(width<=900px)]:gap-x-7" data-product-cards></div>
+    </section>
+  </template>
+  <template data-product-card-template>
+    <article class="grid [grid-template-columns:32px_minmax(0,_1fr)] [align-items:start] gap-3 min-w-0 min-h-23 text-[var(--text)] px-0 py-[3px] [@media(width<=700px)]:min-h-0">
+      <span class="product-mark relative grid w-8 h-8 place-items-center mt-[1px] overflow-hidden rounded-none [background:transparent] text-[var(--brand-strong)] text-[10px] font-bold" aria-hidden="true" data-product-mark>
+        <img class="absolute [inset:0] w-full h-full object-contain" alt="" loading="lazy" decoding="async" />
+      </span>
+      <div class="flex min-w-0 flex-col">
+        <div class="flex min-w-0 items-baseline gap-[9px] text-[var(--text-strong)] leading-[22px]">
+          <strong class="flex-none text-[14px] font-semibold"></strong>
+          <span class="min-w-0 overflow-hidden text-[14px] font-semibold text-ellipsis whitespace-nowrap" data-product-slogan></span>
+        </div>
+        <p class="[display:-webkit-box] min-h-5 mt-[3px] mb-0 overflow-hidden text-[var(--muted-light)] text-[12px] leading-[20px] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] mx-0"></p>
+        <div class="flex flex-wrap gap-4 mt-[9px]" data-product-actions></div>
+      </div>
+    </article>
+  </template>
+  <template data-product-link-template>
+    <a class="rounded-none [background:transparent] text-[color-mix(in_srgb,_var(--brand)_72%,_#4f7cff)] text-[12px] font-medium leading-[18px] [text-decoration:none] p-0 hover:[background:transparent] hover:text-[var(--brand-strong)] hover:[text-decoration:underline] hover:[text-underline-offset:3px] focus-visible:[background:transparent] focus-visible:text-[var(--brand-strong)] focus-visible:[text-decoration:underline] focus-visible:[text-underline-offset:3px]"></a>
+  </template>
+  <template data-product-error-template>
+    <div class="product-error flex items-center justify-center gap-2.5 min-h-31 text-[var(--muted)] text-[12px] [&_button]:[border:1px_solid_color-mix(in_srgb,_var(--brand)_30%,_var(--border))] [&_button]:rounded-[var(--radius-small)] [&_button]:[background:var(--brand-soft)] [&_button]:text-[var(--brand-strong)] [&_button]:cursor-pointer [&_button]:font-semibold [&_button]:px-2.5 [&_button]:py-[5px] [&_button:hover]:[border-color:var(--brand)] [&_button:focus-visible]:[border-color:var(--brand)]">
+      <span>{locale === 'zh' ? '产品数据暂时无法加载' : 'Products are temporarily unavailable'}</span>
+      <button type="button">{locale === 'zh' ? '重新加载' : 'Try again'}</button>
+    </div>
+  </template>
+</details>
+
+<script>
+  import { mountProductMenu } from '../features/products/client';
+
+  mountProductMenu();
+</script>

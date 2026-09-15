@@ -112,10 +112,10 @@ export function mountSiteSearch(): void {
 
     const setState = (message: string | undefined, symbol = '⌕') => {
       const state = document.createElement('div');
-      state.className = 'search-state grid min-h-68 place-content-center justify-items-center gap-2 text-[var(--muted-light)] text-center [&_p]:m-0';
+      state.className = 'grid min-h-68 place-content-center justify-items-center gap-2 text-[var(--muted-light)] text-center [&_p]:m-0';
       state.dataset.searchState = '';
       const icon = document.createElement('span');
-      icon.className = 'search-state-symbol grid w-10 h-10 place-items-center [border:1px_solid_var(--border)] rounded-[12px] [background:var(--surface-subtle)] text-[var(--brand)] text-[21px]';
+      icon.className = 'grid w-10 h-10 place-items-center [border:1px_solid_var(--border)] rounded-[12px] [background:var(--surface-subtle)] text-[var(--brand)] text-[21px]';
       icon.setAttribute('aria-hidden', 'true');
       icon.textContent = symbol;
       const text = document.createElement('p');
@@ -187,11 +187,11 @@ export function mountSiteSearch(): void {
         option.toggleAttribute('data-selected', index === 0);
 
         const heading = document.createElement('div');
-        heading.className = 'search-result-heading flex items-center gap-2.5 [&_strong]:overflow-hidden [&_strong]:text-[var(--text-strong)] [&_strong]:text-[15px] [&_strong]:font-semibold [&_strong]:leading-[1.45] [&_strong]:text-ellipsis [&_strong]:whitespace-nowrap';
+        heading.className = 'flex items-center gap-2.5 [&_strong]:overflow-hidden [&_strong]:text-[var(--text-strong)] [&_strong]:text-[15px] [&_strong]:font-semibold [&_strong]:leading-[1.45] [&_strong]:text-ellipsis [&_strong]:whitespace-nowrap';
         const title = document.createElement('strong');
         appendHighlightedText(title, data.meta?.title || displayPath(data.url), query);
         const badge = document.createElement('span');
-        badge.className = `search-result-type [flex:none] [border:1px_solid_color-mix(in_srgb,_var(--brand)_20%,_var(--border))] rounded-[999px] [background:color-mix(in_srgb,_var(--brand-soft)_48%,_transparent)] text-[var(--brand-strong)] text-[10px] font-semibold leading-[17px] px-1.5 py-[1px] [&.is-example]:[border-color:color-mix(in_srgb,_var(--success)_24%,_var(--border))] [&.is-example]:[background:color-mix(in_srgb,_var(--success)_8%,_transparent)] [&.is-example]:text-[var(--success)]${isExample ? ' is-example' : ''}`;
+        badge.className = `[flex:none] [border:1px_solid_color-mix(in_srgb,_var(--brand)_20%,_var(--border))] rounded-[999px] [background:color-mix(in_srgb,_var(--brand-soft)_48%,_transparent)] text-[var(--brand-strong)] text-[10px] font-semibold leading-[17px] px-1.5 py-[1px] [&.is-example]:[border-color:color-mix(in_srgb,_var(--success)_24%,_var(--border))] [&.is-example]:[background:color-mix(in_srgb,_var(--success)_8%,_transparent)] [&.is-example]:text-[var(--success)]${isExample ? ' is-example' : ''}`;
         badge.textContent = isExample
           ? dialog.dataset.exampleLabel ?? ''
           : dialog.dataset.documentLabel ?? '';
@@ -201,7 +201,7 @@ export function mountSiteSearch(): void {
         path.className = 'search-result-path block mt-0.5 overflow-hidden text-[var(--muted-light)] text-[11px] text-ellipsis whitespace-nowrap';
         path.textContent = displayPath(data.url);
         const excerpt = document.createElement('p');
-        excerpt.className = 'search-result-excerpt [display:-webkit-box] mt-1.5 mb-0 overflow-hidden text-[var(--muted)] text-[12px] leading-[1.55] [-webkit-box-orient:vertical] [-webkit-line-clamp:1] mx-0';
+        excerpt.className = '[display:-webkit-box] mt-1.5 mb-0 overflow-hidden text-[var(--muted)] text-[12px] leading-[1.55] [-webkit-box-orient:vertical] [-webkit-line-clamp:1] mx-0';
         appendHighlightedText(excerpt, data.plain_excerpt || '', query);
         option.append(heading, path, excerpt);
         option.addEventListener('pointermove', () => updateSelection(index));

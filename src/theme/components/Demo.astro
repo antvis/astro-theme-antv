@@ -21,13 +21,13 @@ const title = localize(demo.title, locale, demo.slug);
       <span>examples / {demo.key}</span>
     </div>
     <button
-      class="demo-secondary-action min-h-7.5 [border:1px_solid_var(--border)] rounded-[var(--radius-small)] text-[var(--text)] cursor-pointer [&:hover]:[border-color:var(--brand)] [&:hover]:text-[var(--brand-strong)] demo-icon-action inline-grid w-7.5 min-w-7.5 h-7.5 place-items-center p-0"
+      class="demo-secondary-action min-h-7.5 [border:1px_solid_var(--border)] rounded-[var(--radius-small)] text-[var(--text)] cursor-pointer [&:hover]:[border-color:var(--brand)] [&:hover]:text-[var(--brand-strong)] inline-grid w-7.5 min-w-7.5 h-7.5 place-items-center p-0"
       type="button"
       data-demo-reload
       aria-label={locale === 'zh' ? '重新加载预览' : 'Reload preview'}
       title={locale === 'zh' ? '重新加载预览' : 'Reload preview'}
     >
-      <span class="demo-action-icon block w-[15px] h-[15px] [&_svg]:block [&_svg]:w-[15px] [&_svg]:h-[15px]" aria-hidden="true" set:html={reloadIcon}></span>
+      <span class="block w-[15px] h-[15px] [&_svg]:block [&_svg]:w-[15px] [&_svg]:h-[15px]" aria-hidden="true" set:html={reloadIcon}></span>
     </button>
   </header>
   <iframe
