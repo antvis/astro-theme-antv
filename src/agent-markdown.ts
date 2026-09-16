@@ -67,31 +67,29 @@ export async function serializeAgentMarkdown(
     );
     if (!attribute || attribute.type !== "mdxJsxAttribute") return undefined;
     if (typeof attribute.value === "string") return attribute.value;
-    if (attribute.value) {
-      const statement = attribute.value.data?.estree?.body[0];
-      if (statement?.type === "ExpressionStatement") {
-        // MDX removes indentation in multiline JSX attributes. Parse the
-        // original expression to preserve source whitespace without evaluation.
-        const expression = parseExpressionAt(
-          body,
-          statement.expression.range?.[0] ??
-            fail(`${node.name}.${name} has no source position.`),
-          { ecmaVersion: "latest" }
+    const statement = attribute.value?.data?.estree?.body[0];
+    if (statement?.type === "ExpressionStatement") {
+      // MDX removes indentation in multiline JSX attributes. Parse the
+      // original expression to preserve source whitespace without evaluation.
+      const expression = parseExpressionAt(
+        body,
+        statement.expression.range?.[0] ??
+          fail(`${node.name}.${name} has no source position.`),
+        { ecmaVersion: "latest" }
+      );
+      if (
+        expression.type === "Literal" &&
+        typeof expression.value === "string"
+      )
+        return expression.value;
+      if (
+        expression.type === "TemplateLiteral" &&
+        expression.expressions.length === 0
+      ) {
+        return (
+          expression.quasis[0]?.value.cooked ??
+          fail(`${node.name}.${name} has an invalid escape.`)
         );
-        if (
-          expression.type === "Literal" &&
-          typeof expression.value === "string"
-        )
-          return expression.value;
-        if (
-          expression.type === "TemplateLiteral" &&
-          expression.expressions.length === 0
-        ) {
-          return (
-            expression.quasis[0]?.value.cooked ??
-            fail(`${node.name}.${name} has an invalid escape.`)
-          );
-        }
       }
     }
     return fail(
@@ -110,17 +108,15 @@ export async function serializeAgentMarkdown(
     parts.push(body.slice(cursor, to));
     return parts.join("");
   };
+  const renderChildren = (children: Child[]) =>
+    children.length
+      ? inner(children, start(children[0]!), end(children.at(-1)!))
+      : "";
   const render = async (node: Child | Node): Promise<string> => {
     if (node.type === "link") {
       const target = options.resolveDocument?.(node.url);
       if (target) {
-        const label = node.children.length
-          ? await inner(
-              node.children as Child[],
-              start(node.children[0]!),
-              end(node.children.at(-1)!)
-            )
-          : "";
+        const label = await renderChildren(node.children as Child[]);
         return `[${label}](<${target.href}>${
           node.title ? ` ${JSON.stringify(node.title)}` : ""
         })`;
@@ -172,13 +168,10 @@ export async function serializeAgentMarkdown(
           description ? ` — ${description}` : ""
         }\n\n`;
       }
-      const children = node.children as Child[];
-      const content = children.length
-        ? await inner(children, start(children[0]!), end(children.at(-1)!))
-        : "";
       if (!node.name || ["div", "span", "section"].includes(node.name))
-        return content;
+        return renderChildren(node.children as Child[]);
       if (/^[A-Z]/.test(node.name)) {
+        const content = await renderChildren(node.children as Child[]);
         if (content.trim()) return content;
         const document = imported && options.resolveDocument?.(imported);
         return document
