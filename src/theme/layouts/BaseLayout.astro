@@ -9,6 +9,7 @@ import { defaultFooterGroups } from '../lib/footer';
 import SiteSearch from '../components/SiteSearch.astro';
 import ProductMenu from '../components/ProductMenu.astro';
 import AntVHeaderActions from '../components/AntVHeaderActions.astro';
+import Announcement from '../components/Announcement.astro';
 import { withBase } from '../lib/paths';
 import { getGeneratedRoutes } from '../lib/routes';
 import { config } from '../lib/site';
@@ -139,6 +140,7 @@ const structuredData = {
       {locale === 'zh' ? '跳到主要内容' : 'Skip to content'}
     </a>
     <div class="site-canvas">
+    <Announcement locale={locale} />
     <header class:list={['site-header', pageType === 'home' && 'home-header', isAntVSite && 'antv-site-header']} data-pagefind-ignore>
       <div class="header-inner">
         <a class="brand inline-flex items-center h-full text-[var(--text-strong)] whitespace-nowrap" href={withBase(`/${locale}/`)} aria-label={`${config.site.title} home`}>
@@ -215,10 +217,17 @@ const structuredData = {
       (() => {
         const navButton = document.querySelector('.mobile-nav-toggle');
         const nav = document.querySelector('#primary-nav');
+        const header = document.querySelector('.site-header');
+        const updateNavPosition = () => {
+          if (nav?.hasAttribute('data-open')) {
+            nav.style.setProperty('--mobile-nav-top', `${header.getBoundingClientRect().bottom}px`);
+          }
+        };
         const setNavOpen = (open) => {
           navButton?.setAttribute('aria-expanded', String(open));
           nav?.toggleAttribute('data-open', open);
           document.body.classList.toggle('mobile-nav-open', open);
+          updateNavPosition();
           if (!open) nav?.querySelectorAll('details[open]').forEach((menu) => menu.removeAttribute('open'));
         };
         navButton?.addEventListener('click', () => {
@@ -237,6 +246,9 @@ const structuredData = {
         window.matchMedia('(max-width: 900px)').addEventListener('change', () => {
           setNavOpen(false);
         });
+        window.addEventListener('resize', updateNavPosition);
+        const navPositionObserver = new ResizeObserver(updateNavPosition);
+        navPositionObserver.observe(document.querySelector('.site-canvas'));
 
         const copyText = async (value) => {
           if (navigator.clipboard && window.isSecureContext) {

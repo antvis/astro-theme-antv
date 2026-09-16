@@ -39,16 +39,6 @@ const imageAlt = localize(
 ---
 
 <BaseLayout locale={locale} title={config.site.title} description={localize(config.site.description, locale)} route={route} pageType="home">
-  {home.announcement && (
-    <aside class="bg-[#f0f5ff] px-6 py-3 text-center text-sm text-[#253858]" aria-label={locale === 'zh' ? '公告' : 'Announcement'}>
-      <span>{localize(home.announcement.title, locale)}</span>
-      {home.announcement.link && <>{' '}<a
-        class="whitespace-nowrap text-[#1677ff] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]"
-        href={localHref(home.announcement.link.href)}
-      >{localize(home.announcement.link.text, locale)} <span aria-hidden="true">→</span></a></>}
-    </aside>
-  )}
-
   {homeSlots.beforeHero.map((SlotComponent) => (
     <SlotComponent locale={locale} config={config} registry={registry} slotName="beforeHero" />
   ))}

@@ -1692,11 +1692,11 @@ kbd {
 
   .primary-nav {
     position: fixed;
-    top: var(--header-height);
+    top: var(--mobile-nav-top, var(--header-height));
     right: 0;
     left: 0;
     display: none;
-    height: calc(100dvh - var(--header-height));
+    height: calc(100dvh - var(--mobile-nav-top, var(--header-height)));
     flex-direction: column;
     align-items: stretch;
     padding: 8px 0 24px;

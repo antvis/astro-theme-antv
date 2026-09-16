@@ -159,15 +159,17 @@ for example `text-[var(--brand)]`.
 
 Set `theme.tokens` to override CSS variables, for example `{ "--brand": "#5b5bd6" }`.
 
-Set `home.announcement` to show a bilingual announcement above the homepage hero:
+The theme loads a shared announcement in the browser from the fixed URL
+`https://assets.antv.antgroup.com/antv/announcement.json`. Publish a JSON object
+with this structure (the endpoint must allow cross-origin requests):
 
-```js
-announcement: {
-  title: { zh: "新版本已发布", en: "A new release is available" },
-  link: {
-    text: { zh: "了解更多", en: "Learn more" },
-    href: "https://example.com/releases",
-  },
+```json
+{
+  "title": { "zh": "新版本已发布", "en": "A new release is available" },
+  "link": {
+    "text": { "zh": "了解更多", "en": "Learn more" },
+    "href": "https://example.com/releases"
+  }
 }
 ```
 
