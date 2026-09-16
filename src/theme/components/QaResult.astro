@@ -1,19 +1,13 @@
 ---
+import Loading from './Loading.astro';
+
 interface Props {
   locale: 'zh' | 'en';
-  service: {
-    development: string;
-    production: string;
-  };
+  service: string;
 }
 
 const { locale, service } = Astro.props;
-const isDevelopment = import.meta.env.ANTV_SITE_DEVELOPMENT === 'true';
-const serviceBaseUrl = isDevelopment
-  ? service.development
-  : service.production;
-const sdkUrl = new URL('/sdk/qa/sive-qa.js', serviceBaseUrl);
-if (isDevelopment) sdkUrl.searchParams.set('v', Date.now().toString());
+const sdkUrl = new URL('/sdk/qa/sive-qa.js', service).toString();
 const loadError = locale === 'zh'
   ? '问答模块加载失败，请刷新页面重试。'
   : 'Unable to load the QA module. Please refresh and try again.';
@@ -22,16 +16,19 @@ const loadError = locale === 'zh'
 <section
   class="antv-result-page"
   aria-label={locale === 'zh' ? '问答结果' : 'Conversation'}
-  data-sive-qa-sdk={sdkUrl.toString()}
 >
-  <div id="sive-qa-root" class="antv-result-root"></div>
+  <div id="sive-qa-root" class="antv-result-root">
+    <div class="antv-result-loading"><Loading locale={locale} /></div>
+  </div>
   <p class="antv-result-error" data-qa-sdk-error hidden>{loadError}</p>
 </section>
-
-<script>
-  import { mountQaResult } from '../features/qa/result';
-
-  mountQaResult();
+<script is:inline type="module" src={sdkUrl}></script>
+<script is:inline type="module">
+  try {
+    window.SiveQA.mount('#sive-qa-root');
+  } catch {
+    document.querySelector('[data-qa-sdk-error]').hidden = false;
+  }
 </script>
 
 <style>
@@ -65,13 +62,19 @@ const loadError = locale === 'zh'
     background: var(--surface);
   }
 
+  .antv-result-loading { display: grid; height: 100%; place-items: center; }
+
+  .antv-result-page:has(> .antv-result-error:not([hidden])) .antv-result-loading {
+    display: none;
+  }
+
   .antv-result-error {
     position: absolute;
     inset: 0;
     display: grid;
     margin: 0;
     padding: 24px;
-    color: var(--text-muted);
+    color: var(--muted);
     font-size: 14px;
     text-align: center;
     place-items: center;

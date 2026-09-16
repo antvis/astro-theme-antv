@@ -10,15 +10,17 @@ interface MarkdownDocumentProps {
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const documents = await getAgentDocuments();
-  return documents.map((document) => ({
-    params: {
-      locale: document.locale,
-      route: document.slug || 'index',
-    },
-    props: {
-      content: serializeAgentDocument(document, documents),
-    } satisfies MarkdownDocumentProps,
-  }));
+  return Promise.all(
+    documents.map(async (document) => ({
+      params: {
+        locale: document.locale,
+        route: document.slug || 'index',
+      },
+      props: {
+        content: await serializeAgentDocument(document, documents),
+      } satisfies MarkdownDocumentProps,
+    })),
+  );
 };
 
 export const GET: APIRoute = ({ props }) =>

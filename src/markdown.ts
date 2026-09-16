@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { dirname, extname, relative, resolve, sep } from "node:path";
+import { dirname, extname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { MarkdownProcessor } from "astro/markdown";
 import type {
@@ -7,7 +7,7 @@ import type {
   ResolvedSiteConfig,
   SiteLocale,
 } from "./compiler/config.js";
-import { assertRealpathWithin, assertWithin, pathKey } from "./util.js";
+import { assertRealpathWithin, assertWithin, isWithin, pathKey } from "./util.js";
 
 const escapeHtml = (value: unknown) =>
   String(value)
@@ -290,12 +290,7 @@ export function createLegacyContentMarkdownProcessor(
 
           const config = getConfig();
           const markdownPath = resolve(fileURLToPath(options.fileURL));
-          const relativePath = relative(config.content.docs, markdownPath);
-          if (
-            relativePath === ".." ||
-            relativePath.startsWith(`..${sep}`) ||
-            resolve(config.content.docs, relativePath) !== markdownPath
-          ) {
+          if (!isWithin(config.content.docs, markdownPath)) {
             return renderer.render(content, options);
           }
 

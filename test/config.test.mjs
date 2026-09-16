@@ -128,10 +128,7 @@ test("resolves search and QA configuration for the Astro integration", async () 
   expect(config.search.enabled).toBe(true);
   expect(config.search.aliases).toEqual({ graph: ["chart"] });
   expect(config.qa?.path).toBe("result");
-  expect(config.qa?.service).toEqual({
-    development: "http://localhost:3000",
-    production: "https://sive.antv.antgroup.com",
-  });
+  expect(config.qa?.service).toBe("https://sive.antv.antgroup.com");
 });
 
 test("resolves controlled home slot components from the consumer root", async () => {

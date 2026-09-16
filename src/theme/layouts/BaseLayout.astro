@@ -1,12 +1,13 @@
 ---
 import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
-import { alternateRoute, localize } from '../lib/compiler';
+import { alternateRoute, localize } from '../../compiler/localization.js';
 import * as Analytics from 'astro-analytics';
 import languageIcon from '../assets/icons/language.svg?raw';
 import menuIcon from '@tabler/icons/outline/menu-2.svg?raw';
 import SiteFooter from '../components/SiteFooter.astro';
 import { defaultFooterGroups } from '../lib/footer';
 import SiteSearch from '../components/SiteSearch.astro';
+import Loading from '../components/Loading.astro';
 import ProductMenu from '../components/ProductMenu.astro';
 import AntVHeaderActions from '../components/AntVHeaderActions.astro';
 import Announcement from '../components/Announcement.astro';
@@ -139,6 +140,7 @@ const structuredData = {
     <a class="skip-link" href="#main-content">
       {locale === 'zh' ? '跳到主要内容' : 'Skip to content'}
     </a>
+    <Loading locale={locale} page />
     <div class="site-canvas">
     <Announcement locale={locale} />
     <header class:list={['site-header', pageType === 'home' && 'home-header', isAntVSite && 'antv-site-header']} data-pagefind-ignore>
@@ -286,29 +288,15 @@ const structuredData = {
           button.dataset.codeCopy = '';
           button.setAttribute('aria-label', copyLabels.idle);
           button.title = copyLabels.idle;
-          const svgNamespace = 'http://www.w3.org/2000/svg';
-          const copyIcon = document.createElementNS(svgNamespace, 'svg');
-          copyIcon.classList.add('markdown-code-copy-icon', 'is-copy');
-          copyIcon.setAttribute('viewBox', '0 0 24 24');
-          copyIcon.setAttribute('aria-hidden', 'true');
-          const copyRect = document.createElementNS(svgNamespace, 'rect');
-          copyRect.setAttribute('x', '8');
-          copyRect.setAttribute('y', '8');
-          copyRect.setAttribute('width', '14');
-          copyRect.setAttribute('height', '14');
-          copyRect.setAttribute('rx', '2');
-          const copyPath = document.createElementNS(svgNamespace, 'path');
-          copyPath.setAttribute('d', 'M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2');
-          copyIcon.append(copyRect, copyPath);
-
-          const successIcon = document.createElementNS(svgNamespace, 'svg');
-          successIcon.classList.add('markdown-code-copy-icon', 'is-success');
-          successIcon.setAttribute('viewBox', '0 0 24 24');
-          successIcon.setAttribute('aria-hidden', 'true');
-          const successPath = document.createElementNS(svgNamespace, 'path');
-          successPath.setAttribute('d', 'm5 12 4 4L19 6');
-          successIcon.append(successPath);
-          button.append(copyIcon, successIcon);
+          button.innerHTML = `
+            <svg class="markdown-code-copy-icon is-copy" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="8" y="8" width="14" height="14" rx="2"></rect>
+              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+            </svg>
+            <svg class="markdown-code-copy-icon is-success" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m5 12 4 4L19 6"></path>
+            </svg>
+          `;
           wrapper.append(button);
 
           let resetTimer;

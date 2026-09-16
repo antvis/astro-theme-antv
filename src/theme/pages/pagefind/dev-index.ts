@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getDocsCollection } from '../../lib/docs';
-import { getAntvDocIdentity, localize } from '../../lib/compiler';
+import { getAntvDocIdentity } from '../../../content.js';
+import { localize } from '../../../compiler/localization.js';
 import { withBase } from '../../lib/paths';
 import { config, registry } from '../../lib/site';
 
