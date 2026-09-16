@@ -1,0 +1,165 @@
+---
+interface Props {
+  locale: 'zh' | 'en';
+  label?: string;
+  page?: boolean;
+}
+
+const { locale, label = locale === 'zh' ? '正在加载…' : 'Loading…', page = false } = Astro.props;
+const gradientId = `antv-loading-${crypto.randomUUID()}`;
+---
+
+<div
+  class:list={['antv-loading', page && 'antv-loading-page']}
+  role="status"
+  aria-live="polite"
+  data-page-loading={page || undefined}
+  hidden={page}
+>
+  <div class="antv-loading-shapes" aria-hidden="true">
+    <span class="antv-loading-shape">
+      <svg viewBox="0 0 80 80">
+        <defs>
+          <linearGradient id={gradientId} x1="0%" x2="100%" y1="50%" y2="50%">
+            <stop offset="0%" stop-color="#6500ff" />
+            <stop offset="16%" stop-color="#6a09ff" />
+            <stop offset="43%" stop-color="#7623ff" />
+            <stop offset="77%" stop-color="#8a4cff" />
+            <stop offset="99%" stop-color="#996bff" />
+          </linearGradient>
+        </defs>
+        <circle cx="40" cy="40" r="32" stroke={`url(#${gradientId})`} />
+      </svg>
+    </span>
+    <span class="antv-loading-shape antv-loading-triangle">
+      <svg viewBox="0 0 86 80">
+        <polygon points="43 8 79 72 7 72" stroke={`url(#${gradientId})`} />
+      </svg>
+    </span>
+    <span class="antv-loading-shape">
+      <svg viewBox="0 0 80 80">
+        <rect x="8" y="8" width="64" height="64" stroke={`url(#${gradientId})`} />
+      </svg>
+    </span>
+  </div>
+  <p>{label}</p>
+</div>
+
+{page && (
+  <script is:inline>
+    (() => {
+      const loading = document.querySelector('[data-page-loading]');
+      if (!loading) return;
+      // Fast pages skip the overlay; slow scripts cannot trap the readable HTML.
+      const showTimer = setTimeout(() => { loading.hidden = false; }, 120);
+      const safetyTimer = setTimeout(finish, 8000);
+      function finish() {
+        clearTimeout(showTimer);
+        clearTimeout(safetyTimer);
+        document.removeEventListener('DOMContentLoaded', finish);
+        window.removeEventListener('pageshow', finish);
+        loading.remove();
+      }
+      document.addEventListener('DOMContentLoaded', finish, { once: true });
+      window.addEventListener('pageshow', finish, { once: true });
+      if (document.readyState !== 'loading') finish();
+    })();
+  </script>
+)}
+
+<style>
+  .antv-loading {
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 24px;
+    min-height: 200px;
+    padding: 32px 24px;
+    color: var(--muted, #666);
+  }
+
+  .antv-loading-page {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: var(--surface-raised, #fff);
+  }
+
+  .antv-loading[hidden] { display: none; }
+  .antv-loading p { margin: 0; font-size: 12px; line-height: 20px; letter-spacing: .1em; }
+  .antv-loading-shapes { display: flex; align-items: center; gap: 32px; }
+  .antv-loading-shape { position: relative; display: block; width: 44px; height: 44px; }
+  .antv-loading-triangle { width: 48px; }
+  .antv-loading-shape::before {
+    content: '';
+    position: absolute;
+    top: 37px;
+    left: 19px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ff700a;
+    transform: translate(-18px, -18px);
+    animation: antv-loading-square-dot 3s cubic-bezier(.785, .135, .15, .86) infinite;
+  }
+  .antv-loading-triangle::before {
+    left: 21px;
+    transform: translate(-10px, -18px);
+    animation-name: antv-loading-triangle-dot;
+  }
+  .antv-loading-shape svg { display: block; width: 100%; height: 100%; }
+  .antv-loading-shape :is(circle, polygon, rect) {
+    fill: none;
+    stroke-width: 10px;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    animation: 3s cubic-bezier(.785, .135, .15, .86) infinite;
+  }
+  .antv-loading-shape circle {
+    stroke-dasharray: 150 50 150 50;
+    stroke-dashoffset: 75;
+    animation-name: antv-loading-circle;
+  }
+  .antv-loading-shape polygon {
+    stroke-dasharray: 145 76 145 76;
+    animation-name: antv-loading-triangle;
+  }
+  .antv-loading-shape rect {
+    stroke-dasharray: 192 64 192 64;
+    animation-name: antv-loading-square;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .antv-loading-shape::before,
+    .antv-loading-shape :is(circle, polygon, rect) { animation: none; }
+  }
+  /* Geometry and motion follow https://antv.antgroup.com/. */
+  @keyframes antv-loading-triangle {
+    33% { stroke-dashoffset: 74; }
+    66% { stroke-dashoffset: 147; }
+    to { stroke-dashoffset: 221; }
+  }
+  @keyframes antv-loading-triangle-dot {
+    33% { transform: translate(0); }
+    66% { transform: translate(10px, -18px); }
+    to { transform: translate(-10px, -18px); }
+  }
+  @keyframes antv-loading-square {
+    25% { stroke-dashoffset: 64; }
+    50% { stroke-dashoffset: 128; }
+    75% { stroke-dashoffset: 192; }
+    to { stroke-dashoffset: 256; }
+  }
+  @keyframes antv-loading-square-dot {
+    25% { transform: translate(0); }
+    50% { transform: translate(18px, -18px); }
+    75% { transform: translateY(-36px); }
+    to { transform: translate(-18px, -18px); }
+  }
+  @keyframes antv-loading-circle {
+    25% { stroke-dashoffset: 125; }
+    50% { stroke-dashoffset: 175; }
+    75% { stroke-dashoffset: 225; }
+    to { stroke-dashoffset: 275; }
+  }
+</style>

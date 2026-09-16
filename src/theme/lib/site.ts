@@ -1,4 +1,4 @@
-import type { SiteRegistry } from './compiler';
+import type { SiteRegistry } from '../../compiler/content.js';
 import registryData from 'virtual:antv-site-registry';
 
 export const registry = registryData as SiteRegistry;

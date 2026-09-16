@@ -1,7 +1,8 @@
-import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { relative, resolve } from 'node:path';
 import type { CollectionEntry } from 'astro:content';
 import type { ResolvedSiteConfig } from '../../compiler/config.js';
 import { getAntvDocIdentity } from '../../content.js';
+import { isWithin, pathKey } from '../../util.js';
 
 export interface DocumentPage {
   type: 'document';
@@ -21,20 +22,13 @@ const sourcePathFor = (
   config: ResolvedSiteConfig,
 ) => {
   if (!entry.filePath) return undefined;
-  const sourcePath = relative(
-    config.content.docs,
-    resolve(config.root, entry.filePath),
-  );
-  if (
-    sourcePath === '..' ||
-    sourcePath.startsWith(`..${sep}`) ||
-    isAbsolute(sourcePath)
-  ) {
+  const sourcePath = resolve(config.root, entry.filePath);
+  if (!isWithin(config.content.docs, sourcePath)) {
     throw new Error(
       `Document entry escaped the configured docs root: ${entry.filePath}`,
     );
   }
-  return sourcePath.split(sep).join('/');
+  return pathKey(relative(config.content.docs, sourcePath));
 };
 
 export const toDocumentPage = (

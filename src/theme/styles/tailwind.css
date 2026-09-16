@@ -1,7 +1,12 @@
 /* The theme owns the reset; utilities override its unlayered styles. */
-@layer theme, utilities;
+/* Reserve the full order before external components register their reset layers. */
+@layer theme, base, components, utilities;
 @import 'tailwindcss/theme.css' layer(theme);
-@import 'tailwindcss/utilities.css' layer(utilities) important;
+
+/* The QA SDK owns its utilities, including UI portaled to body via data-slot. */
+@scope (:root) to (.page-qa :is(#sive-qa-root, [data-slot])) {
+  @import 'tailwindcss/utilities.css' layer(utilities) important;
+}
 
 /* Consumer sources are scanned automatically; include the installed theme too. */
 @source "../";

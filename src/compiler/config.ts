@@ -6,7 +6,6 @@ import {
   resolve,
 } from "node:path";
 import { z } from "zod";
-import { qaServiceEndpoints } from "../qa.js";
 import { isWithin } from "../util.js";
 
 export type SiteLocale = "zh" | "en";
@@ -22,6 +21,15 @@ export interface LocalizedLink {
 }
 
 export type ContentComponent = string | { type: "link-card" };
+
+export type AgentComponent =
+  | {
+      type: "code";
+      language?: string;
+      sourceRoot?: string;
+      sourceExtension?: string;
+    }
+  | { type: "link-card" };
 
 export type AnalyticsConfig = Record<string, Record<string, unknown>>;
 
@@ -59,6 +67,8 @@ export interface AntVSiteConfig {
       label?: LocalizedText;
     } | null;
     components?: Record<string, ContentComponent>;
+    /** How MDX components are represented in machine-readable Markdown. */
+    agentComponents?: Record<string, AgentComponent>;
     sidebar?: Record<string, LocalizedText & { order?: number }>;
   };
   navigation?: LocalizedLink[];
@@ -145,6 +155,7 @@ export interface ResolvedSiteConfig {
       label?: LocalizedText;
     } | null;
     components: Record<string, ContentComponent>;
+    agentComponents: Record<string, AgentComponent>;
     sidebar: Record<string, LocalizedText & { order?: number }>;
   };
   navigation: LocalizedLink[];
@@ -157,10 +168,7 @@ export interface ResolvedSiteConfig {
   };
   qa: {
     path: string;
-    service: {
-      development: string;
-      production: string;
-    };
+    service: string;
   } | null;
   examples: Array<{ slug: string; title: LocalizedText; icon?: string }>;
   home: {
@@ -325,6 +333,17 @@ const configSchema = z
         .nullable()
         .default(null),
       components: z.record(z.string(), contentComponentSchema).default({}),
+      agentComponents: z
+        .record(z.string(), z.discriminatedUnion("type", [
+          z.strictObject({
+            type: z.literal("code"),
+            language: z.string().regex(/^[\w+-]+$/).optional(),
+            sourceRoot: z.string().min(1).optional(),
+            sourceExtension: z.string().regex(/^(\.[a-zA-Z0-9]+)?$/).optional(),
+          }),
+          z.strictObject({ type: z.literal("link-card") }),
+        ]))
+        .default({}),
       sidebar: z.record(z.string(), sidebarItemSchema).default({}),
     }),
     navigation: z.array(linkSchema).default([]),
@@ -453,7 +472,7 @@ const configSchema = z
     }
   });
 
-export const resolveFromRoot = (root: string, path: string) =>
+const resolveFromRoot = (root: string, path: string) =>
   isAbsolute(path) ? path : resolve(root, path);
 
 const errorCode = (error: unknown) =>
@@ -530,6 +549,14 @@ export async function resolveConfig(
   const content = {
     ...config.content,
     docs: resolveFromRoot(root, config.content.docs),
+    agentComponents: Object.fromEntries(
+      Object.entries(config.content.agentComponents).map(([name, rule]) => [
+        name,
+        rule.type === "code" && rule.sourceRoot
+          ? { ...rule, sourceRoot: resolveFromRoot(root, rule.sourceRoot) }
+          : rule,
+      ])
+    ),
     examples: config.content.examples
       ? resolveFromRoot(root, config.content.examples)
       : null,
@@ -548,7 +575,7 @@ export async function resolveConfig(
     qa: config.qa?.enabled
       ? {
           path: config.qa.path,
-          service: qaServiceEndpoints,
+          service: "https://sive.antv.antgroup.com",
         }
       : null,
     slots: {

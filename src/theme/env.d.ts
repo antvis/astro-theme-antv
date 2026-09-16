@@ -5,7 +5,7 @@ declare module "virtual:antv-site-demos" {
 }
 
 declare module "virtual:antv-site-registry" {
-  const registry: import("./lib/compiler").SiteRegistry;
+  const registry: import("../compiler/content.js").SiteRegistry;
   export default registry;
 }
 

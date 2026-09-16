@@ -33,23 +33,141 @@ const isZh = locale === 'zh';
   <template data-updates-card>
     <a class="antv-update-card" target="_blank" rel="noreferrer">
       <span class="antv-update-visual"><img alt="" width="36" height="36" loading="lazy" decoding="async" /></span>
-      <span class="antv-update-copy">
-        <strong></strong>
-        <span data-update-description></span>
-      </span>
+      <strong></strong>
+      <span data-update-description></span>
     </a>
   </template>
   <noscript>{isZh ? '启用 JavaScript 以查看最新动态。' : 'Enable JavaScript to view updates.'}</noscript>
 </antv-updates>
 
 <script>
-  import { AntvUpdates } from '../features/updates/client';
+  const updatesUrl = 'https://assets.antv.antgroup.com/antv/banner-messages.json';
+
+  type Locale = 'zh' | 'en';
+  interface UpdateMessage {
+    title: string;
+    description: string;
+    image?: string;
+    href: string;
+  }
+
+  function localized(value: unknown, locale: Locale): string {
+    if (!value || typeof value !== 'object') return '';
+    const text = value as Record<string, unknown>;
+    for (const language of [locale, locale === 'zh' ? 'en' : 'zh']) {
+      if (typeof text[language] === 'string' && text[language].trim()) return text[language].trim();
+    }
+    return '';
+  }
+
+  function httpUrl(value: unknown): string | undefined {
+    if (typeof value !== 'string') return undefined;
+    try {
+      const url = new URL(value);
+      if (url.protocol === 'https:' || url.protocol === 'http:') return url.href;
+    } catch { /* Invalid remote fields are not rendered as URLs. */ }
+    return undefined;
+  }
+
+  function parseUpdates(data: unknown, locale: Locale): UpdateMessage[] {
+    if (!Array.isArray(data)) throw new Error('Invalid updates response');
+    const messages: UpdateMessage[] = [];
+    for (const item of data) {
+      if (!item || typeof item !== 'object') continue;
+      const title = localized(item.title, locale);
+      const href = httpUrl(item.link);
+      if (!title || !href) continue;
+      messages.push({ title, href, description: localized(item.subTitle, locale), image: httpUrl(item.img) });
+    }
+    if (data.length && !messages.length) throw new Error('No valid updates in response');
+    return messages;
+  }
+
+  async function loadUpdates(locale: Locale, signal: AbortSignal): Promise<UpdateMessage[]> {
+    const response = await fetch(updatesUrl, { signal });
+    if (!response.ok) throw new Error(`Updates request failed: ${response.status}`);
+    return parseUpdates(await response.json(), locale);
+  }
+
+  class AntvUpdates extends HTMLElement {
+    private request?: AbortController;
+
+    connectedCallback() {
+      this.querySelector('[data-updates-retry]')?.addEventListener('click', this.reload);
+      void this.load();
+    }
+
+    disconnectedCallback() {
+      this.request?.abort();
+      this.querySelector('[data-updates-retry]')?.removeEventListener('click', this.reload);
+    }
+
+    private reload = () => { void this.load(); };
+
+    private async load() {
+      this.request?.abort();
+      const carousel = this.querySelector('antv-carousel')!;
+      carousel.setAttribute('disabled', '');
+      const request = new AbortController();
+      this.request = request;
+      const track = this.querySelector<HTMLElement>('[data-antv-track]')!;
+      const pagination = this.querySelector<HTMLElement>('[data-antv-pagination]')!;
+      const status = this.querySelector<HTMLElement>('[data-updates-status]')!;
+      const retry = this.querySelector<HTMLButtonElement>('[data-updates-retry]')!;
+      const skeleton = this.querySelector<HTMLTemplateElement>('[data-updates-skeleton]')!;
+      const template = this.querySelector<HTMLTemplateElement>('[data-updates-card]')!;
+      this.dataset.state = 'loading';
+      this.setAttribute('aria-busy', 'true');
+      retry.hidden = true;
+      status.textContent = this.dataset.loading!;
+      track.hidden = false;
+      track.tabIndex = -1;
+      track.replaceChildren(skeleton.content.cloneNode(true));
+      pagination.hidden = true;
+      const timeout = window.setTimeout(() => request.abort(), 10000);
+      try {
+        const messages = await loadUpdates(this.dataset.locale === 'en' ? 'en' : 'zh', request.signal);
+        if (!this.isConnected || this.request !== request) return;
+        const fragment = document.createDocumentFragment();
+        for (const message of messages) {
+          const card = template.content.firstElementChild!.cloneNode(true) as HTMLAnchorElement;
+          card.href = message.href;
+          card.querySelector('strong')!.textContent = message.title;
+          card.querySelector('[data-update-description]')!.textContent = message.description;
+          const image = card.querySelector('img')!;
+          if (message.image) {
+            image.src = message.image;
+            image.addEventListener('error', () => { image.hidden = true; }, { once: true });
+          } else image.remove();
+          fragment.append(card);
+        }
+        track.replaceChildren(fragment);
+        track.hidden = !messages.length;
+        track.tabIndex = 0;
+        this.dataset.state = messages.length ? 'ready' : 'empty';
+        status.textContent = messages.length ? '' : this.dataset.empty!;
+        if (messages.length) carousel.removeAttribute('disabled');
+      } catch {
+        if (!this.isConnected || this.request !== request) return;
+        this.dataset.state = 'error';
+        track.hidden = true;
+        status.textContent = this.dataset.error!;
+        retry.hidden = false;
+      } finally {
+        window.clearTimeout(timeout);
+        if (this.request === request) this.setAttribute('aria-busy', 'false');
+      }
+    }
+  }
+
   if (!customElements.get('antv-updates')) customElements.define('antv-updates', AntvUpdates);
 </script>
 
 <style>
   .antv-update-carousel {
     display: flow-root;
+    min-width: 0;
+    min-height: 210px;
     --carousel-columns: 3;
     --carousel-gap: 20px;
     --carousel-track-padding: 40px;
@@ -60,9 +178,6 @@ const isZh = locale === 'zh';
     color: inherit;
     text-decoration: none;
     transition: border-color .25s, box-shadow .25s, transform .25s;
-  }
-
-  .antv-update-card {
     position: relative;
     display: grid;
     height: 150px;
@@ -84,8 +199,8 @@ const isZh = locale === 'zh';
     box-shadow: 0 8px 20px rgb(0 0 0 / 10%);
   }
 
-  .antv-update-card:hover .antv-update-copy strong,
-  .antv-update-card:focus-visible .antv-update-copy strong {
+  .antv-update-card:hover strong,
+  .antv-update-card:focus-visible strong {
     color: #691eff;
   }
 
@@ -106,11 +221,11 @@ const isZh = locale === 'zh';
     object-fit: contain;
   }
 
-  .antv-update-copy {
-    display: contents;
-  }
-
-  .antv-update-copy strong {
+  .antv-update-card strong {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
     grid-column: 2;
     grid-row: 1;
     align-self: center;
@@ -120,7 +235,7 @@ const isZh = locale === 'zh';
     line-height: 26px;
   }
 
-  .antv-update-copy > span {
+  [data-update-description] {
     display: -webkit-box;
     grid-column: 1 / -1;
     grid-row: 2;
@@ -134,22 +249,10 @@ const isZh = locale === 'zh';
     -webkit-line-clamp: 2;
   }
 
-  .antv-update-carousel {
-    min-width: 0;
-    min-height: 210px;
-  }
-
   .antv-update-carousel [hidden] { display: none; }
 
   .antv-update-card,
   .antv-update-visual { box-sizing: border-box; }
-
-  .antv-update-copy strong {
-    display: -webkit-box;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
 
   .antv-update-card:focus-visible,
   [data-updates-retry]:focus-visible {

@@ -1,9 +1,11 @@
 import type { CollectionEntry } from 'astro:content';
 import { posix } from 'node:path';
-import { getAntvDocIdentity, localize } from './compiler';
+import { getAntvDocIdentity } from '../../content.js';
+import { localize } from '../../compiler/localization.js';
 import { getDocsCollection } from './docs';
 import { withBase } from './paths';
 import { config } from './site';
+import { serializeAgentMarkdown } from '../../agent-markdown.js';
 
 type SiteLocale = 'zh' | 'en';
 
@@ -90,30 +92,6 @@ export function getAgentDocumentSections(
   return [...sections.values()];
 }
 
-const rewriteLocalizedDocumentLinks = (
-  body: string,
-  document: AgentDocument,
-  documentsByFilePath: Map<string, AgentDocument>,
-) => {
-  if (!document.entry.filePath) return body;
-  const sourcePath = document.entry.filePath.replaceAll('\\', '/');
-  return body.replace(
-    /\]\(((?:\.\.?\/)[^)\s]+?)\.(zh|en)\.(mdx|md)([?#][^)\s]+)?\)/g,
-    (match, reference, locale, extension, suffix = '') => {
-      const targetPath = posix.normalize(
-        posix.join(
-          posix.dirname(sourcePath),
-          `${reference}.${locale}.${extension}`,
-        ),
-      );
-      const target = documentsByFilePath.get(targetPath);
-      return target
-        ? `](${absoluteSiteUrl(target.markdownRoute)}${suffix})`
-        : match;
-    },
-  );
-};
-
 const filePathIndexes = new WeakMap<
   AgentDocument[],
   Map<string, AgentDocument>
@@ -133,10 +111,10 @@ const indexAgentDocumentsByFilePath = (documents: AgentDocument[]) => {
   return index;
 };
 
-export function serializeAgentDocument(
+export async function serializeAgentDocument(
   document: AgentDocument,
   documents: AgentDocument[],
-): string {
+): Promise<string> {
   const metadata = [
     `title: ${JSON.stringify(document.entry.data.title)}`,
     `description: ${JSON.stringify(document.entry.data.description || document.entry.data.title)}`,
@@ -146,10 +124,29 @@ export function serializeAgentDocument(
       ? [`version: ${JSON.stringify(currentSiteVersion)}`]
       : []),
   ];
-  const body = rewriteLocalizedDocumentLinks(
-    document.entry.body.trim(),
-    document,
-    indexAgentDocumentsByFilePath(documents),
-  );
+  const body = await serializeAgentMarkdown(document.entry.body.trim(), {
+    filePath: document.entry.filePath ?? '',
+    canonical: absoluteSiteUrl(document.route),
+    components: config.content.agentComponents,
+    resolveDocument: (source) => {
+      if (!document.entry.filePath) return undefined;
+      const match = source.match(/^((?:\.\.?\/)[^?#]+\.(?:zh|en)\.mdx?)([?#].*)?$/);
+      if (!match) return undefined;
+      const target = indexAgentDocumentsByFilePath(documents).get(
+        posix.normalize(
+          posix.join(
+            posix.dirname(document.entry.filePath.replaceAll('\\', '/')),
+            match[1],
+          ),
+        ),
+      );
+      return target
+        ? {
+            title: target.entry.data.title,
+            href: absoluteSiteUrl(target.markdownRoute) + (match[2] ?? ''),
+          }
+        : undefined;
+    },
+  });
   return ['---', ...metadata, '---', '', body, ''].join('\n');
 }

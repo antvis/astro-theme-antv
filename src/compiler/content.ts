@@ -73,15 +73,13 @@ export interface DemoPage extends GeneratedPageBase {
   demoKey: string;
 }
 
-export type GeneratedPage =
+export type SitePage =
   | HomePage
   | QaPage
   | ExamplesPage
   | ExampleCategoryPage
   | ExampleGroupPage
   | DemoPage;
-
-export type SitePage = GeneratedPage;
 
 export interface SiteRegistry {
   config: ResolvedSiteConfig;

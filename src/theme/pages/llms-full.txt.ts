@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { localize } from '../lib/compiler';
+import { localize } from '../../compiler/localization.js';
 import {
   absoluteSiteUrl,
   currentSiteVersion,
@@ -10,16 +10,7 @@ import {
   serializeAgentDocument,
 } from '../lib/agent-content';
 import { config, registry } from '../lib/site';
-
-const fencedSource = (source: string, filename: string) => {
-  const longestFence = Math.max(
-    2,
-    ...[...source.matchAll(/`+/g)].map((match) => match[0].length),
-  );
-  const fence = '`'.repeat(longestFence + 1);
-  const language = filename.split('.').pop() || 'text';
-  return `${fence}${language}\n${source.trim()}\n${fence}`;
-};
+import { fencedCode } from '../../agent-markdown.js';
 
 export const GET: APIRoute = async () => {
   const documents = await getAgentDocuments();
@@ -46,7 +37,7 @@ export const GET: APIRoute = async () => {
             `- Markdown source: ${absoluteSiteUrl(document.markdownRoute)}`,
             `- Description: ${inlineText(document.entry.data.description || document.entry.data.title)}`,
           ].join('\n'),
-          serializeAgentDocument(document, documents),
+          await serializeAgentDocument(document, documents),
         );
       }
     }
@@ -65,7 +56,7 @@ export const GET: APIRoute = async () => {
           ),
           `- Source path: ${demo.relativeSourcePath}`,
         ].join('\n'),
-        fencedSource(demo.source, demo.filename),
+        fencedCode(demo.source, demo.filename.split('.').pop() || 'text'),
       );
     }
   }

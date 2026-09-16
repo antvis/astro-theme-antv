@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { localize } from '../lib/compiler';
+import { localize } from '../../compiler/localization.js';
 import {
   absoluteSiteUrl,
   currentSiteVersion,
