@@ -131,7 +131,14 @@ export const defaultFooterGroups = [
       {
         text: { zh: "llms.txt", en: "llms.txt" },
         href: "/llms.txt",
-        download: "llms.txt",
+        target: "_blank",
+        icon: "file-text",
+      },
+      {
+        text: { zh: "llms-full.txt", en: "llms-full.txt" },
+        href: "/llms-full.txt",
+        target: "_blank",
+        icon: "file-stack",
       },
     ],
   },

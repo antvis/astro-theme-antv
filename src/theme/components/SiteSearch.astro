@@ -129,7 +129,7 @@ const developmentSearch = import.meta.env.ANTV_SITE_DEVELOPMENT === 'true';
       if (!dialog || !input || !resultsRoot || !status || !clearButton) return;
 
       const locale = dialog.dataset.locale || 'en';
-      const parseConfiguration = <Value>(value: string | undefined, fallback: Value): Value => {
+      const parseConfiguration = <Value,>(value: string | undefined, fallback: Value): Value => {
         try {
           return (JSON.parse(value || '') as Value) || fallback;
         } catch {
