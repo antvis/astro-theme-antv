@@ -21,6 +21,11 @@ export interface LocalizedLink {
   href: string;
 }
 
+export interface HomeAnnouncement {
+  title: LocalizedText;
+  link?: LocalizedLink;
+}
+
 export type ContentComponent = string | { type: "link-card" };
 
 export type AnalyticsConfig = Record<string, Record<string, unknown>>;
@@ -80,6 +85,7 @@ export interface AntVSiteConfig {
     icon?: string;
   }>;
   home: {
+    announcement?: HomeAnnouncement;
     eyebrow?: LocalizedText;
     title: LocalizedText;
     description: LocalizedText;
@@ -164,6 +170,7 @@ export interface ResolvedSiteConfig {
   } | null;
   examples: Array<{ slug: string; title: LocalizedText; icon?: string }>;
   home: {
+    announcement?: HomeAnnouncement;
     eyebrow?: LocalizedText;
     title: LocalizedText;
     description: LocalizedText;
@@ -365,6 +372,10 @@ const configSchema = z
       )
       .default([]),
     home: z.strictObject({
+      announcement: z.strictObject({
+        title: localizedTextSchema,
+        link: linkSchema.optional(),
+      }).optional(),
       eyebrow: localizedTextSchema.optional(),
       title: localizedTextSchema,
       description: localizedTextSchema,

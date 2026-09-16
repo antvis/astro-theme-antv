@@ -159,6 +159,18 @@ for example `text-[var(--brand)]`.
 
 Set `theme.tokens` to override CSS variables, for example `{ "--brand": "#5b5bd6" }`.
 
+Set `home.announcement` to show a bilingual announcement above the homepage hero:
+
+```js
+announcement: {
+  title: { zh: "新版本已发布", en: "A new release is available" },
+  link: {
+    text: { zh: "了解更多", en: "Learn more" },
+    href: "https://example.com/releases",
+  },
+}
+```
+
 Use `slots.home` to add your own Astro components. Paths are relative to the project root:
 
 ```js
