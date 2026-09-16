@@ -254,11 +254,19 @@ const structuredData = {
 
         const copyText = async (value) => {
           if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(value);
+            if (typeof value !== 'string' && window.ClipboardItem && navigator.clipboard.write) {
+              // Start the clipboard write during the click, before fetching finishes (Safari).
+              const blob = value.then((text) => new Blob([text], { type: 'text/plain' }));
+              // Permission denial may happen before the clipboard consumes the content.
+              blob.catch(() => {});
+              await navigator.clipboard.write([new ClipboardItem({ 'text/plain': blob })]);
+            } else {
+              await navigator.clipboard.writeText(await value);
+            }
             return;
           }
           const textarea = document.createElement('textarea');
-          textarea.value = value;
+          textarea.value = await value;
           textarea.setAttribute('readonly', '');
           textarea.style.position = 'fixed';
           textarea.style.opacity = '0';
@@ -272,8 +280,45 @@ const structuredData = {
         };
 
         const copyLabels = document.documentElement.lang === 'zh'
-          ? { idle: '复制代码', success: '已复制', error: '复制失败' }
-          : { idle: 'Copy code', success: 'Copied', error: 'Copy failed' };
+          ? { idle: '复制代码', pending: '复制中…', success: '已复制', error: '复制失败' }
+          : { idle: 'Copy code', pending: 'Copying…', success: 'Copied', error: 'Copy failed' };
+        const setupCopy = (button, readContent) => {
+          const label = button.querySelector('[data-copy-label]');
+          const idleTitle = button.title;
+          const idleLabel = label?.textContent || idleTitle;
+          const setCopyState = (state) => {
+            const text = state === 'idle' ? idleLabel : copyLabels[state];
+            button.dataset.copyState = state;
+            button.title = state === 'idle' ? idleTitle : text;
+            button.setAttribute('aria-label', text);
+            if (label) label.textContent = text;
+          };
+          let resetTimer;
+          button.addEventListener('click', async () => {
+            clearTimeout(resetTimer);
+            button.disabled = true;
+            setCopyState('pending');
+            try {
+              await copyText(readContent());
+              setCopyState('success');
+            } catch {
+              setCopyState('error');
+            } finally {
+              button.disabled = false;
+              resetTimer = setTimeout(() => { setCopyState('idle'); }, 1800);
+            }
+          });
+        };
+        document.querySelectorAll('[data-copy-document]').forEach((button) => {
+          button.hidden = false;
+          setupCopy(button, async () => {
+            const response = await fetch(button.dataset.copyDocument, { signal: AbortSignal.timeout(10000) });
+            if (!response.ok || response.headers.get('content-type')?.includes('text/html')) {
+              throw new Error('Unable to load document Markdown.');
+            }
+            return response.text();
+          });
+        });
         document.querySelectorAll('.markdown-body pre').forEach((pre) => {
           const code = pre.querySelector(':scope > code');
           if (!code || pre.closest('.markdown-code-block')) return;
@@ -299,26 +344,7 @@ const structuredData = {
           `;
           wrapper.append(button);
 
-          let resetTimer;
-          button.addEventListener('click', async () => {
-            clearTimeout(resetTimer);
-            try {
-              await copyText(code.textContent || '');
-              button.dataset.copyState = 'success';
-              button.setAttribute('aria-label', copyLabels.success);
-              button.title = copyLabels.success;
-            } catch (error) {
-              console.error('Failed to copy code block.', error);
-              button.dataset.copyState = 'error';
-              button.setAttribute('aria-label', copyLabels.error);
-              button.title = copyLabels.error;
-            }
-            resetTimer = setTimeout(() => {
-              delete button.dataset.copyState;
-              button.setAttribute('aria-label', copyLabels.idle);
-              button.title = copyLabels.idle;
-            }, 1800);
-          });
+          setupCopy(button, () => code.textContent || '');
         });
 
       })();

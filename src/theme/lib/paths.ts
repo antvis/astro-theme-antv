@@ -3,6 +3,9 @@ const basePrefix = base === '/' ? '' : base.replace(/\/$/, '');
 
 const hasScheme = (value: string) => /^[a-z][a-z\d+.-]*:/i.test(value);
 
+export const markdownRouteFor = (locale: 'zh' | 'en', slug: string) =>
+  `/markdown/${locale}/${slug || 'index'}.md`;
+
 export const withBase = (value: string): string => {
   if (
     !value ||

@@ -1044,10 +1044,6 @@ kbd {
   line-height: 38px;
 }
 
-.document-meta {
-  font-family: "SFMono-Regular", Consolas, monospace;
-}
-
 .markdown-body > div > :first-child {
   margin-top: 0;
 }
