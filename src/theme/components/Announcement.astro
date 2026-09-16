@@ -1,0 +1,32 @@
+---
+import closeIcon from '@tabler/icons/outline/x.svg?raw';
+
+interface Props { locale: 'zh' | 'en'; }
+const { locale } = Astro.props;
+---
+
+<antv-announcement
+  hidden
+  data-locale={locale}
+  data-site={import.meta.env.BASE_URL}
+  data-pagefind-ignore
+  class="block [&[hidden]]:hidden relative w-full bg-[var(--announcement-background,#daf5eb)] px-12 py-3 text-center text-sm text-[#253858]"
+>
+  <aside aria-label={locale === 'zh' ? '公告' : 'Announcement'}>
+    <span data-announcement-title class="[overflow-wrap:anywhere]"></span>
+    {' '}<a data-announcement-link hidden class="[&[hidden]]:hidden text-[#1677ff] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)] [overflow-wrap:anywhere]"></a>
+    <button
+      type="button"
+      data-announcement-close
+      aria-label={locale === 'zh' ? '关闭公告' : 'Dismiss announcement'}
+      class="absolute top-1 right-1 inline-flex size-9 cursor-pointer items-center justify-center rounded border-0 bg-transparent p-2 text-inherit hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]"
+    >
+      <span class="block size-5 [&_svg]:block [&_svg]:size-full" aria-hidden="true" set:html={closeIcon}></span>
+    </button>
+  </aside>
+</antv-announcement>
+
+<script>
+  import { AntvAnnouncement } from '../features/announcement/client';
+  if (!customElements.get('antv-announcement')) customElements.define('antv-announcement', AntvAnnouncement);
+</script>

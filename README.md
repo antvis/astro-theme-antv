@@ -159,6 +159,20 @@ for example `text-[var(--brand)]`.
 
 Set `theme.tokens` to override CSS variables, for example `{ "--brand": "#5b5bd6" }`.
 
+The theme loads a shared announcement in the browser from the fixed URL
+`https://assets.antv.antgroup.com/antv/announcement.json`. Publish a JSON object
+with this structure (the endpoint must allow cross-origin requests):
+
+```json
+{
+  "title": { "zh": "新版本已发布", "en": "A new release is available" },
+  "link": {
+    "text": { "zh": "了解更多", "en": "Learn more" },
+    "href": "https://example.com/releases"
+  }
+}
+```
+
 Use `slots.home` to add your own Astro components. Paths are relative to the project root:
 
 ```js
