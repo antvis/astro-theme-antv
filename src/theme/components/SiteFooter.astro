@@ -4,11 +4,21 @@ import type { LocalizedText, LocalizedLink } from '../../compiler/config.js';
 import zhihuIcon from '../assets/icons/zhihu.svg?raw';
 import githubIcon from '../assets/icons/github.svg?raw';
 import questionIcon from '@tabler/icons/outline/help-circle.svg?raw';
+import fileTextIcon from '@tabler/icons/outline/file-text.svg?raw';
+import fileStackIcon from '@tabler/icons/outline/file-stack.svg?raw';
+
+const icons = new Map([
+  ['github', githubIcon],
+  ['help', questionIcon],
+  ['zhihu', zhihuIcon],
+  ['file-text', fileTextIcon],
+  ['file-stack', fileStackIcon],
+]);
 
 interface FooterLink extends LocalizedLink {
   description?: LocalizedText;
   icon?: string;
-  download?: string;
+  target?: string;
 }
 interface Props {
   locale: 'zh' | 'en';
@@ -31,11 +41,10 @@ const { locale, groups, description, copyright, tagline } = Astro.props;
         <ul>
           {group.links.map((link) => (
             <li>
-              <a href={link.href} download={link.download} target={/^https?:\/\//.test(link.href) ? '_blank' : undefined} rel={/^https?:\/\//.test(link.href) ? 'noopener noreferrer' : undefined}>
-                {link.icon === 'github' ? <span class="footer-icon" aria-hidden="true" set:html={githubIcon} />
-                  : link.icon === 'help' ? <span class="footer-icon" aria-hidden="true" set:html={questionIcon} />
-                  : link.icon === 'zhihu' ? <span class="footer-icon footer-zhihu" aria-hidden="true" set:html={zhihuIcon} />
-                  : link.icon && <img class="footer-icon" src={link.icon} width="16" height="16" alt="" loading="lazy" />}
+              <a href={link.href} target={link.target ?? (/^https?:\/\//.test(link.href) ? '_blank' : undefined)} rel={link.target === '_blank' || /^https?:\/\//.test(link.href) ? 'noopener noreferrer' : undefined}>
+                {link.icon && (icons.has(link.icon)
+                  ? <span class:list={['footer-icon', { 'footer-zhihu': link.icon === 'zhihu' }]} aria-hidden="true" set:html={icons.get(link.icon)} />
+                  : <img class="footer-icon" src={link.icon} width="16" height="16" alt="" loading="lazy" />)}
                 <span>{localize(link.text, locale)}</span>
                 {link.description && <span class="footer-description">{localize(link.description, locale)}</span>}
               </a>
