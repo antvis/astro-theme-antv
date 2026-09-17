@@ -14,7 +14,8 @@ export function getStaticPaths() {
   return config.site.locales.map((locale) => ({ params: { locale } }));
 }
 
-const locale = String(Astro.params['locale']) as 'zh' | 'en';
+// The root route shares this page and renders the configured default language.
+const locale = (Astro.params['locale'] ?? config.site.defaultLocale) as 'zh' | 'en';
 const home = config.home;
 const route = `/${locale}/`;
 const localHref = (href: string) => {
