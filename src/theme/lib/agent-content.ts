@@ -3,7 +3,7 @@ import { posix } from 'node:path';
 import { getAntvDocIdentity } from '../../content.js';
 import { localize } from '../../compiler/localization.js';
 import { getDocsCollection } from './docs';
-import { withBase } from './paths';
+import { markdownRouteFor, withBase } from './paths';
 import { config } from './site';
 import { serializeAgentMarkdown } from '../../agent-markdown.js';
 
@@ -38,14 +38,11 @@ export const markdownLinkText = (value: string) =>
 export const absoluteSiteUrl = (route: string) =>
   new URL(withBase(route), config.site.origin).href;
 
-const markdownRouteFor = (locale: SiteLocale, slug: string) =>
-  `/markdown/${locale}/${slug || 'index'}.md`;
-
 export async function getAgentDocuments(): Promise<AgentDocument[]> {
   const localeOrder = new Map(
     config.site.locales.map((locale, index) => [locale, index]),
   );
-  const documents = (await getDocsCollection(false)).flatMap<AgentDocument>((entry) => {
+  const documents = (await getDocsCollection()).flatMap<AgentDocument>((entry) => {
     const identity = getAntvDocIdentity(entry.id);
     if (!config.site.locales.includes(identity.locale)) return [];
     const configuredSection = config.content.sidebar[identity.section];

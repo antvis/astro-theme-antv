@@ -29,34 +29,24 @@ const { locale, title, description, route, pageType = 'page' } = Astro.props;
 const canonical = new URL(withBase(route), config.site.origin);
 const generatedRoutes = await getGeneratedRoutes();
 const alternateLocales = config.site.locales
-  .map((candidateLocale: 'zh' | 'en') => ({
+  .map((candidateLocale) => ({
     locale: candidateLocale,
     route: alternateRoute(route, candidateLocale),
   }))
-  .filter((entry: { locale: 'zh' | 'en'; route: string }) =>
-    generatedRoutes.has(entry.route),
-  );
-const localeSwitch = alternateLocales.find(
-  (entry: { locale: 'zh' | 'en'; route: string }) => entry.locale !== locale,
-);
+  .filter((entry) => generatedRoutes.has(entry.route));
+const localeSwitch = alternateLocales.find((entry) => entry.locale !== locale);
 const defaultAlternate = alternateLocales.find(
-  (entry: { locale: 'zh' | 'en'; route: string }) =>
-    entry.locale === config.site.defaultLocale,
+  (entry) => entry.locale === config.site.defaultLocale,
 );
 const hasScheme = (href: string) => /^[a-z][a-z\d+.-]*:/i.test(href);
 const localizedRoute = (href: string) => {
   if (href.startsWith('//') || hasScheme(href)) return href;
   if (href.startsWith('#')) return href;
   if (href.startsWith('/#')) return `/${locale}/${href.slice(1)}`;
-  if (href.startsWith(`/${locale}/`) || href === `/${locale}/`) return href;
+  if (href.startsWith(`/${locale}/`)) return href;
   return `/${locale}${href.startsWith('/') ? href : `/${href}`}`.replace(/\/$/, '') + '/';
 };
-const localHref = (href: string) => {
-  const localized = localizedRoute(href);
-  return localized.startsWith('//') || hasScheme(localized)
-    ? localized
-    : withBase(localized);
-};
+const localHref = (href: string) => withBase(localizedRoute(href));
 const navLabel = locale === 'zh' ? '主导航' : 'Primary navigation';
 const currentSection = route.replace(new RegExp(`^/${locale}/?`), '').split('/')[0];
 const navigation = config.navigation.map((item) => {
@@ -68,24 +58,18 @@ const navigation = config.navigation.map((item) => {
     active: section ? currentSection === section : route === localizedRoute(item.href),
   };
 });
-const versionEntries = Object.entries(config.versions || {}) as [string, string][];
+const versionEntries = Object.entries(config.versions);
 const currentVersion = versionEntries[0]?.[0];
 const isAntVSite = config.site.title.trim().toLocaleLowerCase() === 'antv';
 const searchEnabled = config.search.enabled;
-const footerGroups = config.footer.groups !== null
-  ? config.footer.groups.map((group) => ({
-      ...group,
-      links: group.links.map((link) => ({ ...link, href: localHref(link.href) })),
-    }))
-  : defaultFooterGroups.map((group) => ({
-      ...group,
-      links: group.links.map((link) => ({ ...link, href: withBase(link.href) })),
-    }));
-const serializeTokens = (tokens: Record<string, string>) =>
-  Object.entries(tokens)
-    .map(([name, value]) => `${name}:${value}`)
-    .join(';');
-const serializedTokens = serializeTokens(config.theme.tokens);
+const footerHref = config.footer.groups === null ? withBase : localHref;
+const footerGroups = (config.footer.groups ?? defaultFooterGroups).map((group) => ({
+  ...group,
+  links: group.links.map((link) => ({ ...link, href: footerHref(link.href) })),
+}));
+const serializedTokens = Object.entries(config.theme.tokens)
+  .map(([name, value]) => `${name}:${value}`)
+  .join(';');
 const themeOverrides = serializedTokens && `:root{${serializedTokens}}`;
 const copyright = localize(
   config.footer.copyright,
@@ -121,7 +105,7 @@ const structuredData = {
     <meta name="generator" content="@antv/astro-theme-antv" />
     <meta name="color-scheme" content="light" />
     <link rel="canonical" href={canonical} />
-    {alternateLocales.map((entry: { locale: 'zh' | 'en'; route: string }) => (
+    {alternateLocales.map((entry) => (
       <link
         rel="alternate"
         hreflang={entry.locale === 'zh' ? 'zh-CN' : 'en'}
@@ -221,28 +205,28 @@ const structuredData = {
         const nav = document.querySelector('#primary-nav');
         const header = document.querySelector('.site-header');
         const updateNavPosition = () => {
-          if (nav?.hasAttribute('data-open')) {
+          if (nav.hasAttribute('data-open')) {
             nav.style.setProperty('--mobile-nav-top', `${header.getBoundingClientRect().bottom}px`);
           }
         };
         const setNavOpen = (open) => {
-          navButton?.setAttribute('aria-expanded', String(open));
-          nav?.toggleAttribute('data-open', open);
+          navButton.setAttribute('aria-expanded', String(open));
+          nav.toggleAttribute('data-open', open);
           document.body.classList.toggle('mobile-nav-open', open);
           updateNavPosition();
-          if (!open) nav?.querySelectorAll('details[open]').forEach((menu) => menu.removeAttribute('open'));
+          if (!open) nav.querySelectorAll('details[open]').forEach((menu) => menu.removeAttribute('open'));
         };
-        navButton?.addEventListener('click', () => {
+        navButton.addEventListener('click', () => {
           const open = navButton.getAttribute('aria-expanded') === 'true';
           setNavOpen(!open);
         });
-        nav?.addEventListener('click', (event) => {
+        nav.addEventListener('click', (event) => {
           if (event.target instanceof Element && event.target.closest('a')) setNavOpen(false);
         });
         document.addEventListener('keydown', (event) => {
-          if (event.key === 'Escape' && nav?.hasAttribute('data-open')) {
+          if (event.key === 'Escape' && nav.hasAttribute('data-open')) {
             setNavOpen(false);
-            navButton?.focus();
+            navButton.focus();
           }
         });
         window.matchMedia('(max-width: 900px)').addEventListener('change', () => {
@@ -252,28 +236,46 @@ const structuredData = {
         const navPositionObserver = new ResizeObserver(updateNavPosition);
         navPositionObserver.observe(document.querySelector('.site-canvas'));
 
-        const copyText = async (value) => {
-          if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(value);
-            return;
-          }
-          const textarea = document.createElement('textarea');
-          textarea.value = value;
-          textarea.setAttribute('readonly', '');
-          textarea.style.position = 'fixed';
-          textarea.style.opacity = '0';
-          textarea.style.pointerEvents = 'none';
-          document.body.append(textarea);
-          textarea.select();
-          const legacyCopy = Reflect.get(document, 'execCommand');
-          const copied = typeof legacyCopy === 'function' && Reflect.apply(legacyCopy, document, ['copy']);
-          textarea.remove();
-          if (!copied) throw new Error('Copy command was rejected.');
-        };
-
         const copyLabels = document.documentElement.lang === 'zh'
           ? { idle: '复制代码', success: '已复制', error: '复制失败' }
           : { idle: 'Copy code', success: 'Copied', error: 'Copy failed' };
+        const setupCopy = (button, readContent) => {
+          const label = button.querySelector('[data-copy-label]');
+          const idleTitle = button.title;
+          const idleLabel = label?.textContent || idleTitle;
+          const setCopyState = (state) => {
+            const text = state === 'idle' ? idleLabel : copyLabels[state];
+            button.dataset.copyState = state;
+            button.title = state === 'idle' ? idleTitle : text;
+            button.setAttribute('aria-label', text);
+            if (label) label.textContent = text;
+          };
+          let resetTimer;
+          button.addEventListener('click', async () => {
+            clearTimeout(resetTimer);
+            button.disabled = true;
+            setCopyState('idle');
+            try {
+              await navigator.clipboard.writeText(await readContent());
+              setCopyState('success');
+            } catch {
+              setCopyState('error');
+            } finally {
+              button.disabled = false;
+              resetTimer = setTimeout(() => { setCopyState('idle'); }, 1800);
+            }
+          });
+        };
+        document.querySelectorAll('[data-copy-document]').forEach((button) => {
+          button.hidden = false;
+          setupCopy(button, async () => {
+            const response = await fetch(button.dataset.copyDocument, { signal: AbortSignal.timeout(10000) });
+            if (!response.ok || response.headers.get('content-type')?.includes('text/html')) {
+              throw new Error('Unable to load document Markdown.');
+            }
+            return response.text();
+          });
+        });
         document.querySelectorAll('.markdown-body pre').forEach((pre) => {
           const code = pre.querySelector(':scope > code');
           if (!code || pre.closest('.markdown-code-block')) return;
@@ -285,7 +287,6 @@ const structuredData = {
           const button = document.createElement('button');
           button.className = 'markdown-code-copy';
           button.type = 'button';
-          button.dataset.codeCopy = '';
           button.setAttribute('aria-label', copyLabels.idle);
           button.title = copyLabels.idle;
           button.innerHTML = `
@@ -299,26 +300,7 @@ const structuredData = {
           `;
           wrapper.append(button);
 
-          let resetTimer;
-          button.addEventListener('click', async () => {
-            clearTimeout(resetTimer);
-            try {
-              await copyText(code.textContent || '');
-              button.dataset.copyState = 'success';
-              button.setAttribute('aria-label', copyLabels.success);
-              button.title = copyLabels.success;
-            } catch (error) {
-              console.error('Failed to copy code block.', error);
-              button.dataset.copyState = 'error';
-              button.setAttribute('aria-label', copyLabels.error);
-              button.title = copyLabels.error;
-            }
-            resetTimer = setTimeout(() => {
-              delete button.dataset.copyState;
-              button.setAttribute('aria-label', copyLabels.idle);
-              button.title = copyLabels.idle;
-            }, 1800);
-          });
+          setupCopy(button, () => code.textContent || '');
         });
 
       })();

@@ -10,14 +10,9 @@ type DocsCollectionEntry = CollectionEntry<'docs'>;
  * consumer that registers it under a different name only has to set
  * `content.collectionName` once in the site config.
  *
- * Entries marked as draft are always excluded; `includeHidden` keeps entries
- * hidden from the sidebar when building the docs navigation.
+ * Only drafts are excluded. Sidebar visibility is handled by the navigation.
  */
-export async function getDocsCollection(
-  includeHidden = true,
-): Promise<DocsCollectionEntry[]> {
+export async function getDocsCollection(): Promise<DocsCollectionEntry[]> {
   const entries = await getCollection(config.content.collectionName) as DocsCollectionEntry[];
-  return entries.filter((entry) =>
-    !entry.data.draft && (includeHidden || !entry.data.sidebar.hidden),
-  );
+  return entries.filter((entry) => !entry.data.draft);
 }

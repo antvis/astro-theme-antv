@@ -1,11 +1,14 @@
 ---
 import { render } from 'astro:content';
+import copyIcon from '@tabler/icons/outline/copy.svg?raw';
+import editIcon from '@tabler/icons/outline/pencil.svg?raw';
+import checkIcon from '@tabler/icons/outline/check.svg?raw';
 import { localize } from '../../../compiler/localization.js';
 import type { SitePage } from '../../../compiler/content.js';
 import { getDocsCollection } from '../../lib/docs';
 import { toDocumentPage } from '../../lib/documents';
 import type { DocumentPage } from '../../lib/documents';
-import { withBase } from '../../lib/paths';
+import { markdownRouteFor, withBase } from '../../lib/paths';
 import DocsSidebar from '../../components/DocsSidebar.astro';
 import ExampleSidebar from '../../components/ExampleSidebar.astro';
 import Toc from '../../components/Toc.astro';
@@ -34,13 +37,9 @@ export async function getStaticPaths() {
     (page): page is Exclude<SitePage, { type: 'home' | 'qa' }> =>
       page.type !== 'home' && page.type !== 'qa',
   );
-  const knownRoutes = new Set(
-    registry.pages
-      .filter((page) => page.type === 'home' || page.type === 'qa')
-      .map((page) => page.route),
-  );
-
-  for (const page of [...generatedPages, ...documentPages]) {
+  // Generated routes are checked by scanSite; documents come from Astro's collection.
+  const knownRoutes = new Set(registry.pages.map((page) => page.route));
+  for (const page of documentPages) {
     if (knownRoutes.has(page.route)) {
       throw new Error(`Duplicate Astro route: ${page.route}`);
     }
@@ -62,9 +61,10 @@ const locale = page.locale;
 const isZh = locale === 'zh';
 const documentSection = page.type === 'document' ? page.section : undefined;
 const documentEntries = page.type === 'document'
-  ? await getDocsCollection(false)
+  ? await getDocsCollection()
   : [];
 const documentItems = documentEntries
+  .filter((entry) => !entry.data.sidebar.hidden)
   .map((entry) => toDocumentPage(entry, config))
   .filter((item) => item.locale === locale && item.section === documentSection)
   .map((item) => ({
@@ -121,10 +121,21 @@ if (page.type === 'document') {
       <DocsSidebar items={documentItems} currentRoute={page.route} locale={locale} labels={config.content.sidebar} />
       <article class="markdown-body">
         <h1 class="document-title" data-pagefind-meta="title">{page.title}</h1>
-        <div class="document-meta flex justify-between gap-6 mb-6 pb-3 [border-bottom:1px_solid_var(--border-soft)] text-[var(--muted-light)] text-[12px] leading-[1.5] [@media(width<=700px)]:items-start [@media(width<=700px)]:flex-col">
-          <span>{page.slug}</span>
+        <div class="flex flex-wrap items-center justify-end gap-4 mb-6 pb-3 [border-bottom:1px_solid_var(--border-soft)] text-[12px] leading-[1.5] [@media(width<=700px)]:justify-start" data-pagefind-ignore>
+          <button
+            type="button"
+            hidden
+            data-copy-document={withBase(markdownRouteFor(locale, page.slug))}
+            class="group/copy inline-flex items-center gap-1.5 border-0 bg-transparent p-0 [font:inherit] text-[var(--muted)] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current [&[hidden]]:hidden"
+            title={isZh ? '复制当前文档的 Markdown' : 'Copy this document as Markdown'}
+          >
+            <span class="inline-flex size-3.5 [&_svg]:size-full group-data-[copy-state=success]/copy:hidden" aria-hidden="true" set:html={copyIcon} />
+            <span class="hidden size-3.5 [&_svg]:size-full group-data-[copy-state=success]/copy:inline-flex" aria-hidden="true" set:html={checkIcon} />
+            <span data-copy-label role="status" aria-live="polite">{isZh ? '复制文档' : 'Copy document'}</span>
+          </button>
           {editHref && (
-            <a href={editHref}>
+            <a href={editHref} class="inline-flex items-center gap-1.5 text-[var(--muted)] hover:text-[var(--muted)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current">
+              <span class="inline-flex size-3.5 [&_svg]:size-full" aria-hidden="true" set:html={editIcon} />
               {localize(editConfig?.label, locale, isZh ? '编辑此页' : 'Edit this page')}
             </a>
           )}
@@ -186,7 +197,7 @@ if (page.type === 'document') {
     </div>
   )}
 
-  {page.type === 'example-category' && category && (
+  {category && (
     <div class="examples-shell">
       <ExampleSidebar categories={registry.categories} locale={locale} currentRoute={page.route} />
       <section class="listing-page">
@@ -207,7 +218,7 @@ if (page.type === 'document') {
     </div>
   )}
 
-  {page.type === 'example-group' && group && (
+  {group && (
     <div class="examples-shell">
       <ExampleSidebar categories={registry.categories} locale={locale} currentRoute={page.route} />
       <section class="listing-page">
@@ -233,7 +244,7 @@ if (page.type === 'document') {
     </div>
   )}
 
-  {page.type === 'demo' && demo && (
+  {demo && (
     <div class="examples-shell demo-shell">
       <ExampleSidebar categories={registry.categories} locale={locale} currentRoute={page.route} />
       <article class="demo-page">
