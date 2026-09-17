@@ -126,7 +126,7 @@ if (page.type === 'document') {
             type="button"
             hidden
             data-copy-document={withBase(markdownRouteFor(locale, page.slug))}
-            class="group/copy inline-flex items-center gap-1.5 border-0 bg-transparent p-0 [font:inherit] text-[var(--muted)] cursor-pointer disabled:cursor-wait disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current [&[hidden]]:hidden"
+            class="group/copy inline-flex items-center gap-1.5 border-0 bg-transparent p-0 [font:inherit] text-[var(--muted)] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current [&[hidden]]:hidden"
             title={isZh ? '复制当前文档的 Markdown' : 'Copy this document as Markdown'}
           >
             <span class="inline-flex size-3.5 [&_svg]:size-full group-data-[copy-state=success]/copy:hidden" aria-hidden="true" set:html={copyIcon} />
