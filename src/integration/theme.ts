@@ -16,7 +16,7 @@ const runtimeRoot = fileURLToPath(new URL("../", import.meta.url));
 const themeRoot = resolve(runtimeRoot, "theme");
 
 const themeRoutes = [
-  ["/", "pages/index.astro"],
+  ["/", "pages/[locale]/index.astro"],
   ["/llms.txt", "pages/llms.txt.ts"],
   ["/llms-full.txt", "pages/llms-full.txt.ts"],
   [

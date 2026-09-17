@@ -27,6 +27,8 @@ interface Props {
 
 const { locale, title, description, route, pageType = 'page' } = Astro.props;
 const canonical = new URL(withBase(route), config.site.origin);
+// Index the localized homepage once; the root URL renders the same content.
+const isRootHome = pageType === 'home' && Astro.url.pathname === withBase('/');
 const generatedRoutes = await getGeneratedRoutes();
 const alternateLocales = config.site.locales
   .map((candidateLocale) => ({
@@ -180,7 +182,7 @@ const structuredData = {
         </nav>
       </div>
     </header>
-    <main id="main-content" data-pagefind-body>
+    <main id="main-content" data-pagefind-body={isRootHome ? undefined : true}>
       <slot />
     </main>
     <SiteFooter
