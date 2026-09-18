@@ -23,3 +23,5 @@ export type {
 } from "./compiler/config.js";
 export type { HomeSlotProps } from "./slots.js";
 export default defineConfig;
+
+export type { OpenGraphOptions } from "./open-graph.js";

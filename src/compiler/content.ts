@@ -1,3 +1,5 @@
+import { openGraphSchema } from "../open-graph.js";
+import type { OpenGraphOptions } from "../open-graph.js";
 import { readFile, readdir } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, relative, resolve, sep } from "node:path";
@@ -21,6 +23,7 @@ export interface DemoRecord {
   filename: string;
   title: LocalizedText | string;
   screenshot?: string;
+  openGraph?: OpenGraphOptions;
   source: string;
   sourcePath: string;
   relativeSourcePath: string;
@@ -116,6 +119,7 @@ const exampleMetadataSchema = z.strictObject({
           .regex(demoExtensionPattern, "Demo files must be JavaScript or TypeScript modules."),
         title: metadataTitleSchema,
         screenshot: z.string().min(1).optional(),
+        openGraph: openGraphSchema.optional(),
       }),
     )
     .default([]),
@@ -282,6 +286,7 @@ export async function scanSite(
         filename: item.filename,
         title: item.title,
         screenshot: item.screenshot,
+        openGraph: item.openGraph,
         source,
         sourcePath,
         relativeSourcePath: pathKey(relative(config.root, sourcePath)),

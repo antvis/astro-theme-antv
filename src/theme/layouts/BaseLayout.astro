@@ -1,4 +1,6 @@
 ---
+import { createOpenGraphTags } from '../../open-graph.js';
+import type { OpenGraphOptions } from '../../open-graph.js';
 import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
 import { alternateRoute, localize } from '../../compiler/localization.js';
 import * as Analytics from 'astro-analytics';
@@ -23,10 +25,26 @@ interface Props {
   description: string;
   route: string;
   pageType?: string;
+  image?: string;
+  imageAlt?: string;
+  openGraph?: OpenGraphOptions;
 }
 
-const { locale, title, description, route, pageType = 'page' } = Astro.props;
+const { locale, title, description, route, pageType = 'page', image, imageAlt, openGraph } = Astro.props;
 const canonical = new URL(withBase(route), config.site.origin);
+const documentTitle = title === config.site.title ? title : `${title} · ${config.site.title}`;
+const openGraphTags = createOpenGraphTags({
+  site: config.site,
+  locale,
+  title: documentTitle,
+  description,
+  canonical: canonical.href,
+  base: import.meta.env.BASE_URL,
+  type: pageType === 'document' ? 'article' : 'website',
+  image,
+  imageAlt,
+  openGraph,
+});
 // Index the localized homepage once; the root URL renders the same content.
 const isRootHome = pageType === 'home' && Astro.url.pathname === withBase('/');
 const generatedRoutes = await getGeneratedRoutes();
@@ -104,6 +122,7 @@ const structuredData = {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    {Object.entries(openGraphTags).map(([property, content]) => <meta property={property} content={content} />)}
     <meta name="generator" content="@antv/astro-theme-antv" />
     <meta name="color-scheme" content="light" />
     <link rel="stylesheet" href="https://assets.antv.antgroup.com/AlibabaPuHuiTi-Regular/result.css" />
@@ -120,7 +139,7 @@ const structuredData = {
       <link rel="alternate" hreflang="x-default" href={new URL(withBase(defaultAlternate.route), config.site.origin)} />
     )}
     {config.site.favicon && <link rel="icon" href={withBase(config.site.favicon)} />}
-    <title>{title === config.site.title ? title : `${title} · ${config.site.title}`}</title>
+    <title>{documentTitle}</title>
     {themeOverrides && <style is:inline set:html={themeOverrides} />}
     <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
   </head>

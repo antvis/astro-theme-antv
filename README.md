@@ -191,3 +191,75 @@ Optional components `QaEntry`, `Updates`, `Carousel`, and `Loading` are availabl
 For Astro options such as `base` or additional integrations, use Astro's `defineConfig` with `antvSite(siteConfig)` in `integrations`. Install and add `@astrojs/mdx` and `@astrojs/sitemap` if needed; the package's `defineConfig` includes both by default.
 
 See [the basic site](./demos/basic-site) for a complete example.
+
+## Open Graph sharing metadata
+
+The theme renders Open Graph tags directly in the HTML `<head>` for home,
+documentation, chart guides, example lists and example detail pages. No browser
+JavaScript or extra integration is required. Existing sites automatically get
+`og:title`, `og:description`, `og:url`, `og:type`, `og:site_name` and `og:locale`.
+
+Set a default sharing image in your downstream `astro.config.mjs`:
+
+```js
+site: {
+  // Keep the existing title, origin, repository and description.
+  openGraph: {
+    image: '/images/share.png',
+    imageAlt: { zh: '项目分享封面', en: 'Project sharing cover' },
+  },
+},
+```
+
+Place that image at `public/images/share.png`, or use an absolute HTTP(S) CDN URL.
+A 1200 × 630 image is a useful default for sharing cards; the theme does not
+create or resize images. All local image paths resolve from the site root,
+including Astro's `base`, regardless of the document's directory. Already-prefixed
+paths are not prefixed twice. `site.origin` supplies the production origin;
+localhost and URL query parameters do not leak into sharing URLs.
+
+Pages automatically reuse their existing metadata:
+
+| Page | Title and description | Image fallback |
+| --- | --- | --- |
+| Homepage | Existing site title and localized description | `home.image`, then site default |
+| Documentation / chart guide | Document title and description | Frontmatter `screenshot`, then site default |
+| Example detail | Example title and generated description | Example `screenshot`, then site default |
+| Example category / group / list | Existing page title and description | Site default |
+
+The default sharing title matches the HTML `<title>`, including the site suffix.
+Documentation defaults to `og:type=article`; other pages use `website`.
+`og:url` always matches the canonical URL. Locales map to `zh_CN` and `en_US`.
+When no image is available, `og:image` and `og:image:alt` are omitted.
+
+Override the homepage separately when its decorative illustration is unsuitable
+for a sharing card:
+
+```js
+home: {
+  // Keep the existing homepage settings.
+  openGraph: {
+    title: { zh: '项目首页分享标题', en: 'Project homepage sharing title' },
+    description: { zh: '分享摘要', en: 'Sharing summary' },
+    image: '/images/home-share.png',
+    imageAlt: { zh: '首页分享封面', en: 'Homepage sharing cover' },
+  },
+},
+```
+
+For an individual Markdown or MDX document, add optional frontmatter:
+
+```yaml
+---
+title: Quick start
+description: Create your first chart.
+openGraph:
+  title: Build your first chart
+  description: A practical guide with runnable examples.
+  image: /images/quick-start.png
+  imageAlt: A chart built with the library
+  type: article
+---
+```
+
+Use the same `openGraph` object on a demo entry in `examples/**/demo/meta.json`
