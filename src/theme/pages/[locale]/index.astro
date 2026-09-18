@@ -39,7 +39,7 @@ const imageAlt = localize(
 );
 ---
 
-<BaseLayout locale={locale} title={config.site.title} description={localize(config.site.description, locale)} route={route} pageType="home">
+<BaseLayout locale={locale} title={config.site.title} description={localize(config.site.description, locale)} route={route} pageType="home" image={home.image} imageAlt={imageAlt} openGraph={home.openGraph}>
   {homeSlots.beforeHero.map((SlotComponent) => (
     <SlotComponent locale={locale} config={config} registry={registry} slotName="beforeHero" />
   ))}

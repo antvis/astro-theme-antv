@@ -1,6 +1,7 @@
 import { glob } from "astro/loaders";
 import type { Loader } from "astro/loaders";
 import { z } from "astro/zod";
+import { openGraphSchema } from "./open-graph.js";
 
 export interface AntvDocsLoaderOptions {
   /** Directory containing localized Markdown or MDX files, relative to the Astro root. */
@@ -19,6 +20,8 @@ export interface AntvDocIdentity {
 export const antvDocsSchema = z.looseObject({
   title: z.string().min(1),
   description: z.string().optional(),
+  screenshot: z.string().optional(),
+  openGraph: openGraphSchema.optional(),
   order: z.number().default(0),
   sidebar: z
     .object({

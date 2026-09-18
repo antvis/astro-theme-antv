@@ -6,6 +6,8 @@ import {
   resolve,
 } from "node:path";
 import { z } from "zod";
+import { openGraphSchema } from "../open-graph.js";
+import type { OpenGraphOptions } from "../open-graph.js";
 import { isWithin } from "../util.js";
 
 export type SiteLocale = "zh" | "en";
@@ -55,6 +57,7 @@ export interface AntVSiteConfig {
     locales?: SiteLocale[];
     favicon?: string;
     logo?: string;
+    openGraph?: Pick<OpenGraphOptions, "image" | "imageAlt">;
   };
   content: {
     docs?: string;
@@ -95,6 +98,7 @@ export interface AntVSiteConfig {
     description: LocalizedText;
     image?: string;
     imageAlt?: LocalizedText;
+    openGraph?: OpenGraphOptions;
     featuresTitle?: LocalizedText;
     featuresDescription?: LocalizedText;
     actions?: LocalizedLink[];
@@ -144,6 +148,7 @@ export interface ResolvedSiteConfig {
     locales: SiteLocale[];
     favicon?: string;
     logo?: string;
+    openGraph?: Pick<OpenGraphOptions, "image" | "imageAlt">;
   };
   content: {
     docs: string;
@@ -177,6 +182,7 @@ export interface ResolvedSiteConfig {
     description: LocalizedText;
     image?: string;
     imageAlt?: LocalizedText;
+    openGraph?: OpenGraphOptions;
     featuresTitle?: LocalizedText;
     featuresDescription?: LocalizedText;
     actions: LocalizedLink[];
@@ -313,6 +319,7 @@ const configSchema = z
         .default(["zh", "en"]),
       favicon: z.string().optional(),
       logo: z.string().optional(),
+      openGraph: openGraphSchema.pick({ image: true, imageAlt: true }).optional(),
     }),
     content: z.strictObject({
       docs: z.string().default("./docs"),
@@ -389,6 +396,7 @@ const configSchema = z
       description: localizedTextSchema,
       image: z.string().optional(),
       imageAlt: localizedTextSchema.optional(),
+      openGraph: openGraphSchema.optional(),
       featuresTitle: localizedTextSchema.optional(),
       featuresDescription: localizedTextSchema.optional(),
       actions: z.array(linkSchema).default([]),
