@@ -3,13 +3,19 @@ import { localize } from '../../compiler/localization.js';
 import type { LocalizedText, LocalizedLink } from '../../compiler/config.js';
 import zhihuIcon from '../assets/icons/zhihu.svg?raw';
 import githubIcon from '../assets/icons/github.svg?raw';
-import questionIcon from '@tabler/icons/outline/help-circle.svg?raw';
+import wechatIcon from '../assets/icons/wechat.svg?raw';
+import booksIcon from '@tabler/icons/outline/books.svg?raw';
+import paletteIcon from '@tabler/icons/outline/palette.svg?raw';
+import usersIcon from '@tabler/icons/outline/users.svg?raw';
 import fileTextIcon from '@tabler/icons/outline/file-text.svg?raw';
 import fileStackIcon from '@tabler/icons/outline/file-stack.svg?raw';
 
 const icons = new Map([
   ['github', githubIcon],
-  ['help', questionIcon],
+  ['official_account', wechatIcon],
+  ['books', booksIcon],
+  ['palette', paletteIcon],
+  ['users', usersIcon],
   ['zhihu', zhihuIcon],
   ['file-text', fileTextIcon],
   ['file-stack', fileStackIcon],
@@ -35,7 +41,9 @@ const { locale, groups, description, copyright, tagline } = Astro.props;
     {groups.map((group) => (
       <section class="footer-group">
         <h2>
-          {group.icon && <img class="footer-heading-icon" src={group.icon} width="22" height="22" alt="" loading="lazy" />}
+          {group.icon && (icons.has(group.icon)
+            ? <span class="footer-heading-icon" aria-hidden="true" set:html={icons.get(group.icon)} />
+            : <img class="footer-heading-icon" src={group.icon} width="22" height="22" alt="" loading="lazy" />)}
           {localize(group.title, locale)}
         </h2>
         <ul>
@@ -89,7 +97,7 @@ const { locale, groups, description, copyright, tagline } = Astro.props;
     gap: 8px;
     margin: 0;
     font-size: 16px;
-    font-weight: 500;
+    font-weight: 700;
     line-height: 24px;
   }
   ul {
@@ -102,7 +110,8 @@ const { locale, groups, description, copyright, tagline } = Astro.props;
   }
   a {
     color: inherit;
-    font-size: 16px;
+    font-size: 14px;
+    font-weight: 400;
     text-decoration: none;
     transition: color 0.2s;
     overflow-wrap: anywhere;
@@ -133,7 +142,17 @@ const { locale, groups, description, copyright, tagline } = Astro.props;
     line-height: 16px;
   }
   .footer-heading-icon {
+    display: inline-flex;
+    flex: none;
+    width: 22px;
+    height: 22px;
     object-fit: contain;
+  }
+  .footer-heading-icon :global(svg) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    stroke-width: 1.5;
   }
   .footer-description {
     margin-left: 0.5em;
@@ -151,7 +170,7 @@ const { locale, groups, description, copyright, tagline } = Astro.props;
     justify-content: center;
     gap: 0 24px;
     padding: 16px 0;
-    border-top: 4px solid #e8e8e8;
+    border-top: 1px solid #e8e8e8;
     line-height: 32px;
     text-align: center;
   }
