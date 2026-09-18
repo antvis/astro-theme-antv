@@ -1,12 +1,14 @@
 ---
 import Loading from './Loading.astro';
+import { withBase } from '../lib/paths';
 
 interface Props {
   locale: 'zh' | 'en';
   service: string;
+  route: string;
 }
 
-const { locale, service } = Astro.props;
+const { locale, service, route } = Astro.props;
 const sdkUrl = new URL('/sdk/qa/sive-qa.js', service).toString();
 const loadError = locale === 'zh'
   ? '问答模块加载失败，请刷新页面重试。'
@@ -14,18 +16,27 @@ const loadError = locale === 'zh'
 ---
 
 <section
-  class="antv-result-page"
-  aria-label={locale === 'zh' ? '问答结果' : 'Conversation'}
+  class="antv-qa-page"
+  aria-label={locale === 'zh' ? 'AI 问答' : 'Conversation'}
 >
-  <div id="sive-qa-root" class="antv-result-root">
-    <div class="antv-result-loading"><Loading locale={locale} /></div>
+  <div
+    id="sive-qa-root"
+    class="antv-qa-root"
+    data-qa-path={withBase(route)}
+    data-home-path={withBase(`/${locale}/`)}
+  >
+    <div class="antv-qa-loading"><Loading locale={locale} /></div>
   </div>
-  <p class="antv-result-error" data-qa-sdk-error hidden>{loadError}</p>
+  <p class="antv-qa-error" data-qa-sdk-error hidden>{loadError}</p>
 </section>
 <script is:inline type="module" src={sdkUrl}></script>
 <script is:inline type="module">
   try {
-    window.SiveQA.mount('#sive-qa-root');
+    const root = document.querySelector('#sive-qa-root');
+    window.SiveQA.mount('#sive-qa-root', {
+      qaPath: root.dataset.qaPath,
+      homePath: root.dataset.homePath,
+    });
   } catch {
     document.querySelector('[data-qa-sdk-error]').hidden = false;
   }
@@ -49,26 +60,26 @@ const loadError = locale === 'zh'
     overflow: hidden;
   }
 
-  .antv-result-page,
-  .antv-result-root {
+  .antv-qa-page,
+  .antv-qa-root {
     width: 100%;
     height: 100%;
     min-height: 0;
   }
 
-  .antv-result-page {
+  .antv-qa-page {
     position: relative;
     overflow: hidden;
     background: var(--surface);
   }
 
-  .antv-result-loading { display: grid; height: 100%; place-items: center; }
+  .antv-qa-loading { display: grid; height: 100%; place-items: center; }
 
-  .antv-result-page:has(> .antv-result-error:not([hidden])) .antv-result-loading {
+  .antv-qa-page:has(> .antv-qa-error:not([hidden])) .antv-qa-loading {
     display: none;
   }
 
-  .antv-result-error {
+  .antv-qa-error {
     position: absolute;
     inset: 0;
     display: grid;
@@ -80,7 +91,7 @@ const loadError = locale === 'zh'
     place-items: center;
   }
 
-  .antv-result-error[hidden] {
+  .antv-qa-error[hidden] {
     display: none;
   }
 </style>

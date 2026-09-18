@@ -127,7 +127,7 @@ test("resolves search and QA configuration for the Astro integration", async () 
   );
   expect(config.search.enabled).toBe(true);
   expect(config.search.aliases).toEqual({ graph: ["chart"] });
-  expect(config.qa?.path).toBe("result");
+  expect(config.qa?.path).toBe("qa");
   expect(config.qa?.service).toBe("https://sive.antv.antgroup.com");
 });
 
