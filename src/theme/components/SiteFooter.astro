@@ -34,6 +34,7 @@ interface Props {
   tagline: string;
 }
 const { locale, groups, description, copyright, tagline } = Astro.props;
+const isImageLink = (href: string) => /\.(?:avif|bmp|gif|ico|jpe?g|png|svg|webp)$/i.test(href.split(/[?#]/, 1)[0]);
 ---
 
 <footer class="site-footer" data-pagefind-ignore>
@@ -49,12 +50,19 @@ const { locale, groups, description, copyright, tagline } = Astro.props;
         <ul>
           {group.links.map((link) => (
             <li>
-              <a href={link.href} target={link.target ?? (/^https?:\/\//.test(link.href) ? '_blank' : undefined)} rel={link.target === '_blank' || /^https?:\/\//.test(link.href) ? 'noopener noreferrer' : undefined}>
+              <a class:list={{ 'footer-image-link': isImageLink(link.href) }} href={link.href} target={link.target ?? (/^https?:\/\//.test(link.href) ? '_blank' : undefined)} rel={link.target === '_blank' || /^https?:\/\//.test(link.href) ? 'noopener noreferrer' : undefined}>
                 {link.icon && (icons.has(link.icon)
                   ? <span class:list={['footer-icon', { 'footer-zhihu': link.icon === 'zhihu' }]} aria-hidden="true" set:html={icons.get(link.icon)} />
                   : <img class="footer-icon" src={link.icon} width="16" height="16" alt="" loading="lazy" />)}
                 <span>{localize(link.text, locale)}</span>
                 {link.description && <span class="footer-description">{localize(link.description, locale)}</span>}
+                {isImageLink(link.href) && (
+                  <span class="footer-image-preview" aria-hidden="true">
+                    <span class="footer-image-card">
+                      <img src={link.href} alt="" loading="lazy" decoding="async" />
+                    </span>
+                  </span>
+                )}
               </a>
             </li>
           ))}
@@ -122,6 +130,42 @@ const { locale, groups, description, copyright, tagline } = Astro.props;
   a:focus-visible {
     outline: 2px solid var(--brand);
     outline-offset: 4px;
+  }
+  .footer-image-link {
+    position: relative;
+    display: inline-block;
+  }
+  .footer-image-preview {
+    position: absolute;
+    z-index: 20;
+    bottom: 100%;
+    left: 50%;
+    width: 164px;
+    padding-bottom: 12px;
+    transform: translateX(-50%);
+    visibility: hidden;
+  }
+  .footer-image-card {
+    display: block;
+    padding: 16px;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 0 3px 12px rgb(0 0 0 / 16%);
+  }
+  .footer-image-card img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 192px;
+    object-fit: contain;
+  }
+  .footer-image-link:focus-visible .footer-image-preview {
+    visibility: visible;
+  }
+  @media (hover: hover) {
+    .footer-image-link:hover .footer-image-preview {
+      visibility: visible;
+    }
   }
   .footer-icon {
     display: inline-block;
