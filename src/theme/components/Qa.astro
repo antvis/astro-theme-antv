@@ -23,7 +23,6 @@ const loadError = locale === 'zh'
     id="sive-qa-root"
     class="antv-qa-root"
     data-qa-path={withBase(route)}
-    data-home-path={withBase(`/${locale}/`)}
   >
     <div class="antv-qa-loading"><Loading locale={locale} /></div>
   </div>
@@ -35,7 +34,6 @@ const loadError = locale === 'zh'
     const root = document.querySelector('#sive-qa-root');
     window.SiveQA.mount('#sive-qa-root', {
       qaPath: root.dataset.qaPath,
-      homePath: root.dataset.homePath,
     });
   } catch {
     document.querySelector('[data-qa-sdk-error]').hidden = false;
