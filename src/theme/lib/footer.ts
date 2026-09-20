@@ -47,8 +47,8 @@ export const defaultFooterGroups = [
     links: [
       {
         text: {
-          zh: "GitHub",
-          en: "GitHub"
+          zh: "AntV AI Visualization Team",
+          en: "AntV AI Visualization Team"
         },
         href: "https://github.com/antvis",
         icon: "github"
