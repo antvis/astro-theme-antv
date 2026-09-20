@@ -50,16 +50,16 @@ const isImageLink = (href: string) => /\.(?:avif|bmp|gif|ico|jpe?g|png|svg|webp)
         <ul>
           {group.links.map((link) => (
             <li>
-              <a class:list={{ 'footer-image-link': isImageLink(link.href) }} href={link.href} target={link.target ?? (/^https?:\/\//.test(link.href) ? '_blank' : undefined)} rel={link.target === '_blank' || /^https?:\/\//.test(link.href) ? 'noopener noreferrer' : undefined}>
+              <a class:list={{ 'group/footer-image relative inline-block': isImageLink(link.href) }} href={link.href} target={link.target ?? (/^https?:\/\//.test(link.href) ? '_blank' : undefined)} rel={link.target === '_blank' || /^https?:\/\//.test(link.href) ? 'noopener noreferrer' : undefined}>
                 {link.icon && (icons.has(link.icon)
                   ? <span class:list={['footer-icon', { 'footer-zhihu': link.icon === 'zhihu' }]} aria-hidden="true" set:html={icons.get(link.icon)} />
                   : <img class="footer-icon" src={link.icon} width="16" height="16" alt="" loading="lazy" />)}
                 <span>{localize(link.text, locale)}</span>
                 {link.description && <span class="footer-description">{localize(link.description, locale)}</span>}
                 {isImageLink(link.href) && (
-                  <span class="footer-image-preview" aria-hidden="true">
-                    <span class="footer-image-card">
-                      <img src={link.href} alt="" loading="lazy" decoding="async" />
+                  <span class="invisible absolute bottom-full left-1/2 z-20 w-[164px] -translate-x-1/2 pb-3 group-hover/footer-image:visible group-focus-visible/footer-image:visible" aria-hidden="true">
+                    <span class="block rounded bg-white p-4 shadow-[0_3px_12px_rgb(0_0_0/16%)]">
+                      <img class="block h-auto max-h-48 w-full object-contain" src={link.href} alt="" loading="lazy" decoding="async" />
                     </span>
                   </span>
                 )}
@@ -130,42 +130,6 @@ const isImageLink = (href: string) => /\.(?:avif|bmp|gif|ico|jpe?g|png|svg|webp)
   a:focus-visible {
     outline: 2px solid var(--brand);
     outline-offset: 4px;
-  }
-  .footer-image-link {
-    position: relative;
-    display: inline-block;
-  }
-  .footer-image-preview {
-    position: absolute;
-    z-index: 20;
-    bottom: 100%;
-    left: 50%;
-    width: 164px;
-    padding-bottom: 12px;
-    transform: translateX(-50%);
-    visibility: hidden;
-  }
-  .footer-image-card {
-    display: block;
-    padding: 16px;
-    border-radius: 4px;
-    background: #fff;
-    box-shadow: 0 3px 12px rgb(0 0 0 / 16%);
-  }
-  .footer-image-card img {
-    display: block;
-    width: 100%;
-    height: auto;
-    max-height: 192px;
-    object-fit: contain;
-  }
-  .footer-image-link:focus-visible .footer-image-preview {
-    visibility: visible;
-  }
-  @media (hover: hover) {
-    .footer-image-link:hover .footer-image-preview {
-      visibility: visible;
-    }
   }
   .footer-icon {
     display: inline-block;
