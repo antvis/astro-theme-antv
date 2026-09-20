@@ -140,7 +140,7 @@ test("preserves Astro publicDir and injects QA as a dedicated route", async () =
   expect(Object.hasOwn(update, "outDir")).toBe(false);
   expect(Object.hasOwn(update, "output")).toBe(false);
   const routePatterns = injectedRoutes.map((route) => route.pattern);
-  expect(routePatterns).toContain("/[locale]/result");
+  expect(routePatterns).toContain("/[locale]/qa");
   expect(routePatterns).toContain("/llms.txt");
   expect(routePatterns).toContain("/llms-full.txt");
   expect(routePatterns).toContain("/markdown/[locale]/[...route].md");
@@ -194,6 +194,6 @@ test("does not add QA integration capabilities when the switch is disabled", asy
   });
 
   expect(
-    injectedRoutes.some((route) => route.pattern === "/[locale]/result"),
+    injectedRoutes.some((route) => route.pattern === "/[locale]/qa"),
   ).toBe(false);
 });

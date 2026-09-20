@@ -1,7 +1,7 @@
 ---
 import type { SitePage } from '../../../compiler/content.js';
 import { config, registry } from '../../lib/site';
-import QaResult from '../../components/QaResult.astro';
+import Qa from '../../components/Qa.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 type QaPage = Extract<SitePage, { type: 'qa' }>;
@@ -22,10 +22,10 @@ export function getStaticPaths() {
 const { page } = Astro.props;
 const locale = page.locale;
 const isZh = locale === 'zh';
-const title = isZh ? '查询结果' : 'Query results';
+const title = isZh ? 'AI 问答' : 'AI Q&A';
 const description = isZh
-  ? '承载当前 AntV 产品站可视化查询的结果页面。'
-  : 'The visualization query result page for this AntV product site.';
+  ? '与 AI 助手交流，获取可视化创作与图表使用方面的帮助。'
+  : 'Ask the AI assistant for help creating visualizations and using charts.';
 ---
 
 <BaseLayout
@@ -35,5 +35,5 @@ const description = isZh
   route={page.route}
   pageType="qa"
 >
-  {config.qa && <QaResult locale={locale} service={config.qa.service} />}
+  {config.qa && <Qa locale={locale} service={config.qa.service} route={page.route} />}
 </BaseLayout>

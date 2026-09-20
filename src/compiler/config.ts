@@ -83,7 +83,7 @@ export interface AntVSiteConfig {
     pathBoosts?: Array<{ prefix: string; weight: number }>;
   };
   qa?: {
-    /** Enable the package-owned QA entry and Result route. */
+    /** Enable the package-owned QA entry and QA route. */
     enabled?: boolean;
     path?: string;
   } | null;
@@ -377,7 +377,7 @@ const configSchema = z
     qa: z
       .strictObject({
         enabled: z.boolean().default(false),
-        path: routeSegmentSchema.default("result"),
+        path: routeSegmentSchema.default("qa"),
       })
       .nullable()
       .default(null),
