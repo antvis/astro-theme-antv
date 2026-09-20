@@ -124,6 +124,8 @@ export interface AntVSiteConfig {
     home?: Partial<Record<HomeSlotName, string[]>>;
   };
   demo?: {
+    /** Demo import names mapped to installed packages or consumer-relative modules. */
+    dependencies?: Record<string, string>;
     height?: number;
   };
   /** @deprecated Configure Astro's standard `outDir` instead. */
@@ -205,6 +207,7 @@ export interface ResolvedSiteConfig {
     home: Record<HomeSlotName, string[]>;
   };
   demo: {
+    dependencies: Record<string, string>;
     height: number;
   };
 }
@@ -432,10 +435,12 @@ const configSchema = z
       .default({ home: emptyHomeSlots }),
     demo: z
       .strictObject({
+        dependencies: z.record(z.string().min(1), z.string().min(1)).default({}),
         height: z.number().int().min(240).max(1200).default(480),
       })
       .default({
         height: 480,
+        dependencies: {},
       }),
     output: z
       .never({
@@ -557,14 +562,22 @@ export async function resolveConfig(
   const content = {
     ...config.content,
     docs: resolveFromRoot(root, config.content.docs),
-    agentComponents: Object.fromEntries(
-      Object.entries(config.content.agentComponents).map(([name, rule]) => [
-        name,
-        rule.type === "code" && rule.sourceRoot
-          ? { ...rule, sourceRoot: resolveFromRoot(root, rule.sourceRoot) }
-          : rule,
-      ])
-    ),
+    agentComponents: {
+      Demo: {
+        type: "code" as const,
+        language: "ts",
+        sourceRoot: resolveFromRoot(root, config.content.docs),
+        sourceExtension: ".ts",
+      },
+      ...Object.fromEntries(
+        Object.entries(config.content.agentComponents).map(([name, rule]) => [
+          name,
+          rule.type === "code" && rule.sourceRoot
+            ? { ...rule, sourceRoot: resolveFromRoot(root, rule.sourceRoot) }
+            : rule,
+        ]),
+      ),
+    },
     examples: config.content.examples
       ? resolveFromRoot(root, config.content.examples)
       : null,

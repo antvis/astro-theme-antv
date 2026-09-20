@@ -10,7 +10,11 @@ export const defineConfig = <const Config extends AntVSiteConfig>(
   config: Config,
 ) =>
   defineAstroConfig({
-    integrations: [antvSite(config), mdx(), sitemap()],
+    integrations: [
+      antvSite(config),
+      mdx(),
+      sitemap({ filter: (page) => !new URL(page).pathname.endsWith("/_antv/demo/") }),
+    ],
   });
 
 export type {

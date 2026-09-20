@@ -24,6 +24,7 @@ interface Options {
   filePath: string;
   canonical: string;
   components: Record<string, AgentComponent>;
+  renderCode?: (component: { name: string; code: string; src?: string }) => string | Promise<string>;
   resolveDocument?: (
     source: string
   ) => { title: string; href: string } | undefined;
@@ -45,7 +46,7 @@ export async function serializeAgentMarkdown(
   const tree = (
     options.filePath.endsWith(".mdx") ? processor : markdownProcessor
   ).parse(body);
-  const imports = new Map<string, string>();
+  const imports = new Map<string, { source: string; name?: string }>();
   for (const node of tree.children) {
     if (node.type !== "mdxjsEsm") continue;
     for (const statement of node.data?.estree?.body ?? []) {
@@ -54,8 +55,14 @@ export async function serializeAgentMarkdown(
         typeof statement.source.value !== "string"
       )
         continue;
-      for (const specifier of statement.specifiers)
-        imports.set(specifier.local.name, statement.source.value);
+      for (const specifier of statement.specifiers) {
+        imports.set(specifier.local.name, {
+          source: statement.source.value,
+          name: specifier.type === 'ImportSpecifier'
+            ? specifier.imported.type === 'Identifier' ? specifier.imported.name : String(specifier.imported.value)
+            : undefined,
+        });
+      }
     }
   }
   const fail = (message: string): never => {
@@ -137,8 +144,9 @@ export async function serializeAgentMarkdown(
       const imported = imports.get(node.name ?? "");
       const rule =
         options.components[node.name ?? ""] ??
+        options.components[imported?.name ?? ''] ??
         (imported
-          ? options.components[basename(imported).replace(/\.[^.]+$/, "")]
+          ? options.components[basename(imported.source).replace(/\.[^.]+$/, "")]
           : undefined);
       if (rule?.type === "code") {
         let code = staticAttribute(node, "code");
@@ -157,6 +165,9 @@ export async function serializeAgentMarkdown(
           await assertRealpathWithin(rule.sourceRoot, target);
           code = await readFile(target, "utf8");
         }
+        if (options.renderCode) return options.renderCode({
+          name: imported?.name ?? node.name ?? '', code: code!, src,
+        });
         return `\n\n${fencedCode(code!, rule.language)}\n\n`;
       }
       if (rule?.type === "link-card") {
@@ -173,7 +184,7 @@ export async function serializeAgentMarkdown(
       if (/^[A-Z]/.test(node.name)) {
         const content = await renderChildren(node.children as Child[]);
         if (content.trim()) return content;
-        const document = imported && options.resolveDocument?.(imported);
+        const document = imported && options.resolveDocument?.(imported.source);
         return document
           ? link(document.title, document.href)
           : link("Interactive content", options.canonical);

@@ -141,6 +141,7 @@ test("preserves Astro publicDir and injects QA as a dedicated route", async () =
   expect(Object.hasOwn(update, "output")).toBe(false);
   const routePatterns = injectedRoutes.map((route) => route.pattern);
   expect(routePatterns).toContain("/[locale]/qa");
+  expect(routePatterns).toContain("/_antv/demo");
   expect(routePatterns).toContain("/llms.txt");
   expect(routePatterns).toContain("/llms-full.txt");
   expect(routePatterns).toContain("/markdown/[locale]/[...route].md");

@@ -57,6 +57,7 @@ export async function getStaticPaths() {
 }
 
 const { page } = Astro.props;
+if (page.type === 'document') Astro.locals.antvDocument = page.entry;
 const locale = page.locale;
 const isZh = locale === 'zh';
 const documentSection = page.type === 'document' ? page.section : undefined;
@@ -122,6 +123,7 @@ if (page.type === 'document') {
       <article class="markdown-body">
         <h1 class="document-title" data-pagefind-meta="title">{page.title}</h1>
         <div class="flex flex-wrap items-center justify-end gap-4 mb-6 pb-3 [border-bottom:1px_solid_var(--border-soft)] text-[12px] leading-[1.5] [@media(width<=700px)]:justify-start" data-pagefind-ignore>
+          <a href={withBase(markdownRouteFor(locale, page.slug))} type="text/markdown">Markdown</a>
           <button
             type="button"
             hidden

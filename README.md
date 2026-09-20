@@ -111,6 +111,30 @@ docs/
 
 Frontmatter must contain `title`; `description`, `order`, `draft`, and `sidebar.label` / `sidebar.hidden` are optional. Use standard Astro/MDX syntax for components in `.mdx` files.
 
+## Interactive document demos
+
+Import `Demo` in MDX to add an editable example:
+
+```mdx
+import { Demo } from '@antv/astro-theme-antv/components';
+
+<Demo code={`document.getElementById('container').textContent = 'Hello';`} />
+<Demo src="guide/demos/shared-chart" />
+```
+
+Provide either static `code` or a `src` path to a `.ts` file relative to `content.docs`.
+Demos run in an iframe; the parent page retains the complete source in build-time `<pre><code>` HTML and page-level Markdown, readable without JavaScript.
+
+For demos that import packages, install them in your site and configure their imports in `astro.config.mjs`:
+
+```js
+demo: {
+  dependencies: {
+    '@antv/g6': '@antv/g6',
+  },
+},
+```
+
 ## Examples
 
 To enable examples, set `content.examples` to `"./examples"` and add the following files:
