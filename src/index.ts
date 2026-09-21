@@ -10,6 +10,7 @@ export const defineConfig = <const Config extends AntVSiteConfig>(
   config: Config,
 ) =>
   defineAstroConfig({
+    markdown: { shikiConfig: { theme: "one-light" } },
     integrations: [antvSite(config), mdx(), sitemap()],
   });
 

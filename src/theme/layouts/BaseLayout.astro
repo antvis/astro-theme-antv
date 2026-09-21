@@ -6,6 +6,7 @@ import { alternateRoute, localize } from '../../compiler/localization.js';
 import * as Analytics from 'astro-analytics';
 import languageIcon from '../assets/icons/language.svg?raw';
 import menuIcon from '@tabler/icons/outline/menu-2.svg?raw';
+import searchIcon from '@tabler/icons/outline/search.svg?raw';
 import SiteFooter from '../components/SiteFooter.astro';
 import { defaultFooterGroups } from '../lib/footer';
 import SiteSearch from '../components/SiteSearch.astro';
@@ -162,6 +163,19 @@ const structuredData = {
           {!isAntVSite && <span class="brand-divider w-[1px] h-6 mx-5 my-0 [@media(width<=700px)]:mx-3" aria-hidden="true"></span>}
           {!isAntVSite && <span class="brand-product text-[var(--text-strong)] text-[18px] font-medium [@media(width<=700px)]:text-[16px]">{config.site.title}</span>}
         </a>
+        {searchEnabled && (
+          <button
+            class="inline-flex h-10 min-w-0 shrink-0 items-center gap-2 ml-8 mr-auto border-0 bg-transparent p-0 text-[14px] text-[var(--muted-light)] cursor-pointer hover:text-[var(--brand)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current [@media(width<=1080px)]:ml-4"
+            type="button"
+            data-search-open
+            aria-haspopup="dialog"
+            aria-label={locale === 'zh' ? '搜索文档' : 'Search docs'}
+            title={locale === 'zh' ? '搜索文档 (⌘ K / Ctrl K)' : 'Search docs (⌘ K / Ctrl K)'}
+          >
+            <span class="inline-flex size-4 [&_svg]:size-full" aria-hidden="true" set:html={searchIcon} />
+            <span>{locale === 'zh' ? '搜索…' : 'Search…'}</span>
+          </button>
+        )}
         <button class="mobile-nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label={locale === 'zh' ? '菜单' : 'Menu'}>
           <span aria-hidden="true" set:html={menuIcon}></span>
         </button>
@@ -180,13 +194,6 @@ const structuredData = {
                 {versionEntries.map(([label, href]) => <a href={withBase(href)}>{label}</a>)}
               </div>
             </details>
-          )}
-          {searchEnabled && (
-            <button class="search-trigger" type="button" data-search-open aria-haspopup="dialog">
-              <span class="nav-search-icon" aria-hidden="true"></span>
-              <span>{locale === 'zh' ? '搜索文档' : 'Search docs'}</span>
-              <kbd>⌘ K</kbd>
-            </button>
           )}
           {localeSwitch && (
             <a

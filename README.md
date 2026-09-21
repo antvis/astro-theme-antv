@@ -109,7 +109,9 @@ docs/
     advanced.en.mdx
 ```
 
-Frontmatter must contain `title`; `description`, `order`, `draft`, and `sidebar.label` / `sidebar.hidden` are optional. Use standard Astro/MDX syntax for components in `.mdx` files.
+Frontmatter must contain `title`; `description`, `order`, `draft`, and `sidebar.label` / `sidebar.hidden` / `sidebar.icon` are optional. `sidebar.icon` uses the same icon names or image URLs as example categories. Use standard Astro/MDX syntax for components in `.mdx` files.
+
+Each published document has a Markdown URL alongside its HTML page: `/zh/guide/` is exported as `/zh/guide.md` (and `/en/guide/` as `/en/guide.md`). The document toolbar, copy action, and `llms.txt` index use this same URL, including the configured Astro `base` prefix.
 
 ## Interactive document demos
 
@@ -225,6 +227,8 @@ slots: {
 Optional components `QaEntry`, `Updates`, `Carousel`, and `Loading` are available from `@antv/astro-theme-antv/components`. QA requires `qa.enabled: true` and access to Sive's QA service and authentication.
 
 For Astro options such as `base` or additional integrations, use Astro's `defineConfig` with `antvSite(siteConfig)` in `integrations`. Install and add `@astrojs/mdx` and `@astrojs/sitemap` if needed; the package's `defineConfig` includes both by default.
+
+The package's `defineConfig` defaults Markdown and MDX syntax highlighting to Shiki's `one-light` theme. When configuring Astro directly, set `markdown.shikiConfig.theme` to `one-light` for the same appearance.
 
 See [the basic site](./demos/basic-site) for a complete example.
 

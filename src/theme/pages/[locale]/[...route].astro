@@ -3,6 +3,7 @@ import { render } from 'astro:content';
 import copyIcon from '@tabler/icons/outline/copy.svg?raw';
 import editIcon from '@tabler/icons/outline/pencil.svg?raw';
 import checkIcon from '@tabler/icons/outline/check.svg?raw';
+import markdownIcon from '@tabler/icons/outline/markdown.svg?raw';
 import { localize } from '../../../compiler/localization.js';
 import type { SitePage } from '../../../compiler/content.js';
 import { getDocsCollection } from '../../lib/docs';
@@ -71,6 +72,7 @@ const documentItems = documentEntries
   .map((item) => ({
     ...item,
     title: item.entry.data.sidebar.label || item.title,
+    icon: item.entry.data.sidebar.icon,
   }))
   .sort((a, b) => a.order - b.order || a.slug.localeCompare(b.slug));
 const renderedDocument = page.type === 'document' ? await render(page.entry) : undefined;
@@ -83,6 +85,9 @@ const group = page.type === 'example-group'
   : undefined;
 const demo = page.type === 'demo' ? demosByKey.get(page.demoKey) : undefined;
 const editConfig = config.content.edit;
+const markdownHref = page.type === 'document'
+  ? withBase(markdownRouteFor(locale, page.slug))
+  : undefined;
 const repositoryPath = (...parts: string[]) =>
   parts
     .flatMap((part) => part.split('/'))
@@ -123,11 +128,14 @@ if (page.type === 'document') {
       <article class="markdown-body">
         <h1 class="document-title" data-pagefind-meta="title">{page.title}</h1>
         <div class="flex flex-wrap items-center justify-end gap-4 mb-6 pb-3 [border-bottom:1px_solid_var(--border-soft)] text-[12px] leading-[1.5] [@media(width<=700px)]:justify-start" data-pagefind-ignore>
-          <a href={withBase(markdownRouteFor(locale, page.slug))} type="text/markdown">Markdown</a>
+          <a href={markdownHref} type="text/markdown" class="inline-flex items-center gap-1.5 text-[var(--muted)] hover:text-[var(--muted)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current">
+            <span class="inline-flex size-3.5 [&_svg]:size-full" aria-hidden="true" set:html={markdownIcon} />
+            {isZh ? '查看 Markdown' : 'View Markdown'}
+          </a>
           <button
             type="button"
             hidden
-            data-copy-document={withBase(markdownRouteFor(locale, page.slug))}
+            data-copy-document={markdownHref}
             class="group/copy inline-flex items-center gap-1.5 border-0 bg-transparent p-0 [font:inherit] text-[var(--muted)] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current [&[hidden]]:hidden"
             title={isZh ? '复制当前文档的 Markdown' : 'Copy this document as Markdown'}
           >
@@ -152,10 +160,6 @@ if (page.type === 'document') {
     <div class="examples-shell example-catalog-shell">
       <ExampleSidebar categories={registry.categories} locale={locale} currentRoute={page.route} />
       <section class="listing-page example-catalog">
-        <header class="listing-header compact">
-          <h1>{title}</h1>
-          <p>{isZh ? `共 ${registry.counts.demos} 个示例。通过左侧分类快速定位，点击缩略图直接查看运行结果和完整源码。` : `${registry.counts.demos} examples. Use the categories to navigate, then select a thumbnail to open its live result and complete source.`}</p>
-        </header>
         <div class="grid gap-16 [@media(width<=700px)]:gap-y-12 [@media(width<=700px)]:gap-x-12">
           {registry.categories.map((item) => {
             const demoCount = item.groups.reduce((sum, entry) => sum + entry.demos.length, 0);
@@ -179,12 +183,12 @@ if (page.type === 'document') {
                         const demoTitle = localize(demoItem.title, locale, demoItem.slug);
                         return (
                           <a href={withBase(`/${locale}/examples/${demoItem.key}/`)} aria-label={demoTitle}>
-                            <div class="demo-image flex [aspect-ratio:16_/_10] items-center justify-center mb-3.5 overflow-hidden [border:1px_solid_var(--border-soft)] rounded-[var(--radius-small)] [&_img]:w-full [&_img]:h-full [&_img]:[object-fit:scale-down] [.demo-grid_a:hover_&]:border-[var(--brand)] [.demo-grid_a:hover_&]:[box-shadow:var(--shadow-hover)] [.demo-grid_a:hover_&]:[transform:translateY(-4px)]">
+                            <div class="demo-image flex [aspect-ratio:16_/_10] items-center justify-center mb-3.5 overflow-hidden [border:1px_solid_var(--border-soft)] rounded-[var(--radius-small)] [&_img]:w-full [&_img]:h-full [&_img]:[object-fit:scale-down] [.demo-grid_a:hover_&]:[box-shadow:var(--shadow-hover)] [.demo-grid_a:hover_&]:[transform:translateY(-4px)]">
                               {demoItem.screenshot && (
                                 <img src={withBase(demoItem.screenshot)} alt={`${demoTitle}${isZh ? '缩略图' : ' thumbnail'}`} loading="lazy" decoding="async" />
                               )}
                             </div>
-                            <strong>{demoTitle}</strong>
+                            <strong class="font-semibold!">{demoTitle}</strong>
                           </a>
                         );
                       })}

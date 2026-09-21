@@ -29,53 +29,43 @@ const categoryDemoCount = (category: ExampleCategory) =>
 const navigationCategories = isCatalog
   ? categories.filter((category) => categoryDemoCount(category) > 0)
   : categories;
-const nodes = [
-  {
-    key: 'all-examples',
-    label: locale === 'zh' ? '全部示例' : 'All examples',
-    href: withBase(catalogRoute),
-    icon: 'other',
-    current: isCatalog,
-    children: [],
-  },
-  ...navigationCategories.map((category) => ({
-    key: category.slug,
-    label: localize(category.title, locale),
-    href: isCatalog
-      ? `#category-${category.slug}`
-      : withBase(`/${locale}/examples/${category.slug}/`),
-    icon: category.icon,
-    open: !isCatalog && currentRoute.includes(`/examples/${category.slug}/`),
-    children: category.groups.map((group) => {
-      const route = `/${locale}/examples/${category.slug}/${group.slug}/`;
-      const groupIsCurrent =
-        !isCatalog &&
-        (route === currentRoute || currentRoute.startsWith(route));
-      return {
-        key: `${category.slug}/${group.slug}`,
-        label: localize(group.title, locale),
-        href: isCatalog
-          ? `#${groupAnchor(category.slug, group.slug)}`
-          : withBase(route),
-        current: groupIsCurrent,
-        open: groupIsCurrent,
-        children:
-          isDemoRoute && groupIsCurrent
-            ? group.demos.map((demo) => {
-                const demoRoute = `/${locale}/examples/${demo.key}/`;
-                return {
-                  key: demo.key,
-                  label: localize(demo.title, locale, demo.slug),
-                  href: withBase(demoRoute),
-                  current: demoRoute === currentRoute,
-                  children: [],
-                };
-              })
-            : [],
-      };
-    }),
-  })),
-];
+const nodes = navigationCategories.map((category) => ({
+  key: category.slug,
+  label: localize(category.title, locale),
+  href: isCatalog
+    ? `#category-${category.slug}`
+    : withBase(`/${locale}/examples/${category.slug}/`),
+  icon: category.icon,
+  open: !isCatalog && currentRoute.includes(`/examples/${category.slug}/`),
+  children: category.groups.map((group) => {
+    const route = `/${locale}/examples/${category.slug}/${group.slug}/`;
+    const groupIsCurrent =
+      !isCatalog &&
+      (route === currentRoute || currentRoute.startsWith(route));
+    return {
+      key: `${category.slug}/${group.slug}`,
+      label: localize(group.title, locale),
+      href: isCatalog
+        ? `#${groupAnchor(category.slug, group.slug)}`
+        : withBase(route),
+      current: groupIsCurrent,
+      open: groupIsCurrent,
+      children:
+        isDemoRoute && groupIsCurrent
+          ? group.demos.map((demo) => {
+              const demoRoute = `/${locale}/examples/${demo.key}/`;
+              return {
+                key: demo.key,
+                label: localize(demo.title, locale, demo.slug),
+                href: withBase(demoRoute),
+                current: demoRoute === currentRoute,
+                children: [],
+              };
+            })
+          : [],
+    };
+  }),
+}));
 ---
 
 <aside
@@ -120,21 +110,11 @@ const nodes = [
     const rootMenu = sidebar.querySelector<HTMLElement>(
       'nav > .sidebar-menu',
     );
-    const rootItems = rootMenu
+    const categoryItems = rootMenu
       ? [...rootMenu.children].filter(
           (item): item is HTMLElement => item instanceof HTMLElement,
         )
       : [];
-    const allExamplesItem = rootItems.find(
-      (item) => item.dataset.sidebarKey === 'all-examples',
-    );
-    const allExamplesLink =
-      allExamplesItem?.querySelector<HTMLAnchorElement>(
-        ':scope > .sidebar-menu__link',
-      ) || null;
-    const categoryItems = rootItems.filter(
-      (item) => item.dataset.sidebarKey !== 'all-examples',
-    );
     const categorySections = [
       ...document.querySelectorAll<HTMLElement>('[data-example-category]'),
     ];
@@ -148,11 +128,6 @@ const nodes = [
       const nextSelection = `${categorySlug || 'all'}:${groupHash || ''}`;
       if (nextSelection === selection) return;
       selection = nextSelection;
-
-      if (allExamplesLink) {
-        if (categorySlug) allExamplesLink.removeAttribute('aria-current');
-        else allExamplesLink.setAttribute('aria-current', 'page');
-      }
 
       let activeElement: HTMLElement | null = null;
       categoryItems.forEach((item, index) => {
