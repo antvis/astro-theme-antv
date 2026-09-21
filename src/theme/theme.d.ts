@@ -24,5 +24,5 @@ declare module "virtual:antv-site-home-slots" {
 }
 
 declare module "virtual:antv-demo-dependencies" {
-  export const dependencies: Record<string, () => Promise<unknown>>;
+  export const imports: Record<string, string>;
 }

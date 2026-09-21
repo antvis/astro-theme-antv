@@ -22,6 +22,10 @@
       "types": "./dist/content.d.ts",
       "import": "./dist/content.js"
     },
+    "./table": {
+      "types": "./dist/theme/demos/table.ts",
+      "import": "./dist/theme/demos/table.ts"
+    },
     "./components": {
       "types": "./dist/theme/components/index.ts",
       "import": "./dist/theme/components/index.ts"

@@ -25,7 +25,6 @@ const themeRoutes = [
   ],
   ["/[locale]", "pages/[locale]/index.astro"],
   ["/[locale]/[...route]", "pages/[locale]/[...route].astro"],
-  ["/_antv/demo", "pages/_antv/demo.astro"],
   ["/demos/[...key]", "pages/demos/[...key].astro"],
 ] as const;
 

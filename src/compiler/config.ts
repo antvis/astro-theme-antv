@@ -124,7 +124,7 @@ export interface AntVSiteConfig {
     home?: Partial<Record<HomeSlotName, string[]>>;
   };
   demo?: {
-    /** Demo import names mapped to installed packages or consumer-relative modules. */
+    /** Demo import names mapped to installed packages or consumer-relative modules, emitted as native ESM entries. */
     dependencies?: Record<string, string>;
     height?: number;
   };

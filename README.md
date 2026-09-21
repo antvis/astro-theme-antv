@@ -123,9 +123,9 @@ import { Demo } from '@antv/astro-theme-antv/components';
 ```
 
 Provide either static `code` or a `src` path to a `.ts` file relative to `content.docs`.
-Demos run in an iframe; the parent page retains the complete source in build-time `<pre><code>` HTML and page-level Markdown, readable without JavaScript.
+Demos run in an iframe using `srcdoc`, without a separate preview route; the parent page retains the complete source in build-time `<pre><code>` HTML and page-level Markdown, readable without JavaScript.
 
-For demos that import packages, install them in your site and configure their imports in `astro.config.mjs`:
+Demos use Sucrase to remove TypeScript types and native ES modules to load dependencies. For package imports, install them in your site and configure their imports in `astro.config.mjs`:
 
 ```js
 demo: {
@@ -134,6 +134,18 @@ demo: {
   },
 },
 ```
+
+For legacy packages, map to their ESM entry when using named imports; CommonJS default imports remain supported through Vite.
+
+For data previews, the built-in table helper needs no dependency configuration:
+
+```ts
+import { table } from '@antv/astro-theme-antv/table';
+
+await table([{ name: 'Alice', value: 10 }], document.getElementById('container')!);
+```
+
+`table` accepts an array of records or `{ url: '…' }` for a JSON array.
 
 ## Examples
 

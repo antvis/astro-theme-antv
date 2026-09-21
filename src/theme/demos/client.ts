@@ -28,13 +28,10 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo]'
     pendingFrame = undefined;
   };
   const receive = (event: MessageEvent) => {
-    if (event.origin !== location.origin) return;
     const target = pendingFrame?.contentWindow === event.source ? pendingFrame
       : frame?.contentWindow === event.source ? frame : undefined;
     if (!target) return;
-    if (event.data?.type === 'antv-demo:ready' && target === pendingFrame) {
-      target.contentWindow!.postMessage({ type: 'antv-demo:run', source, path: root.dataset.demoPath! }, location.origin);
-    } else if (event.data?.type === 'antv-demo:complete' && target === pendingFrame) {
+    if (event.data?.type === 'antv-demo:complete' && target === pendingFrame) {
       frame?.remove();
       frame = target;
       pendingFrame = undefined;
@@ -47,16 +44,25 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo]'
     }
   };
   window.addEventListener('message', receive);
-  const run = () => {
+  const run = async () => {
     observer.disconnect();
     clearTimeout(timer);
     discardPending();
-    pendingFrame = document.createElement('iframe');
-    pendingFrame.title = preview.getAttribute('aria-label')!;
-    pendingFrame.src = root.dataset.demoFrame!;
-    pendingFrame.className = 'absolute inset-0 block size-full border-0';
-    pendingFrame.style.visibility = 'hidden';
-    preview.append(pendingFrame);
+    const next = pendingFrame = document.createElement('iframe');
+    next.title = preview.getAttribute('aria-label')!;
+    next.className = 'absolute inset-0 block size-full border-0';
+    next.style.visibility = 'hidden';
+    try {
+      const { createFrameDocument } = await import('./frame');
+      if (pendingFrame !== next) return;
+      next.srcdoc = createFrameDocument(source, root.dataset.demoPath!);
+      preview.append(next);
+    } catch (error) {
+      if (pendingFrame !== next) return;
+      discardPending();
+      errorTarget.textContent = error instanceof Error ? error.message : String(error);
+      errorTarget.hidden = false;
+    }
   };
   root.querySelector('[data-demo-run]')!.addEventListener('click', run);
   const schedule = (value: string) => {
