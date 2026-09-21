@@ -2,7 +2,7 @@ import type { APIRoute, GetStaticPaths } from 'astro';
 import {
   getAgentDocuments,
   serializeAgentDocument,
-} from '../../../lib/agent-content';
+} from '../../lib/agent-content';
 
 interface MarkdownDocumentProps {
   content: string;

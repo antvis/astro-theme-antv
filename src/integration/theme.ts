@@ -20,8 +20,8 @@ const themeRoutes = [
   ["/llms.txt", "pages/llms.txt.ts"],
   ["/llms-full.txt", "pages/llms-full.txt.ts"],
   [
-    "/markdown/[locale]/[...route].md",
-    "pages/markdown/[locale]/[...route].md.ts",
+    "/[locale]/[...route].md",
+    "pages/[locale]/[...route].md.ts",
   ],
   ["/[locale]", "pages/[locale]/index.astro"],
   ["/[locale]/[...route]", "pages/[locale]/[...route].astro"],

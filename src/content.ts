@@ -26,6 +26,7 @@ export const antvDocsSchema = z.looseObject({
   sidebar: z
     .object({
       label: z.string().optional(),
+      icon: z.string().optional(),
       hidden: z.boolean().default(false),
     })
     .default({ hidden: false }),

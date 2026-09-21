@@ -1,17 +1,34 @@
 ---
 import { resolveExampleCategoryIcon } from './exampleCategoryIcons';
+import playIcon from '@tabler/icons/outline/player-play.svg?raw';
+import cubeIcon from '@tabler/icons/outline/cube.svg?raw';
+import accessibleIcon from '@tabler/icons/outline/accessible.svg?raw';
 
 interface Props {
   icon?: string;
 }
 
 const { icon = 'other' } = Astro.props;
+const categoryIcons: Record<string, string> = {
+  'player-play': playIcon,
+  cube: cubeIcon,
+  accessible: accessibleIcon,
+};
+const svg = Object.hasOwn(categoryIcons, icon) ? categoryIcons[icon] : undefined;
 const isImage = /^(?:https?:)?\/\//.test(icon);
-const resolvedIcon = isImage ? undefined : resolveExampleCategoryIcon(icon);
+const resolvedIcon = isImage || svg ? undefined : resolveExampleCategoryIcon(icon);
 ---
 
 {isImage ? (
   <img class="[flex:0_0_16px] w-4 h-4 mr-2 object-contain [fill:currentColor] opacity-60" src={icon} alt="" aria-hidden="true" data-example-category-icon />
+) : svg ? (
+  <span
+    class="flex items-center [flex:0_0_16px] w-4 h-4 mr-2 opacity-60 [&>svg]:size-4"
+    aria-hidden="true"
+    data-example-category-icon
+    data-icon={icon}
+    set:html={svg}
+  />
 ) : (
   <svg
     class="[flex:0_0_16px] w-4 h-4 mr-2 object-contain [fill:currentColor] opacity-60"
