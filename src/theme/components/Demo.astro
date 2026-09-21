@@ -19,7 +19,20 @@ const { demo, locale, height } = Astro.props;
 const title = localize(demo.title, locale, demo.slug);
 const isZh = locale === 'zh';
 const copyLabel = isZh ? '复制源码' : 'Copy source';
-const toolClass = 'relative inline-flex size-7 shrink-0 items-center justify-center rounded border-0 bg-transparent p-0 text-[var(--muted)] cursor-pointer hover:bg-[var(--surface-subtle)] hover:text-[var(--brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)] [&_svg]:block [&_svg]:size-4 [&_svg]:stroke-[1.5] after:pointer-events-none after:absolute after:right-0 after:top-full after:z-30 after:mt-2 after:rounded-md after:bg-[#262626] after:px-2.5 after:py-1.5 after:text-xs after:font-normal after:leading-5 after:whitespace-nowrap after:text-white after:shadow-lg after:content-[attr(data-tooltip)] after:invisible after:opacity-0 hover:after:visible hover:after:opacity-100 focus-visible:after:visible focus-visible:after:opacity-100';
+const toolClass = [
+  // Button layout
+  'relative inline-flex size-7 shrink-0 items-center justify-center rounded border-0 bg-transparent p-0 text-[var(--muted)] cursor-pointer',
+  'hover:bg-[var(--surface-subtle)] hover:text-[var(--brand)]',
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]',
+  // Icon
+  '[&_svg]:block [&_svg]:size-4 [&_svg]:stroke-[1.5]',
+  // Tooltip placement and appearance
+  'after:pointer-events-none after:absolute after:right-0 after:top-full after:z-30 after:mt-2',
+  'after:rounded-md after:bg-[#262626] after:px-2.5 after:py-1.5 after:text-xs after:font-normal after:leading-5 after:whitespace-nowrap after:text-white after:shadow-lg',
+  // Tooltip content and visibility
+  'after:content-[attr(data-tooltip)] after:invisible after:opacity-0',
+  'hover:after:visible hover:after:opacity-100 focus-visible:after:visible focus-visible:after:opacity-100',
+].join(' ');
 const exportHtml = '<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body,#container{width:100%;height:100%;margin:0}body{font-family:sans-serif}</style></head><body><div id="container"></div></body></html>';
 ---
 
