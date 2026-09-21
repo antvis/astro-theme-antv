@@ -1,6 +1,7 @@
 ---
 import type { DemoRecord } from '../../../compiler/content.js';
-import { registry } from '../../lib/site';
+import { config, registry } from '../../lib/site';
+import { withBase } from '../../lib/paths';
 
 interface Props {
   demo: DemoRecord;
@@ -22,6 +23,7 @@ const { demo } = Astro.props;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{demo.key}</title>
+    <link rel="canonical" href={new URL(withBase(`/${config.site.defaultLocale}/examples/${demo.key}/`), config.site.origin)} />
     <style>
       :root { color-scheme: light; }
       * { box-sizing: border-box; }
@@ -40,12 +42,19 @@ const { demo } = Astro.props;
     </style>
   </head>
   <body data-demo-key={demo.key}>
+    <section id="demo-source">
+      <h1>{demo.key}</h1>
+      <p><a href={withBase(`/${config.site.defaultLocale}/examples/${demo.key}/`)}>Example page</a></p>
+      <pre><code>{demo.source}</code></pre>
+    </section>
     <div id="container"></div>
     <pre id="demo-error" hidden></pre>
     <script>
       import { demos } from 'virtual:antv-site-demos';
 
       const key = document.body.dataset.demoKey || '';
+      // Embedded previews keep their compact layout; direct URLs retain readable content.
+      if (window.parent !== window) document.querySelector<HTMLElement>('#demo-source')!.hidden = true;
       const errorTarget = document.querySelector('#demo-error');
       const showError = (error: unknown) => {
         if (!(errorTarget instanceof HTMLElement)) return;

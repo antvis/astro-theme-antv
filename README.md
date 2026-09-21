@@ -111,6 +111,42 @@ docs/
 
 Frontmatter must contain `title`; `description`, `order`, `draft`, and `sidebar.label` / `sidebar.hidden` are optional. Use standard Astro/MDX syntax for components in `.mdx` files.
 
+## Interactive document demos
+
+Import `Demo` in MDX to add an editable example:
+
+```mdx
+import { Demo } from '@antv/astro-theme-antv/components';
+
+<Demo code={`document.getElementById('container').textContent = 'Hello';`} />
+<Demo src="guide/demos/shared-chart" />
+```
+
+Provide either static `code` or a `src` path to a `.ts` file relative to `content.docs`.
+Demos run in an iframe using `srcdoc`, without a separate preview route; the parent page retains the complete source in build-time `<pre><code>` HTML and page-level Markdown, readable without JavaScript.
+
+Demos use Sucrase to remove TypeScript types and native ES modules to load dependencies. For package imports, install them in your site and configure their imports in `astro.config.mjs`:
+
+```js
+demo: {
+  dependencies: {
+    '@antv/g6': '@antv/g6',
+  },
+},
+```
+
+For legacy packages, map to their ESM entry when using named imports; CommonJS default imports remain supported through Vite.
+
+For data previews, the built-in table helper needs no dependency configuration:
+
+```ts
+import { table } from '@antv/astro-theme-antv/table';
+
+await table([{ name: 'Alice', value: 10 }], document.getElementById('container')!);
+```
+
+`table` accepts an array of records or `{ url: '…' }` for a JSON array.
+
 ## Examples
 
 To enable examples, set `content.examples` to `"./examples"` and add the following files:

@@ -1,5 +1,10 @@
 # astro-theme-antv 实现约定
 
+## AntV Agent 可读性优先
+
+- 涉及技术决策时，优先考虑 Agent 和 AI 更容易获取、理解和使用 AntV；内容可获取性是架构与交互选择的首要验收标准。
+- 每个公开文档、API 和示例地址应可直接读取有意义的内容，不能依赖客户端 JavaScript 执行、点击、展开或 iframe 消息注入才能获得正文、示例源码、依赖和必要说明。
+
 ## 样式与组件
 
 - 新增局部 UI 样式使用 Tailwind utilities；hover、focus 和响应式优先使用状态变体，不为简单交互新增 CSS 类或 JavaScript。

@@ -1,0 +1,79 @@
+---
+import pinIcon from '@tabler/icons/outline/pin.svg?raw';
+import playIcon from '@tabler/icons/outline/circle-caret-right.svg?raw';
+import copyIcon from '@tabler/icons/outline/copy.svg?raw';
+import checkIcon from '@tabler/icons/outline/check.svg?raw';
+import { readFile } from 'node:fs/promises';
+import { extname, relative, resolve } from 'node:path';
+import { assertRealpathWithin, assertWithin, pathKey } from '../../util.js';
+import { config } from '../lib/site';
+import { withBase } from '../lib/paths';
+import { serializeAgentMarkdown } from '../../agent-markdown.js';
+
+interface Props {
+  src?: string;
+  code?: string;
+  title?: string;
+  height?: number;
+  open?: boolean;
+}
+const { src, code, title = `${config.site.title} Demo`, height = config.demo.height, open = false } = Astro.props;
+if ((src === undefined) === (code === undefined)) throw new Error('Demo requires either code or src.');
+let source = code ?? '';
+let path = '/inline-demo.ts';
+if (src !== undefined) {
+  const file = resolve(config.content.docs, extname(src) ? src : `${src}.ts`);
+  assertWithin(config.content.docs, file);
+  await assertRealpathWithin(config.content.docs, file);
+  source = await readFile(file, 'utf8');
+  path = `/${pathKey(relative(config.root, file))}`;
+}
+const document = Astro.locals.antvDocument;
+if (code !== undefined && document) {
+  Astro.locals.inlineDemoSources ??= (async () => {
+    const sources: string[] = [];
+    await serializeAgentMarkdown(document.body, {
+      filePath: document.filePath ?? '',
+      canonical: Astro.url.href,
+      components: config.content.agentComponents,
+      renderCode: (demo) => {
+        if (demo.name === 'Demo' && demo.src === undefined) sources.push(demo.code);
+        return '';
+      },
+    });
+    return sources;
+  })();
+  // MDX strips JSX attribute indentation; preserve the original source in HTML and the editor.
+  const matchSource = (value: string) => value.split('\n').map((line) => line.trimStart()).join('\n').trim();
+  source = (await Astro.locals.inlineDemoSources).find((value) => matchSource(value) === matchSource(source)) ?? source;
+}
+const isZh = Astro.url.pathname.startsWith(withBase('/zh/'));
+const panelId = `demo-source-${crypto.randomUUID()}`;
+const showLabel = isZh ? '展开源码' : 'Show source';
+const hideLabel = isZh ? '收起源码' : 'Hide source';
+const toggleLabel = open ? hideLabel : showLabel;
+const runLabel = isZh ? '重新运行' : 'Run again';
+const copyLabel = isZh ? '复制源码' : 'Copy source';
+const toolClass = 'flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-sm border-0 bg-transparent p-0 text-inherit transition-[color,transform] duration-150 hover:text-[var(--brand)] active:scale-110 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--brand)] aria-expanded:text-[var(--brand)] motion-reduce:transition-none motion-reduce:active:scale-100 [&_svg]:size-5 [&_svg]:stroke-[1.5]';
+---
+<section class="group/demo relative my-6 min-w-0 pl-7" data-document-demo data-demo-path={path}>
+  <div data-demo-toolbar hidden class="[&[hidden]]:hidden pointer-events-none absolute inset-y-0 left-0 z-1 flex w-7 flex-col rounded-l bg-[#eee] text-[#262626] opacity-0 transition-opacity duration-150 group-hover/demo:pointer-events-auto group-hover/demo:opacity-100 group-focus-within/demo:pointer-events-auto group-focus-within/demo:opacity-100 group-has-[[aria-expanded=true]]/demo:pointer-events-auto group-has-[[aria-expanded=true]]/demo:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100 motion-reduce:transition-none">
+    <button type="button" class={toolClass} data-demo-toggle data-show={showLabel} data-hide={hideLabel} title={toggleLabel} aria-label={toggleLabel} aria-expanded={open} aria-controls={panelId} set:html={pinIcon}></button>
+    <button type="button" class={toolClass} data-demo-run title={runLabel} aria-label={runLabel} set:html={playIcon}></button>
+  </div>
+  <div data-demo-preview hidden class="relative w-full overflow-auto bg-white [&[hidden]]:hidden" style={`height:${height}px`} aria-label={title}>
+    <pre data-demo-error role="alert" hidden class="absolute inset-x-3 top-3 z-1 m-0! max-h-full overflow-auto whitespace-pre-wrap bg-red-50 text-red-700 [&[hidden]]:hidden"></pre>
+  </div>
+  <div id={panelId} data-demo-panel class="relative min-w-0 bg-[var(--surface)] [&[hidden]]:hidden">
+    <button type="button" hidden data-demo-copy data-copied={isZh ? '已复制' : 'Copied'} data-copy-error={isZh ? '复制失败' : 'Copy failed'} title={copyLabel} class="markdown-code-copy top-2! right-2! z-2! opacity-100! pointer-events-auto! transform-none! disabled:cursor-wait [&[hidden]]:hidden [&_svg]:block [&_svg]:size-4">
+      <span class="markdown-code-copy-icon is-copy" set:html={copyIcon}></span>
+      <span class="markdown-code-copy-icon is-success" set:html={checkIcon}></span>
+      <span data-demo-copy-label class="sr-only" aria-live="polite">{copyLabel}</span>
+    </button>
+    <pre data-demo-source class="max-h-130 overflow-auto [&[hidden]]:hidden"><code class="language-ts">{source}</code></pre>
+    <div data-demo-editor data-label={isZh ? `${title} 源码编辑器` : `${title} source editor`}></div>
+  </div>
+</section>
+<script>
+  import '../demos/client';
+</script>
