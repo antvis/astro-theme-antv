@@ -3,6 +3,8 @@ import { localize } from '../../compiler/localization.js';
 import type { ExampleCategory } from '../../compiler/content.js';
 import { withBase } from '../lib/paths';
 import SidebarMenu from './SidebarMenu.astro';
+import searchIcon from '@tabler/icons/outline/search.svg?raw';
+import collapseIcon from '@tabler/icons/outline/arrow-bar-to-up.svg?raw';
 
 interface Props {
   categories: ExampleCategory[];
@@ -12,13 +14,6 @@ interface Props {
 const { categories, locale, currentRoute } = Astro.props;
 const catalogRoute = `/${locale}/examples/`;
 const isCatalog = currentRoute === catalogRoute;
-const isDemoRoute = categories.some((category) =>
-  category.groups.some((group) =>
-    group.demos.some(
-      (demo) => `/${locale}/examples/${demo.key}/` === currentRoute,
-    ),
-  ),
-);
 const groupAnchor = (categorySlug: string, groupSlug: string) =>
   `group-${categorySlug}-${groupSlug.replaceAll('/', '-')}`;
 const categoryDemoCount = (category: ExampleCategory) =>
@@ -34,7 +29,7 @@ const nodes = navigationCategories.map((category) => ({
   label: localize(category.title, locale),
   href: isCatalog
     ? `#category-${category.slug}`
-    : withBase(`/${locale}/examples/${category.slug}/`),
+    : undefined,
   icon: category.icon,
   open: !isCatalog && currentRoute.includes(`/examples/${category.slug}/`),
   children: category.groups.map((group) => {
@@ -47,17 +42,17 @@ const nodes = navigationCategories.map((category) => ({
       label: localize(group.title, locale),
       href: isCatalog
         ? `#${groupAnchor(category.slug, group.slug)}`
-        : withBase(route),
-      current: groupIsCurrent,
+        : undefined,
       open: groupIsCurrent,
       children:
-        isDemoRoute && groupIsCurrent
+        !isCatalog
           ? group.demos.map((demo) => {
               const demoRoute = `/${locale}/examples/${demo.key}/`;
               return {
                 key: demo.key,
                 label: localize(demo.title, locale, demo.slug),
                 href: withBase(demoRoute),
+                thumbnail: demo.screenshot ? withBase(demo.screenshot) : undefined,
                 current: demoRoute === currentRoute,
                 children: [],
               };
@@ -69,13 +64,22 @@ const nodes = navigationCategories.map((category) => ({
 ---
 
 <aside
-  class="docs-sidebar examples-sidebar"
+  class:list={["docs-sidebar examples-sidebar", !isCatalog && "z-10 [@media(width>1080px)]:h-full [@media(width>1080px)]:max-h-full"]}
   data-example-sidebar
   data-example-catalog={isCatalog ? 'true' : undefined}
 >
+  {!isCatalog && <div data-example-controls hidden class="sticky top-0 z-1 flex items-center gap-2 bg-white px-4 pb-3 [&[hidden]]:hidden">
+    <label class="flex min-w-0 flex-1 items-center gap-1.5 rounded border border-[var(--border)] px-2 text-[var(--muted-light)] focus-within:border-[var(--brand)]">
+      <span aria-hidden="true" class="inline-flex size-3.5 shrink-0 [&_svg]:size-full" set:html={searchIcon} />
+      <input data-example-search type="search" placeholder={locale === 'zh' ? '搜索…' : 'Search…'} aria-label={locale === 'zh' ? '搜索示例' : 'Search examples'} class="h-7 w-full min-w-0 border-0 bg-transparent p-0 text-xs text-[var(--text)] outline-none" />
+    </label>
+    <button data-example-collapse type="button" title={locale === 'zh' ? '全部收起' : 'Collapse all'} aria-label={locale === 'zh' ? '全部收起' : 'Collapse all'} class="inline-flex size-7 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-1 text-[var(--text)] hover:text-[var(--brand)] [&_svg]:size-4" set:html={collapseIcon} />
+  </div>}
+  <p data-example-empty hidden class="m-0 px-4 py-3 text-xs text-[var(--muted)] [&[hidden]]:hidden" role="status">{locale === 'zh' ? '没有匹配的示例' : 'No matching examples'}</p>
   <nav aria-label={locale === 'zh' ? '示例目录' : 'Examples'}>
     <SidebarMenu nodes={nodes} variant="examples" />
   </nav>
+  {!isCatalog && <div id="example-thumbnail-tooltip" role="tooltip" hidden class="pointer-events-none fixed z-300 max-w-64 -translate-y-1/2 rounded-lg bg-[#262626] px-3 py-2 text-sm text-white shadow-xl [&[hidden]]:hidden before:absolute before:top-1/2 before:-left-1 before:size-2 before:-translate-y-1/2 before:rotate-45 before:bg-[#262626]"></div>}
 </aside>
 
 <script>
@@ -84,6 +88,71 @@ const nodes = navigationCategories.map((category) => ({
   );
 
   for (const sidebar of sidebars) {
+    const controls = sidebar.querySelector<HTMLElement>('[data-example-controls]');
+    if (controls) {
+      controls.hidden = false;
+      const search = controls.querySelector<HTMLInputElement>('input')!;
+      const empty = sidebar.querySelector<HTMLElement>('[data-example-empty]')!;
+      const details = [...sidebar.querySelectorAll<HTMLDetailsElement>('details')];
+      const examples = [...sidebar.querySelectorAll<HTMLAnchorElement>('[data-demo-link]')].map((link) => {
+        const labels = [link.getAttribute('aria-label') ?? link.textContent, link.getAttribute('href')];
+        for (let branch = link.closest('details'); branch; branch = branch.parentElement!.closest('details')) {
+          labels.push(branch.querySelector('summary')!.textContent);
+        }
+        return { item: link.parentElement!, label: labels.join(' ').toLocaleLowerCase() };
+      });
+      let savedOpen: boolean[] | undefined;
+      const filter = () => {
+        const query = search.value.trim().toLocaleLowerCase();
+        if (query && !savedOpen) savedOpen = details.map((item) => item.open);
+        examples.forEach(({ item, label }) => { item.hidden = !label.includes(query); });
+        for (const branch of [...details].reverse()) {
+          branch.parentElement!.hidden = !branch.querySelector(':scope > ul > li:not([hidden])');
+          if (query) branch.open = !branch.parentElement!.hidden;
+        }
+        empty.hidden = examples.some(({ item }) => !item.hidden);
+        if (!query && savedOpen) {
+          details.forEach((item, index) => { item.open = savedOpen![index]!; });
+          savedOpen = undefined;
+        }
+      };
+      search.addEventListener('input', filter);
+      controls.querySelector('button')!.addEventListener('click', () => {
+        search.value = '';
+        filter();
+        details.forEach((item) => { item.open = false; });
+      });
+      sidebar.addEventListener('antv:example-selected', (event) => {
+        const link = (event as CustomEvent<HTMLAnchorElement>).detail;
+        if (link.closest('[hidden]')) {
+          search.value = '';
+          filter();
+        }
+        for (let branch = link.closest('details'); branch; branch = branch.parentElement!.closest('details')) branch.open = true;
+        ensureMenuItemVisible(link);
+      });
+    }
+    const tooltip = sidebar.querySelector<HTMLElement>('[role="tooltip"]');
+    if (tooltip) {
+      const hide = () => { tooltip.hidden = true; };
+      const show = (event: Event) => {
+        const link = (event.target as Element).closest<HTMLElement>('[data-demo-thumbnail]');
+        if (!link) return hide();
+        const bounds = (link.querySelector('img') ?? link).getBoundingClientRect();
+        tooltip.textContent = link.getAttribute('aria-label');
+        tooltip.hidden = false;
+        tooltip.style.left = `${Math.min(bounds.right + 12, innerWidth - tooltip.offsetWidth - 8)}px`;
+        tooltip.style.top = `${Math.max(tooltip.offsetHeight / 2 + 8, Math.min(bounds.top + bounds.height / 2, innerHeight - tooltip.offsetHeight / 2 - 8))}px`;
+      };
+      sidebar.addEventListener('pointerover', show);
+      sidebar.addEventListener('focusin', show);
+      sidebar.addEventListener('pointerleave', hide);
+      sidebar.addEventListener('focusout', hide);
+      window.addEventListener('scroll', hide, { capture: true, passive: true });
+      window.addEventListener('resize', hide);
+      sidebar.addEventListener('keydown', (event) => { if (event.key === 'Escape') hide(); });
+    }
+
     const ensureMenuItemVisible = (element: HTMLElement | null) => {
       if (!element || sidebar.scrollHeight <= sidebar.clientHeight) return;
       const sidebarBounds = sidebar.getBoundingClientRect();
@@ -130,7 +199,7 @@ const nodes = navigationCategories.map((category) => ({
       selection = nextSelection;
 
       let activeElement: HTMLElement | null = null;
-      categoryItems.forEach((item, index) => {
+      categoryItems.forEach((item) => {
         const selected = item.dataset.sidebarKey === categorySlug;
         const details = item.querySelector<HTMLDetailsElement>(
           ':scope > .sidebar-menu__details',
@@ -145,7 +214,6 @@ const nodes = navigationCategories.map((category) => ({
           ...item.querySelectorAll<HTMLAnchorElement>('a[href^="#group-"]'),
         ];
 
-        if (details) details.open = selected || (!categorySlug && index === 0);
         summary?.classList.toggle('is-current', selected);
         if (categoryLink) {
           if (selected) categoryLink.setAttribute('aria-current', 'location');
@@ -156,7 +224,7 @@ const nodes = navigationCategories.map((category) => ({
           const groupSelected = selected && link.hash === groupHash;
           if (groupSelected) link.setAttribute('aria-current', 'location');
           else link.removeAttribute('aria-current');
-          if (groupSelected) activeElement = link;
+          if (groupSelected && details?.open) activeElement = link;
         });
 
         if (selected && !activeElement) {

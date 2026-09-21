@@ -5,7 +5,7 @@ export function createEditor(
   parent: HTMLElement,
   source: string,
   label: string,
-  onChange: (source: string) => void,
+  onChange: () => void,
   onCompositionStart: () => void
 ) {
   let composing = false;
@@ -20,11 +20,13 @@ export function createEditor(
         "&": { fontSize: "13px" },
         ".cm-scroller": { fontFamily: "monospace", maxHeight: "520px" },
         ".cm-content": { minHeight: "180px" },
-        "&.cm-focused": { outline: "2px solid var(--brand)" },
+        "&.cm-focused": { outline: "none" },
+        ".cm-gutters": { backgroundColor: "#fff", border: "none" },
+        ".cm-activeLineGutter": { backgroundColor: "#fff" },
       }),
       EditorView.updateListener.of((update) => {
         if (update.docChanged && !composing) {
-          onChange(update.state.doc.toString());
+          onChange();
         }
       }),
       EditorView.domEventHandlers({
@@ -32,9 +34,9 @@ export function createEditor(
           composing = true;
           onCompositionStart();
         },
-        compositionend: (_event, view) => {
+        compositionend: () => {
           composing = false;
-          onChange(view.state.doc.toString());
+          onChange();
         },
       }),
     ],

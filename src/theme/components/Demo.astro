@@ -2,7 +2,12 @@
 import { localize } from '../../compiler/localization.js';
 import type { DemoRecord } from '../../compiler/content.js';
 import { withBase } from '../lib/paths';
+import { demoDependencies } from '../lib/demo-dependencies';
 import reloadIcon from '@tabler/icons/outline/reload.svg?raw';
+import stackblitzIcon from '@tabler/icons/outline/bolt.svg?raw';
+import copyIcon from '@tabler/icons/outline/copy.svg?raw';
+import checkIcon from '@tabler/icons/outline/check.svg?raw';
+import playIcon from '@tabler/icons/outline/circle-caret-right.svg?raw';
 
 interface Props {
   demo: DemoRecord;
@@ -12,49 +17,60 @@ interface Props {
 
 const { demo, locale, height } = Astro.props;
 const title = localize(demo.title, locale, demo.slug);
+const isZh = locale === 'zh';
+const copyLabel = isZh ? '复制源码' : 'Copy source';
+const toolClass = [
+  // Button layout
+  'relative inline-flex size-7 shrink-0 items-center justify-center rounded border-0 bg-transparent p-0 text-[var(--muted)] cursor-pointer',
+  'hover:bg-[var(--surface-subtle)] hover:text-[var(--brand)]',
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]',
+  // Icon
+  '[&_svg]:block [&_svg]:size-4 [&_svg]:stroke-[1.5]',
+  // Tooltip placement and appearance
+  'after:pointer-events-none after:absolute after:right-0 after:top-full after:z-30 after:mt-2',
+  'after:rounded-md after:bg-[#262626] after:px-2.5 after:py-1.5 after:text-xs after:font-normal after:leading-5 after:whitespace-nowrap after:text-white after:shadow-lg',
+  // Tooltip content and visibility
+  'after:content-[attr(data-tooltip)] after:invisible after:opacity-0',
+  'hover:after:visible hover:after:opacity-100 focus-visible:after:visible focus-visible:after:opacity-100',
+].join(' ');
+const exportHtml = '<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body,#container{width:100%;height:100%;margin:0}body{font-family:sans-serif}</style></head><body><div id="container"></div></body></html>';
 ---
 
-<section class="demo-workbench overflow-hidden [border:1px_solid_var(--border-soft)] rounded-[var(--radius-medium)] [&_>_iframe]:block [&_>_iframe]:w-full [&_>_iframe]:min-h-80 [&_>_iframe]:[border:0]" aria-labelledby="demo-title" data-static-demo>
-  <header class="demo-static-header flex min-h-16 items-center justify-between gap-4 pr-4 pl-5 [border-bottom:1px_solid_var(--border-soft)] py-3 [&_h1]:text-[var(--text-strong)] [&_h1]:text-[20px] [&_h1]:font-semibold [&_h1]:m-0 [&_span]:text-[var(--muted-light)] [&_span]:text-[10px]">
-    <div>
-      <h1 id="demo-title">{title}</h1>
-      <span>examples / {demo.key}</span>
+<section class="grid h-full min-h-0 min-w-0 grid-cols-[minmax(0,3fr)_minmax(0,2fr)] [@media(width<=1080px)]:h-auto [@media(width<=1080px)]:grid-cols-1" aria-labelledby="demo-title" data-example-demo data-demo-path={`/${demo.relativeSourcePath}`}>
+  <div class="flex min-h-0 min-w-0 flex-col p-6 [@media(width<=700px)]:p-4">
+    <h1 id="demo-title" class="m-0 mb-4 text-[20px] font-semibold text-[var(--text-strong)]">{title}</h1>
+    <div data-demo-preview class="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-white [@media(width<=1080px)]:min-h-80 [@media(width<=1080px)]:flex-none [@media(width<=1080px)]:h-[var(--demo-height)]" style={`--demo-height:${height}px`} aria-label={`${title} ${isZh ? '运行结果' : 'result'}`}>
+      <iframe title={`${title} ${isZh ? '运行结果' : 'result'}`} src={withBase(`/demos/${demo.key}/`)} class="absolute inset-0 block size-full border-0" loading="eager" data-demo-frame></iframe>
+      <pre data-demo-error role="alert" hidden class="absolute inset-x-3 top-3 z-1 m-0 max-h-full overflow-auto whitespace-pre-wrap bg-red-50 p-3 text-red-700 [&[hidden]]:hidden"></pre>
     </div>
-    <button
-      class="demo-secondary-action min-h-7.5 [border:1px_solid_var(--border)] rounded-[var(--radius-small)] text-[var(--text)] cursor-pointer [&:hover]:[border-color:var(--brand)] [&:hover]:text-[var(--brand-strong)] inline-grid w-7.5 min-w-7.5 h-7.5 place-items-center p-0"
-      type="button"
-      data-demo-reload
-      aria-label={locale === 'zh' ? '重新加载预览' : 'Reload preview'}
-      title={locale === 'zh' ? '重新加载预览' : 'Reload preview'}
-    >
-      <span class="block w-[15px] h-[15px] [&_svg]:block [&_svg]:w-[15px] [&_svg]:h-[15px]" aria-hidden="true" set:html={reloadIcon}></span>
-    </button>
-  </header>
-  <iframe
-    title={`${title} ${locale === 'zh' ? '运行结果' : 'result'}`}
-    src={withBase(`/demos/${demo.key}/`)}
-    style={`height:${height}px`}
-    loading="eager"
-    data-demo-frame
-  ></iframe>
-  <details class="demo-source [border-top:1px_solid_var(--border-soft)] [&_summary]:text-[var(--muted)] [&_summary]:text-[12px] [&_summary]:cursor-pointer [&_summary]:px-4 [&_summary]:py-2.5 [&_pre]:max-h-130 [&_pre]:overflow-auto [&_pre]:[border:0] [&_pre]:rounded-none [&_pre]:text-[var(--code-text)] [&_pre]:text-[12px] [&_pre]:leading-[1.7] [&_pre]:m-0 [&_pre]:px-5 [&_pre]:py-4.5" open>
-    <summary>{locale === 'zh' ? '源码' : 'Source'}</summary>
-    <pre><code class="language-ts">{demo.source}</code></pre>
-  </details>
+  </div>
+  <div data-demo-panel class="flex min-h-0 min-w-0 flex-col border-l border-[var(--border-soft)] [@media(width<=1080px)]:border-t [@media(width<=1080px)]:border-l-0">
+    <header class="relative z-20 flex h-10 shrink-0 items-center justify-between gap-2 border-b border-[var(--border-soft)] px-3">
+      <span class="text-sm leading-none font-medium text-[var(--text)]">{isZh ? '源码' : 'Source'}</span>
+      <div data-demo-toolbar hidden class="flex items-center gap-1 [&[hidden]]:hidden">
+        <button type="button" class={toolClass} data-demo-reset data-tooltip={isZh ? '还原源码' : 'Reset source'} aria-label={isZh ? '还原源码' : 'Reset source'} set:html={reloadIcon}></button>
+        <form action="https://stackblitz.com/run?file=index.ts" method="post" target="_blank" rel="noopener noreferrer" data-demo-stackblitz class="m-0 flex items-center">
+          <input type="hidden" name="project[title]" value={title} />
+          <input type="hidden" name="project[description]" value={demo.key} />
+          <input type="hidden" name="project[template]" value="typescript" />
+          <input type="hidden" name="project[dependencies]" value={JSON.stringify(demoDependencies)} />
+          <input type="hidden" name="project[files][index.html]" value={exportHtml} />
+          <input type="hidden" name="project[files][index.ts]" data-demo-export-source />
+          <button type="submit" class={toolClass} data-tooltip={isZh ? '在 StackBlitz 中打开' : 'Open in StackBlitz'} aria-label={isZh ? '在 StackBlitz 中打开' : 'Open in StackBlitz'} set:html={stackblitzIcon}></button>
+        </form>
+        <button type="button" class={`${toolClass} group/copy`} data-demo-copy data-copied={isZh ? '已复制' : 'Copied'} data-copy-error={isZh ? '复制失败' : 'Copy failed'} data-tooltip={copyLabel}>
+          <span aria-hidden="true" class="group-data-[copy-state=success]/copy:hidden" set:html={copyIcon}></span>
+          <span aria-hidden="true" class="hidden group-data-[copy-state=success]/copy:inline" set:html={checkIcon}></span>
+          <span data-demo-copy-label class="sr-only" aria-live="polite">{copyLabel}</span>
+        </button>
+        <button type="button" class={toolClass} data-demo-run data-tooltip={isZh ? '运行' : 'Run'} aria-label={isZh ? '运行' : 'Run'} set:html={playIcon}></button>
+      </div>
+    </header>
+    <pre data-demo-source class="m-0 min-h-0 flex-1 overflow-auto p-4 text-[13px] [&[hidden]]:hidden"><code class="language-ts">{demo.source}</code></pre>
+    <div data-demo-editor data-label={isZh ? `${title} 源码编辑器` : `${title} source editor`} class="min-h-0 flex-1 [&_.cm-editor]:h-full [&_.cm-scroller]:max-h-none! [@media(width<=1080px)]:h-120 [@media(width<=1080px)]:flex-none"></div>
+  </div>
 </section>
 
 <script>
-  document
-    .querySelectorAll<HTMLElement>('[data-static-demo]:not([data-initialized])')
-    .forEach((root) => {
-      root.dataset.initialized = '';
-      const frame = root.querySelector<HTMLIFrameElement>('[data-demo-frame]');
-      const reload = root.querySelector<HTMLButtonElement>('[data-demo-reload]');
-      reload?.addEventListener('click', () => {
-        if (!frame) return;
-        const url = new URL(frame.src, location.href);
-        url.searchParams.set('reload', String(Date.now()));
-        frame.src = url.href;
-      });
-    });
+  import '../demos/client';
 </script>

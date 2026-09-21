@@ -150,7 +150,7 @@ const structuredData = {
       {locale === 'zh' ? '跳到主要内容' : 'Skip to content'}
     </a>
     <Loading locale={locale} page />
-    <div class="site-canvas">
+    <div class:list={["site-canvas", pageType === 'demo' && "[@media(width>1080px)]:flex [@media(width>1080px)]:h-dvh [@media(width>1080px)]:flex-col [@media(width>1080px)]:overflow-hidden [&>header]:shrink-0 [&>antv-announcement]:shrink-0"]}>
     <Announcement locale={locale} />
     <header class:list={['site-header', pageType === 'home' && 'home-header', isAntVSite && 'antv-site-header']} data-pagefind-ignore>
       <div class="header-inner">
@@ -211,16 +211,16 @@ const structuredData = {
         </nav>
       </div>
     </header>
-    <main id="main-content" data-pagefind-body={isRootHome ? undefined : true}>
+    <main id="main-content" class:list={[pageType === 'demo' && "[@media(width>1080px)]:min-h-0 [@media(width>1080px)]:flex-1"]} data-pagefind-body={isRootHome ? undefined : true}>
       <slot />
     </main>
-    <SiteFooter
+    {pageType !== 'demo' && <SiteFooter
       locale={locale}
       groups={footerGroups}
       description={localize(config.footer.description, locale)}
       copyright={copyright}
       tagline={footerTagline}
-    />
+    />}
     </div>
     {searchEnabled && (
       <SiteSearch

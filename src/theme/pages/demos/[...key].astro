@@ -24,12 +24,25 @@ const { demo } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{demo.key}</title>
     <link rel="canonical" href={new URL(withBase(`/${config.site.defaultLocale}/examples/${demo.key}/`), config.site.origin)} />
+    <script is:inline>
+      // Set the embedded layout before parsing the readable source below.
+      if (window.parent !== window) document.documentElement.classList.add('embedded-demo');
+    </script>
     <style>
       :root { color-scheme: light; }
       * { box-sizing: border-box; }
       html, body { min-height: 100%; margin: 0; }
       body { padding: 16px; background: #fff; color: #1d2129; }
       #container { width: 100%; min-height: 320px; }
+      html.embedded-demo { overflow: hidden; }
+      .embedded-demo body { height: 100dvh; padding: 0; overflow: hidden; }
+      .embedded-demo #demo-source { display: none; }
+      .embedded-demo #container { height: 100%; min-height: 0; opacity: 0; transition: opacity 160ms ease-out; }
+      .embedded-demo.preview-ready #container { opacity: 1; }
+      @media (prefers-reduced-motion: reduce) {
+        .embedded-demo #container { transition: none; }
+      }
+      #container canvas, #container svg { display: block; }
       #demo-error {
         margin: 0;
         padding: 16px;
@@ -53,13 +66,12 @@ const { demo } = Astro.props;
       import { demos } from 'virtual:antv-site-demos';
 
       const key = document.body.dataset.demoKey || '';
-      // Embedded previews keep their compact layout; direct URLs retain readable content.
-      if (window.parent !== window) document.querySelector<HTMLElement>('#demo-source')!.hidden = true;
       const errorTarget = document.querySelector('#demo-error');
       const showError = (error: unknown) => {
         if (!(errorTarget instanceof HTMLElement)) return;
         errorTarget.hidden = false;
         errorTarget.textContent = error instanceof Error ? error.stack || error.message : String(error);
+        if (parent !== window) parent.postMessage({ type: 'antv-demo:error', error: errorTarget.textContent }, location.origin);
       };
 
       addEventListener('error', (event) => showError(event.error || event.message));
@@ -67,7 +79,13 @@ const { demo } = Astro.props;
 
       const load = demos[key];
       if (!load) showError(new Error(`Unknown demo: ${key}`));
-      else load().catch(showError);
+      else load().then(() => {
+        // Allow the renderer's first layout to settle before revealing the preview.
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          document.documentElement.classList.add('preview-ready');
+          if (parent !== window) parent.postMessage({ type: 'antv-demo:complete' }, location.origin);
+        }));
+      }).catch(showError);
     </script>
   </body>
 </html>

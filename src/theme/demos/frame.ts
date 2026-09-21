@@ -1,7 +1,7 @@
 import { transform } from 'sucrase';
 import { imports } from 'virtual:antv-demo-dependencies';
 
-export function createFrameDocument(source: string, path: string) {
+export function createFrameDocument(source: string, path: string, fitToFrame = false) {
   // JSON stays inside its script element even when example strings contain </script>.
   const input = JSON.stringify({ source, path }).replaceAll('<', '\\u003c');
   const importMap = JSON.stringify({ imports }).replaceAll('<', '\\u003c');
@@ -18,6 +18,8 @@ export function createFrameDocument(source: string, path: string) {
       * { box-sizing: border-box; }
       html, body, #container { width: 100%; height: 100%; margin: 0; }
       body { background: #fff; font-family: sans-serif; }
+      #container canvas, #container svg { display: block; }
+      ${fitToFrame ? "html, body, #container { overflow: hidden; }" : ""}
     </style></head><body><div id="container"></div>
     <script type="application/json" data-demo-input>${input}</script>
     <script type="module" src="${import.meta.url}"></script></body></html>`;
