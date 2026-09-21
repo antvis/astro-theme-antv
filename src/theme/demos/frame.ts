@@ -1,3 +1,4 @@
+import { transform } from 'sucrase';
 import { imports } from 'virtual:antv-demo-dependencies';
 
 export function createFrameDocument(source: string, path: string) {
@@ -35,17 +36,17 @@ if (input) {
     );
   addEventListener('error', (event) => showError(event.error || event.message));
   addEventListener('unhandledrejection', (event) => showError(event.reason));
-  import('sucrase')
-    .then(({ transform }) => {
-      const { code } = transform(source, {
-        transforms: ['typescript'],
-        filePath: path,
-      });
-      const script = document.createElement('script');
-      script.type = 'module';
-      script.textContent = `${code}\n;globalThis.parent.postMessage({ type: 'antv-demo:complete' }, '*');`;
-      script.onerror = () => showError('Unable to load demo module.');
-      document.body.append(script);
-    })
-    .catch(showError);
+  try {
+    const { code } = transform(source, {
+      transforms: ['typescript'],
+      filePath: path,
+    });
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.textContent = `${code}\n;globalThis.parent.postMessage({ type: 'antv-demo:complete' }, '*');`;
+    script.onerror = () => showError('Unable to load demo module.');
+    document.body.append(script);
+  } catch (error) {
+    showError(error);
+  }
 }

@@ -1,4 +1,6 @@
 import type { EditorView } from 'codemirror';
+import { createEditor } from './editor';
+import { createFrameDocument } from './frame';
 
 for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo]')) {
   const preview = root.querySelector<HTMLElement>('[data-demo-preview]')!;
@@ -14,7 +16,6 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo]'
   let editor: EditorView | undefined;
   let frame: HTMLIFrameElement | undefined;
   let pendingFrame: HTMLIFrameElement | undefined;
-  let mounting = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let copyTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -44,7 +45,7 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo]'
     }
   };
   window.addEventListener('message', receive);
-  const run = async () => {
+  const run = () => {
     observer.disconnect();
     clearTimeout(timer);
     discardPending();
@@ -52,17 +53,8 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo]'
     next.title = preview.getAttribute('aria-label')!;
     next.className = 'absolute inset-0 block size-full border-0';
     next.style.visibility = 'hidden';
-    try {
-      const { createFrameDocument } = await import('./frame');
-      if (pendingFrame !== next) return;
-      next.srcdoc = createFrameDocument(source, root.dataset.demoPath!);
-      preview.append(next);
-    } catch (error) {
-      if (pendingFrame !== next) return;
-      discardPending();
-      errorTarget.textContent = error instanceof Error ? error.message : String(error);
-      errorTarget.hidden = false;
-    }
+    next.srcdoc = createFrameDocument(source, root.dataset.demoPath!);
+    preview.append(next);
   };
   root.querySelector('[data-demo-run]')!.addEventListener('click', run);
   const schedule = (value: string) => {
@@ -72,15 +64,10 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo]'
     clearTimeout(timer);
     timer = setTimeout(run, 400);
   };
-  const mountEditor = async () => {
-    if (panel.hidden || editor || mounting) return;
-    mounting = true;
-    try {
-      const { createEditor } = await import('./editor');
-      editor = createEditor(editorTarget, source, editorTarget.dataset.label!, schedule, () => clearTimeout(timer));
-      sourceElement.hidden = true;
-    } catch (error) { console.error('Unable to load demo editor', error); }
-    finally { mounting = false; }
+  const mountEditor = () => {
+    if (panel.hidden || editor) return;
+    editor = createEditor(editorTarget, source, editorTarget.dataset.label!, schedule, () => clearTimeout(timer));
+    sourceElement.hidden = true;
   };
   toggle.addEventListener('click', () => {
     panel.hidden = !panel.hidden;
@@ -88,7 +75,7 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo]'
     const label = panel.hidden ? toggle.dataset.show! : toggle.dataset.hide!;
     toggle.title = label;
     toggle.setAttribute('aria-label', label);
-    void mountEditor();
+    mountEditor();
   });
   copyButton.addEventListener('click', async () => {
     clearTimeout(copyTimer);
@@ -110,7 +97,7 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo]'
   const observer = new IntersectionObserver((entries) => {
     if (entries.some((entry) => entry.isIntersecting)) {
       run();
-      void mountEditor();
+      mountEditor();
     }
   }, { rootMargin: '200px' });
   observer.observe(root);
