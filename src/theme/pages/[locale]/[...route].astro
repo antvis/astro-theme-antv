@@ -83,6 +83,11 @@ const category = page.type === 'example-category'
 const group = page.type === 'example-group'
   ? groupsByKey.get(page.groupKey)
   : undefined;
+// Keep existing group/category URLs usable without an intermediate listing page.
+if (group || category) {
+  const firstDemo = group?.demos[0] ?? category?.groups.flatMap((item) => item.demos)[0];
+  return Astro.redirect(withBase(firstDemo ? `/${locale}/examples/${firstDemo.key}/` : `/${locale}/examples/`), 301);
+}
 const demo = page.type === 'demo' ? demosByKey.get(page.demoKey) : undefined;
 const editConfig = config.content.edit;
 const markdownHref = page.type === 'document'
@@ -121,7 +126,7 @@ if (page.type === 'document') {
 }
 ---
 
-<BaseLayout locale={locale} title={title} description={description} route={page.route} pageType={page.type === 'document' ? 'document' : 'page'} image={page.type === 'document' ? page.entry.data.screenshot : demo?.screenshot} openGraph={page.type === 'document' ? page.entry.data.openGraph : demo?.openGraph}>
+<BaseLayout locale={locale} title={title} description={description} route={page.route} pageType={page.type === 'document' ? 'document' : demo ? 'demo' : 'page'} image={page.type === 'document' ? page.entry.data.screenshot : demo?.screenshot} openGraph={page.type === 'document' ? page.entry.data.openGraph : demo?.openGraph}>
   {page.type === 'document' && (
     <div class="docs-shell">
       <DocsSidebar items={documentItems} currentRoute={page.route} locale={locale} labels={config.content.sidebar} />
@@ -174,7 +179,7 @@ if (page.type === 'document') {
                   <section class="catalog-group [scroll-margin-top:calc(var(--header-height)_+_24px)] [&_+_.catalog-group]:mt-11" id={groupAnchor(item.slug, entry.slug)} data-example-group={`${item.slug}/${entry.slug}`}>
                     <header class="catalog-group-header flex items-baseline justify-between gap-6 mb-4.5 [@media(width<=700px)]:gap-y-4 [@media(width<=700px)]:gap-x-4 [&_h3]:text-[var(--text-strong)] [&_h3]:font-medium [&_h3]:text-[20px] [&_h3]:leading-[30px] [&_h3]:m-0 [&_a]:[flex:none] [&_a]:text-[var(--muted-light)] [&_a]:text-[11px] [&_a:hover]:text-[var(--brand)]">
                       <h3>{localize(entry.title, locale)}</h3>
-                      <a href={withBase(`/${locale}/examples/${item.slug}/${entry.slug}/`)}>
+                      <a href={withBase(entry.demos[0] ? `/${locale}/examples/${entry.demos[0].key}/` : `/${locale}/examples/`)}>
                         {entry.demos.length} {isZh ? '个示例' : 'examples'}
                       </a>
                     </header>
@@ -198,53 +203,6 @@ if (page.type === 'document') {
               </section>
             );
           })}
-        </div>
-      </section>
-    </div>
-  )}
-
-  {category && (
-    <div class="examples-shell">
-      <ExampleSidebar categories={registry.categories} locale={locale} currentRoute={page.route} />
-      <section class="listing-page">
-        <header class="listing-header compact">
-          <p class="eyebrow">examples / {category.slug}</p>
-          <h1>{localize(category.title, locale)}</h1>
-          <p>{category.groups.reduce((sum, item) => sum + item.demos.length, 0)} {isZh ? '个示例，按图表与能力分组。' : 'examples grouped by chart and capability.'}</p>
-        </header>
-        <div class="group-list [border-top:1px_solid_var(--border-soft)] [&_a]:flex [&_a]:items-center [&_a]:justify-between [&_a]:gap-y-6 [&_a]:gap-x-6 [&_a]:[border-bottom:1px_solid_var(--border-soft)] [&_a]:text-[var(--text-strong)] [&_a]:px-1 [&_a]:py-4.5 [&_a:hover_strong]:text-[var(--brand)] [&_div]:flex [&_div]:flex-col [&_div]:gap-y-1 [&_div]:gap-x-1 [&_small]:text-[var(--muted-light)] [&_small]:text-[12px] [&_span]:text-[var(--muted-light)] [&_span]:text-[12px]">
-          {category.groups.map((item) => (
-            <a href={withBase(`/${locale}/examples/${category.slug}/${item.slug}/`)}>
-              <div><strong>{localize(item.title, locale)}</strong><small>{item.slug}</small></div>
-              <span>{item.demos.length}</span>
-            </a>
-          ))}
-        </div>
-      </section>
-    </div>
-  )}
-
-  {group && (
-    <div class="examples-shell">
-      <ExampleSidebar categories={registry.categories} locale={locale} currentRoute={page.route} />
-      <section class="listing-page">
-        <header class="listing-header compact">
-          <p class="eyebrow">examples / {group.categorySlug} / {group.slug}</p>
-          <h1>{localize(group.title, locale)}</h1>
-          <p>{group.demos.length} {isZh ? '个可运行示例。' : 'runnable examples.'}</p>
-        </header>
-        <div class="demo-grid">
-          {group.demos.map((item) => (
-            <a href={withBase(`/${locale}/examples/${item.key}/`)}>
-              <div class="demo-image flex [aspect-ratio:16_/_10] items-center justify-center mb-3.5 overflow-hidden [border:1px_solid_var(--border-soft)] rounded-[var(--radius-small)] [&_img]:w-full [&_img]:h-full [&_img]:[object-fit:scale-down] [.demo-grid_a:hover_&]:border-[var(--brand)] [.demo-grid_a:hover_&]:[box-shadow:var(--shadow-hover)] [.demo-grid_a:hover_&]:[transform:translateY(-4px)]">
-                {item.screenshot && (
-                  <img src={withBase(item.screenshot)} alt={`${localize(item.title, locale, item.slug)}${isZh ? '缩略图' : ' thumbnail'}`} loading="lazy" decoding="async" />
-                )}
-              </div>
-              <strong>{localize(item.title, locale, item.slug)}</strong>
-              <code>{item.slug}</code>
-            </a>
-          ))}
         </div>
       </section>
     </div>

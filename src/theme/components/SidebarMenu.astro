@@ -6,6 +6,7 @@ export interface SidebarMenuNode {
   label: string;
   href?: string;
   icon?: string;
+  thumbnail?: string;
   current?: boolean;
   open?: boolean;
   children?: SidebarMenuNode[];
@@ -41,7 +42,7 @@ const containsCurrent = (node: SidebarMenuNode): boolean =>
         style={`--sidebar-menu-offset: ${offset}px;`}
       >
         {hasChildren ? (
-          <details class="sidebar-menu__details" open={isOpen}>
+          <details class:list={["sidebar-menu__details", variant === 'examples' && "[interpolate-size:allow-keywords] [&::details-content]:h-0 [&[open]::details-content]:h-auto [&::details-content]:overflow-clip [&::details-content]:[transition:height_180ms_ease,content-visibility_180ms_allow-discrete] motion-reduce:[&::details-content]:transition-none"]} open={isOpen}>
             <summary
               class:list={[
                 'sidebar-menu__summary',
@@ -65,7 +66,7 @@ const containsCurrent = (node: SidebarMenuNode): boolean =>
                   </span>
                 )}
               </span>
-              <span class="sidebar-menu__chevron" aria-hidden="true" />
+              <span class:list={["sidebar-menu__chevron", variant === 'examples' && "[transform:rotate(45deg)]! [[open]>summary_&]:[transform:rotate(225deg)]!"]} aria-hidden="true" />
             </summary>
             <Astro.self
               nodes={children}
@@ -74,9 +75,24 @@ const containsCurrent = (node: SidebarMenuNode): boolean =>
               indent={indent}
             />
           </details>
+        ) : node.href && node.thumbnail ? (
+          <a
+            class="group/thumb block py-1 pl-[var(--sidebar-menu-offset)] hover:bg-black/4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--brand)] aria-[current=page]:bg-black/5"
+            href={node.href}
+            aria-current={node.current ? 'page' : undefined}
+            aria-label={node.label}
+            aria-describedby="example-thumbnail-tooltip"
+            data-demo-link
+            data-demo-thumbnail
+          >
+            <span class="block h-17.5 w-25 border border-[var(--border-soft)] bg-white group-aria-[current=page]/thumb:border-[var(--brand)] group-aria-[current=page]/thumb:bg-[var(--brand-soft)]">
+              <img src={node.thumbnail} alt="" loading="lazy" decoding="async" class="block size-full object-contain mix-blend-multiply" />
+            </span>
+          </a>
         ) : node.href ? (
           <a
             class="sidebar-menu__link"
+            data-demo-link={variant === 'examples' && depth === 2 ? true : undefined}
             href={node.href}
             aria-current={node.current ? 'page' : undefined}
             title={node.label}
