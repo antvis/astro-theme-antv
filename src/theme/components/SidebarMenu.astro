@@ -28,32 +28,32 @@ const {
 const offset = 24 + depth * indent;
 const containsCurrent = (node: SidebarMenuNode): boolean =>
   Boolean(node.current || node.children?.some(containsCurrent));
+const menuItemClass = "relative box-border flex items-center w-full min-h-10 m-0 py-0 pr-4 pl-[var(--sidebar-menu-offset)] rounded-none text-[var(--text)] text-[14px] font-normal leading-10 no-underline [transition:background-color_0.2s,color_0.2s] hover:bg-black/2 hover:text-[var(--brand)] [&:is([data-current],[aria-current])]:bg-[var(--brand-soft)] [&:is([data-current],[aria-current])]:text-[var(--brand-strong)] [&:is([data-current],[aria-current])]:font-semibold [&:is([data-current],[aria-current])]:after:content-[''] [&:is([data-current],[aria-current])]:after:absolute [&:is([data-current],[aria-current])]:after:inset-y-0 [&:is([data-current],[aria-current])]:after:right-0 [&:is([data-current],[aria-current])]:after:w-[3px] [&:is([data-current],[aria-current])]:after:bg-[var(--brand)]";
+
 ---
 
-<ul class:list={['sidebar-menu', `sidebar-menu--${variant}`]}>
+<ul data-sidebar-menu class:list={["m-0 p-0 list-none", variant === "examples" && depth > 0 && "pb-2"]}>
   {nodes.map((node) => {
     const children = node.children || [];
     const hasChildren = children.length > 0;
     const isOpen = node.open ?? containsCurrent(node);
     return (
       <li
-        class="sidebar-menu__item"
+        class="m-0 list-none"
         data-sidebar-key={node.key}
         style={`--sidebar-menu-offset: ${offset}px;`}
       >
         {hasChildren ? (
-          <details class:list={["sidebar-menu__details", variant === 'examples' && "[interpolate-size:allow-keywords] [&::details-content]:h-0 [&[open]::details-content]:h-auto [&::details-content]:overflow-clip [&::details-content]:[transition:height_180ms_ease,content-visibility_180ms_allow-discrete] motion-reduce:[&::details-content]:transition-none"]} open={isOpen}>
+          <details data-sidebar-details class:list={["border-0", variant === 'examples' && "[interpolate-size:allow-keywords] [&::details-content]:h-0 [&[open]::details-content]:h-auto [&::details-content]:overflow-clip [&::details-content]:[transition:height_180ms_ease,content-visibility_180ms_allow-discrete] motion-reduce:[&::details-content]:transition-none"]} open={isOpen}>
             <summary
-              class:list={[
-                'sidebar-menu__summary',
-                { 'is-current': node.current },
-              ]}
+              data-sidebar-summary data-current={node.current || undefined}
+              class={`${menuItemClass} justify-between list-none cursor-pointer [&::-webkit-details-marker]:hidden marker:content-['']`}
             >
-              <span class="sidebar-menu__label">
+              <span class="flex flex-1 items-center min-w-0">
                 {node.icon && <ExampleCategoryIcon icon={node.icon} />}
                 {node.href ? (
                   <a
-                    class="sidebar-menu__summary-link"
+                    data-sidebar-category-link class="min-w-0 truncate text-inherit no-underline focus-visible:[outline:2px_solid_var(--brand)] focus-visible:outline-offset-[-2px]"
                     href={node.href}
                     aria-current={node.current ? 'page' : undefined}
                     title={node.label}
@@ -61,12 +61,12 @@ const containsCurrent = (node: SidebarMenuNode): boolean =>
                     {node.label}
                   </a>
                 ) : (
-                  <span class="sidebar-menu__text" title={node.label}>
+                  <span class="min-w-0 truncate text-inherit" title={node.label}>
                     {node.label}
                   </span>
                 )}
               </span>
-              <span class:list={["sidebar-menu__chevron", variant === 'examples' && "[transform:rotate(45deg)]! [[open]>summary_&]:[transform:rotate(225deg)]!"]} aria-hidden="true" />
+              <span class:list={["shrink-0 basis-[7px] size-[7px] ml-3 mr-[3px] [border-right:1px_solid_currentColor] [border-bottom:1px_solid_currentColor] opacity-55 [transition:transform_0.2s]", variant === 'examples' ? "[transform:rotate(45deg)] [[open]>summary_&]:[transform:rotate(225deg)]" : "[transform:rotate(-45deg)] [[open]>summary_&]:[transform:rotate(45deg)_translate(-1px,-1px)]"]} aria-hidden="true" />
             </summary>
             <Astro.self
               nodes={children}
@@ -91,14 +91,14 @@ const containsCurrent = (node: SidebarMenuNode): boolean =>
           </a>
         ) : node.href ? (
           <a
-            class="sidebar-menu__link"
+            class={`${menuItemClass} focus-visible:[outline:2px_solid_var(--brand)] focus-visible:outline-offset-[-2px]`}
             data-demo-link={variant === 'examples' && depth === 2 ? true : undefined}
             href={node.href}
             aria-current={node.current ? 'page' : undefined}
             title={node.label}
           >
             {node.icon && <ExampleCategoryIcon icon={node.icon} />}
-            <span class="sidebar-menu__text">{node.label}</span>
+            <span class="min-w-0 flex-1 truncate text-inherit">{node.label}</span>
           </a>
         ) : null}
       </li>

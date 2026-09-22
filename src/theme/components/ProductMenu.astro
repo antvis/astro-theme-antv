@@ -1,17 +1,18 @@
 ---
 interface Props {
   locale: 'zh' | 'en';
+  summaryClass: string;
 }
 
-const { locale } = Astro.props;
+const { locale, summaryClass } = Astro.props;
 ---
 
-<details class="header-menu static [&_>_summary]:relative" data-products-menu>
-  <summary aria-label={locale === 'zh' ? '所有产品' : 'All products'}>
+<details class="static h-full [&>summary]:relative [&>summary]:gap-[7px] [&>summary]:list-none [&>summary::-webkit-details-marker]:hidden [@media(width<=900px)]:block [@media(width<=900px)]:w-full [@media(width<=900px)]:h-auto [@media(width<=900px)]:[&>summary]:justify-between [.antv-site-header.home-header_&]:[@media(width>=901px)]:flex [.antv-site-header.home-header_&]:[@media(width>=901px)]:items-center" data-products-menu>
+  <summary class={summaryClass} aria-label={locale === 'zh' ? '所有产品' : 'All products'}>
     <span>{locale === 'zh' ? '所有产品' : 'Products'}</span>
-    <span class="nav-chevron" aria-hidden="true"></span>
+    <span class="size-[7px] [border-right:1.5px_solid_currentColor] [border-bottom:1.5px_solid_currentColor] text-[var(--muted-light)] [transform:translateY(-2px)_rotate(45deg)] origin-center [transition:transform_0.2s_ease] [[open]>summary_&]:[transform:translateY(2px)_rotate(225deg)]" aria-hidden="true"></span>
   </summary>
-  <div class="absolute top-[var(--header-height)] right-0 left-0 block w-auto max-h-[calc(100dvh_-_var(--header-height)_-_12px)] overflow-auto [border-width:1px_0] [border-style:solid] [border-color:var(--border-soft)_transparent_var(--border)] rounded-none [background:var(--surface-raised)] [box-shadow:inset_0_2px_8px_#f0f1f2,_0_8px_16px_rgb(29_33_41_/_6%)] p-0 [@media(width<=900px)]:static [@media(width<=900px)]:max-h-[none] [@media(width<=900px)]:[box-shadow:none] [@media(width<=900px)]:[border-width:1px_0]">
+  <div class="min-w-30 absolute top-[var(--header-height)] right-0 left-0 block w-auto max-h-[calc(100dvh_-_var(--header-height)_-_12px)] overflow-auto [border-width:1px_0] [border-style:solid] [border-color:var(--border-soft)_transparent_var(--border)] rounded-none [background:var(--surface-raised)] [box-shadow:inset_0_2px_8px_#f0f1f2,_0_8px_16px_rgb(29_33_41_/_6%)] p-0 [@media(width<=900px)]:static [@media(width<=900px)]:max-h-[none] [@media(width<=900px)]:[box-shadow:none] [@media(width<=900px)]:[border-width:1px_0]">
     <div
       class="w-[min(100%,_1520px)] min-h-60 pt-2 pb-9.5 mx-auto my-0 px-10 [@media(width<=900px)]:pt-1 [@media(width<=900px)]:pb-6 [@media(900px<width<=1320px)]:px-7 [@media(700px<width<=900px)]:px-6 [@media(width<=700px)]:px-4.5"
       data-products-list
@@ -19,7 +20,7 @@ const { locale } = Astro.props;
       aria-live="polite"
       aria-busy="true"
     >
-      <div class="product-loading flex items-center justify-center gap-2.5 min-h-31 text-[var(--muted)] text-[12px] [&_>_span]:w-3.5 [&_>_span]:h-3.5 [&_>_span]:[border:2px_solid_var(--border)] [&_>_span]:[border-top-color:var(--brand)] [&_>_span]:rounded-[50%]" data-products-loading>
+      <div class="[&>span]:animate-spin [&>span]:[animation-duration:0.8s] flex items-center justify-center gap-2.5 min-h-31 text-[var(--muted)] text-[12px] [&_>_span]:w-3.5 [&_>_span]:h-3.5 [&_>_span]:[border:2px_solid_var(--border)] [&_>_span]:[border-top-color:var(--brand)] [&_>_span]:rounded-[50%]" data-products-loading>
         <span aria-hidden="true"></span>
         {locale === 'zh' ? '正在加载产品…' : 'Loading products…'}
       </div>
@@ -34,7 +35,7 @@ const { locale } = Astro.props;
   </template>
   <template data-product-card-template>
     <article class="grid [grid-template-columns:32px_minmax(0,_1fr)] [align-items:start] gap-3 min-w-0 min-h-23 text-[var(--text)] px-0 py-[3px] [@media(width<=700px)]:min-h-0">
-      <span class="product-mark relative grid w-8 h-8 place-items-center mt-[1px] overflow-hidden rounded-none [background:transparent] text-[var(--brand-strong)] text-[10px] font-bold" aria-hidden="true" data-product-mark>
+      <span class="[font-family:SFMono-Regular,Consolas,monospace] relative grid w-8 h-8 place-items-center mt-[1px] overflow-hidden rounded-none [background:transparent] text-[var(--brand-strong)] text-[10px] font-bold" aria-hidden="true" data-product-mark>
         <img class="absolute [inset:0] w-full h-full object-contain" alt="" loading="lazy" decoding="async" />
       </span>
       <div class="flex min-w-0 flex-col">
@@ -51,7 +52,7 @@ const { locale } = Astro.props;
     <a class="rounded-none [background:transparent] text-[color-mix(in_srgb,_var(--brand)_72%,_#4f7cff)] text-[12px] font-medium leading-[18px] [text-decoration:none] p-0 hover:[background:transparent] hover:text-[var(--brand-strong)] hover:[text-decoration:underline] hover:[text-underline-offset:3px] focus-visible:[background:transparent] focus-visible:text-[var(--brand-strong)] focus-visible:[text-decoration:underline] focus-visible:[text-underline-offset:3px]"></a>
   </template>
   <template data-product-error-template>
-    <div class="product-error flex items-center justify-center gap-2.5 min-h-31 text-[var(--muted)] text-[12px] [&_button]:[border:1px_solid_color-mix(in_srgb,_var(--brand)_30%,_var(--border))] [&_button]:rounded-[var(--radius-small)] [&_button]:[background:var(--brand-soft)] [&_button]:text-[var(--brand-strong)] [&_button]:cursor-pointer [&_button]:font-semibold [&_button]:px-2.5 [&_button]:py-[5px] [&_button:hover]:[border-color:var(--brand)] [&_button:focus-visible]:[border-color:var(--brand)]">
+    <div class="flex items-center justify-center gap-2.5 min-h-31 text-[var(--muted)] text-[12px] [&_button]:[border:1px_solid_color-mix(in_srgb,_var(--brand)_30%,_var(--border))] [&_button]:rounded-[var(--radius-small)] [&_button]:[background:var(--brand-soft)] [&_button]:text-[var(--brand-strong)] [&_button]:cursor-pointer [&_button]:font-semibold [&_button]:px-2.5 [&_button]:py-[5px] [&_button:hover]:[border-color:var(--brand)] [&_button:focus-visible]:[border-color:var(--brand)]">
       <span>{locale === 'zh' ? '产品数据暂时无法加载' : 'Products are temporarily unavailable'}</span>
       <button type="button">{locale === 'zh' ? '重新加载' : 'Try again'}</button>
     </div>

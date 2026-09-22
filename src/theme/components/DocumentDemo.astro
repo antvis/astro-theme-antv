@@ -65,9 +65,9 @@ const toolClass = 'flex size-7 shrink-0 cursor-pointer items-center justify-cent
     <pre data-demo-error role="alert" hidden class="absolute inset-x-3 top-3 z-1 m-0! max-h-full overflow-auto whitespace-pre-wrap bg-red-50 text-red-700 [&[hidden]]:hidden"></pre>
   </div>
   <div id={panelId} data-demo-panel class="relative min-w-0 bg-[var(--surface)] [&[hidden]]:hidden">
-    <button type="button" hidden data-demo-copy data-copied={isZh ? '已复制' : 'Copied'} data-copy-error={isZh ? '复制失败' : 'Copy failed'} title={copyLabel} class="markdown-code-copy top-2! right-2! z-2! opacity-100! pointer-events-auto! transform-none! disabled:cursor-wait [&[hidden]]:hidden [&_svg]:block [&_svg]:size-4">
-      <span class="markdown-code-copy-icon is-copy" set:html={copyIcon}></span>
-      <span class="markdown-code-copy-icon is-success" set:html={checkIcon}></span>
+    <button type="button" hidden data-demo-copy data-copied={isZh ? '已复制' : 'Copied'} data-copy-error={isZh ? '复制失败' : 'Copy failed'} title={copyLabel} class="group/code-copy absolute z-2 top-2 right-2 grid size-8 p-0 place-items-center [border:1px_solid_color-mix(in_srgb,var(--border-strong)_58%,transparent)] rounded-lg bg-[color-mix(in_srgb,var(--surface-raised)_90%,transparent)] shadow-[0_3px_10px_rgb(30_27_41/6%)] text-[var(--muted-light)] cursor-pointer [transition:opacity_0.16s,color_0.16s,border-color_0.16s,background_0.16s,transform_0.16s] hover:border-[color-mix(in_srgb,var(--brand)_34%,var(--border))] hover:bg-[var(--surface-raised)] hover:text-[var(--brand-strong)] data-[copy-state=success]:border-[color-mix(in_srgb,var(--success)_40%,var(--border))] data-[copy-state=success]:text-[var(--success)] data-[copy-state=error]:border-[color-mix(in_srgb,var(--danger)_38%,var(--border))] data-[copy-state=error]:text-[var(--danger)] disabled:cursor-wait [&[hidden]]:hidden [&_svg]:block [&_svg]:size-4">
+      <span class="size-4 fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8] block group-data-[copy-state=success]/code-copy:hidden" set:html={copyIcon}></span>
+      <span class="size-4 fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8] hidden group-data-[copy-state=success]/code-copy:block" set:html={checkIcon}></span>
       <span data-demo-copy-label class="sr-only" aria-live="polite">{copyLabel}</span>
     </button>
     <pre data-demo-source class="max-h-130 overflow-auto [&[hidden]]:hidden"><code class="language-ts">{source}</code></pre>

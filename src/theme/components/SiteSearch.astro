@@ -41,7 +41,7 @@ const developmentSearch = import.meta.env.ANTV_SITE_DEVELOPMENT === 'true';
         <kbd>Esc</kbd>
       </button>
     </header>
-    <div class="search-input-shell grid [grid-template-columns:24px_minmax(0,_1fr)_30px] items-center gap-2.5 [border:1px_solid_var(--border)] rounded-[11px] [background:var(--surface-subtle)] [box-shadow:inset_0_1px_2px_rgb(30_22_48_/_3%)] mx-4 my-0 px-3.5 py-0 [@media(width<=700px)]:mx-2.5 [&:focus-within]:[border-color:color-mix(in_srgb,_var(--brand)_65%,_var(--border))] [&:focus-within]:[background:var(--surface-raised)] [&:focus-within]:[box-shadow:0_0_0_3px_color-mix(in_srgb,_var(--brand)_12%,_transparent)] [&_svg]:w-[21px] [&_svg]:h-[21px] [&_svg]:[fill:none] [&_svg]:[stroke:var(--muted-light)] [&_svg]:[stroke-linecap:round] [&_svg]:[stroke-width:1.7] [&_input]:w-full [&_input]:h-14 [&_input]:[border:0] [&_input]:[outline:0] [&_input]:[background:transparent] [&_input]:text-[var(--text-strong)] [&_input]:text-[17px] [&_input]:p-0 [@media(width<=700px)]:[&_input]:h-13 [@media(width<=700px)]:[&_input]:text-[16px] [&_input::placeholder]:text-[var(--muted-light)] [&_input::-webkit-search-cancel-button]:hidden">
+    <div class="[transition:border-color_0.16s,box-shadow_0.16s,background_0.16s] grid [grid-template-columns:24px_minmax(0,_1fr)_30px] items-center gap-2.5 [border:1px_solid_var(--border)] rounded-[11px] [background:var(--surface-subtle)] [box-shadow:inset_0_1px_2px_rgb(30_22_48_/_3%)] mx-4 my-0 px-3.5 py-0 [@media(width<=700px)]:mx-2.5 [&:focus-within]:[border-color:color-mix(in_srgb,_var(--brand)_65%,_var(--border))] [&:focus-within]:[background:var(--surface-raised)] [&:focus-within]:[box-shadow:0_0_0_3px_color-mix(in_srgb,_var(--brand)_12%,_transparent)] [&_svg]:w-[21px] [&_svg]:h-[21px] [&_svg]:[fill:none] [&_svg]:[stroke:var(--muted-light)] [&_svg]:[stroke-linecap:round] [&_svg]:[stroke-width:1.7] [&_input]:w-full [&_input]:h-14 [&_input]:[border:0] [&_input]:[outline:0] [&_input]:[background:transparent] [&_input]:text-[var(--text-strong)] [&_input]:text-[17px] [&_input]:p-0 [@media(width<=700px)]:[&_input]:h-13 [@media(width<=700px)]:[&_input]:text-[16px] [&_input::placeholder]:text-[var(--muted-light)] [&_input::-webkit-search-cancel-button]:hidden">
       <svg aria-hidden="true" viewBox="0 0 20 20">
         <circle cx="8.5" cy="8.5" r="5.5"></circle>
         <path d="m13 13 4 4"></path>
@@ -261,7 +261,7 @@ const developmentSearch = import.meta.env.ANTV_SITE_DEVELOPMENT === 'true';
           const isExample = withoutSiteBase(parsedUrl.pathname).includes('/examples/');
           const option = document.createElement('a');
           option.id = `site-search-result-${index}`;
-          option.className = 'search-result relative block pt-[13px] pr-4 pb-3 pl-4.5 [border-bottom:1px_solid_var(--border-soft)] rounded-[8px] text-[var(--text)] [@media(width<=700px)]:pr-3 [@media(width<=700px)]:pl-3.5 [&::before]:absolute [&::before]:top-3 [&::before]:bottom-3 [&::before]:left-0 [&::before]:w-0.5 [&::before]:rounded-[2px] [&::before]:[background:var(--brand)] [&::before]:opacity-0 [&[data-selected]]:[background:var(--brand-soft)] [&[data-selected]]:text-[var(--text)] [&[data-selected]::before]:opacity-100 [&_mark]:[background:transparent] [&_mark]:text-[var(--brand-strong)] [&_mark]:p-0';
+          option.className = '[transition:background_0.12s,color_0.12s] before:content-[""] relative block pt-[13px] pr-4 pb-3 pl-4.5 [border-bottom:1px_solid_var(--border-soft)] rounded-[8px] text-[var(--text)] [@media(width<=700px)]:pr-3 [@media(width<=700px)]:pl-3.5 [&::before]:absolute [&::before]:top-3 [&::before]:bottom-3 [&::before]:left-0 [&::before]:w-0.5 [&::before]:rounded-[2px] [&::before]:[background:var(--brand)] [&::before]:opacity-0 [&[data-selected]]:[background:var(--brand-soft)] [&[data-selected]]:text-[var(--text)] [&[data-selected]::before]:opacity-100 [&_mark]:[background:transparent] [&_mark]:text-[var(--brand-strong)] [&_mark]:p-0';
           option.href = href;
           option.setAttribute('role', 'option');
           option.setAttribute('aria-selected', String(index === 0));
@@ -279,7 +279,7 @@ const developmentSearch = import.meta.env.ANTV_SITE_DEVELOPMENT === 'true';
           heading.append(title, badge);
 
           const path = document.createElement('span');
-          path.className = 'search-result-path block mt-0.5 overflow-hidden text-[var(--muted-light)] text-[11px] text-ellipsis whitespace-nowrap';
+          path.className = '[font-family:SFMono-Regular,Consolas,Liberation_Mono,Menlo,monospace] block mt-0.5 overflow-hidden text-[var(--muted-light)] text-[11px] text-ellipsis whitespace-nowrap';
           path.textContent = displayPath(data.url);
           const excerpt = document.createElement('p');
           excerpt.className = '[display:-webkit-box] mt-1.5 mb-0 overflow-hidden text-[var(--muted)] text-[12px] leading-[1.55] [-webkit-box-orient:vertical] [-webkit-line-clamp:1] mx-0';

@@ -121,7 +121,7 @@ const prepareNodes = (entries: Node[]): number => {
 prepareNodes(nodes);
 ---
 
-<aside class="docs-sidebar">
+<aside class="sticky top-[var(--header-height)] self-start max-h-[calc(100dvh_-_var(--header-height))] overflow-x-hidden overflow-y-auto pb-12 [border-right:1px_solid_var(--border-soft)] bg-[var(--surface-raised)] [@media(width<=900px)]:static [@media(width<=900px)]:max-h-85 [@media(width<=900px)]:mt-6 [@media(width<=900px)]:mb-8 [@media(width<=900px)]:p-4 [@media(width<=900px)]:overflow-auto [@media(width<=900px)]:[border:1px_solid_var(--border)] [@media(width<=900px)]:rounded-[var(--radius-medium)] [@media(width<=900px)]:bg-[var(--surface-subtle)] pt-2">
   <nav aria-label={locale === 'zh' ? '文档目录' : 'Documentation'}>
     <SidebarMenu nodes={nodes} variant="docs" />
   </nav>

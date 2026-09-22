@@ -167,8 +167,8 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
       const metadata = 'link[rel="canonical"], link[rel="alternate"][hreflang], meta[property^="og:"], meta[name^="twitter:"], meta[name="description"], script[type="application/ld+json"]';
       document.head.querySelectorAll(metadata).forEach((element) => element.remove());
       page.head.querySelectorAll(metadata).forEach((element) => document.head.append(element));
-      const localeLink = document.querySelector<HTMLAnchorElement>('.nav-icon-action[hreflang]');
-      const nextLocaleLink = page.querySelector<HTMLAnchorElement>('.nav-icon-action[hreflang]');
+      const localeLink = document.querySelector<HTMLAnchorElement>('[data-nav-icon][hreflang]');
+      const nextLocaleLink = page.querySelector<HTMLAnchorElement>('[data-nav-icon][hreflang]');
       if (localeLink && nextLocaleLink) localeLink.href = nextLocaleLink.href;
       sidebar.querySelector('[data-demo-link][aria-current="page"]')?.removeAttribute('aria-current');
       const selected = links.get(url)!;

@@ -64,7 +64,7 @@ const nodes = navigationCategories.map((category) => ({
 ---
 
 <aside
-  class:list={["docs-sidebar examples-sidebar", !isCatalog && "z-10 [@media(width>1080px)]:h-full [@media(width>1080px)]:max-h-full"]}
+  class:list={["sticky top-[var(--header-height)] self-start max-h-[calc(100dvh_-_var(--header-height))] overflow-x-hidden overflow-y-auto pb-12 [border-right:1px_solid_var(--border-soft)] bg-[var(--surface-raised)] [@media(width<=900px)]:static [@media(width<=900px)]:max-h-85 [@media(width<=900px)]:mt-6 [@media(width<=900px)]:mb-8 [@media(width<=900px)]:p-4 [@media(width<=900px)]:overflow-auto [@media(width<=900px)]:[border:1px_solid_var(--border)] [@media(width<=900px)]:rounded-[var(--radius-medium)] [@media(width<=900px)]:bg-[var(--surface-subtle)] pt-6", !isCatalog && "z-10 [@media(width>1080px)]:h-full [@media(width>1080px)]:max-h-full"]}
   data-example-sidebar
   data-example-catalog={isCatalog ? 'true' : undefined}
 >
@@ -177,7 +177,7 @@ const nodes = navigationCategories.map((category) => ({
     }
 
     const rootMenu = sidebar.querySelector<HTMLElement>(
-      'nav > .sidebar-menu',
+      'nav > [data-sidebar-menu]',
     );
     const categoryItems = rootMenu
       ? [...rootMenu.children].filter(
@@ -202,19 +202,19 @@ const nodes = navigationCategories.map((category) => ({
       categoryItems.forEach((item) => {
         const selected = item.dataset.sidebarKey === categorySlug;
         const details = item.querySelector<HTMLDetailsElement>(
-          ':scope > .sidebar-menu__details',
+          ':scope > [data-sidebar-details]',
         );
         const summary = details?.querySelector<HTMLElement>(
-          ':scope > .sidebar-menu__summary',
+          ':scope > [data-sidebar-summary]',
         );
         const categoryLink = summary?.querySelector<HTMLAnchorElement>(
-          '.sidebar-menu__summary-link',
+          '[data-sidebar-category-link]',
         );
         const groupLinks = [
           ...item.querySelectorAll<HTMLAnchorElement>('a[href^="#group-"]'),
         ];
 
-        summary?.classList.toggle('is-current', selected);
+        summary?.toggleAttribute('data-current', selected);
         if (categoryLink) {
           if (selected) categoryLink.setAttribute('aria-current', 'location');
           else categoryLink.removeAttribute('aria-current');

@@ -1,6 +1,6 @@
 /* The theme owns the reset; utilities override its unlayered styles. */
 /* Reserve the full order before external components register their reset layers. */
-@layer theme, base, components, utilities;
+@layer accessibility, theme, base, components, utilities;
 @import 'tailwindcss/theme.css' layer(theme);
 
 /* The QA SDK owns its utilities, including UI portaled to body via data-slot. */
@@ -10,6 +10,22 @@
 
 /* Consumer sources are scanned automatically; include the installed theme too. */
 @source "../";
+@source "../../markdown.js";
+@source "../../markdown.ts";
 
 @custom-variant tablet (@media (max-width: 1200px));
 @custom-variant mobile (@media (max-width: 640px));
+
+/* Important reduced-motion rules must precede the important utilities layer. */
+@layer accessibility {
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
+}

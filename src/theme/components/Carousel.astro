@@ -77,7 +77,7 @@ const { locale, label, pageLabel, disabled = false, list = false } = Astro.props
       for (let index = 0; index < count; index += 1) {
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = 'antv-carousel-dot size-2.5 p-0 border-0 rounded-[50%] bg-[var(--brand)] cursor-pointer opacity-20 enabled:hover:opacity-55 focus-visible:opacity-55 focus-visible:outline-2 focus-visible:[outline-style:solid] focus-visible:outline-[color-mix(in_srgb,var(--brand)_65%,white)] focus-visible:[outline-offset:4px] [&[aria-current=true]]:opacity-100 [&[aria-current=true]]:[transform:scale(1.08)] disabled:cursor-not-allowed';
+        button.className = '[transition:opacity_0.22s,transform_0.22s] size-2.5 p-0 border-0 rounded-[50%] bg-[var(--brand)] cursor-pointer opacity-20 enabled:hover:opacity-55 focus-visible:opacity-55 focus-visible:outline-2 focus-visible:[outline-style:solid] focus-visible:outline-[color-mix(in_srgb,var(--brand)_65%,white)] focus-visible:[outline-offset:4px] [&[aria-current=true]]:opacity-100 [&[aria-current=true]]:[transform:scale(1.08)] disabled:cursor-not-allowed';
         button.setAttribute('aria-label', pageLabel.replace('{page}', String(index + 1)));
         button.addEventListener('click', () => {
           if (!canScroll()) return;

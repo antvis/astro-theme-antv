@@ -8,11 +8,11 @@ const visible = headings.filter((heading) => heading.depth >= 2 && heading.depth
 ---
 
 {visible.length > 0 && (
-  <aside class="page-toc">
+  <aside class="sticky top-[var(--header-height)] self-start max-h-[calc(100dvh_-_var(--header-height))] overflow-x-hidden overflow-y-auto w-[var(--toc-width)] pt-2 pr-0 pb-12 pl-6 [border-left:1px_solid_var(--border-soft)] bg-[var(--surface-raised)] text-[12px] [@media(width<=1320px)]:hidden">
     <div class="sidebar-title">{locale === 'zh' ? '本页内容' : 'On this page'}</div>
-    <ol>
+    <ol class="m-0 p-0 list-none">
       {visible.map((heading) => (
-        <li class:list={[`toc-depth-${heading.depth}`]}><a href={`#${heading.slug}`}>{heading.text}</a></li>
+        <li><a class:list={["block my-px mr-0 -ml-px py-[7px] px-3 [border-left:1px_solid_var(--border-soft)] rounded-none text-[13px] leading-[1.5] no-underline hover:[border-left:3px_solid_var(--brand)]", heading.depth === 3 ? "pl-6 text-[var(--muted)] hover:text-[var(--muted)]" : "text-[var(--text)] hover:text-[var(--brand)]"]} href={`#${heading.slug}`}>{heading.text}</a></li>
       ))}
     </ol>
   </aside>
