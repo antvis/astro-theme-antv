@@ -213,8 +213,8 @@ async function expandLegacyCodeSources(
     const source = await readFile(sourcePath, "utf8");
     const language = extname(sourcePath).replace(/^\./, "") || "text";
     const replacement = [
-      `<figure class="legacy-code-reference" data-code-src="${escapeHtml(match[1])}">`,
-      `<figcaption>${escapeHtml(match[1])}</figcaption>`,
+      `<figure data-code-src="${escapeHtml(match[1])}">`,
+      `<figcaption class="mb-[4px] text-[var(--muted-light)] [font-family:SFMono-Regular,Consolas,monospace] text-[12px]">${escapeHtml(match[1])}</figcaption>`,
       `<pre><code class="language-${escapeHtml(language)}">${escapeHtml(source)}</code></pre>`,
       "</figure>",
     ].join("\n");

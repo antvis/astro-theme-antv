@@ -83,6 +83,10 @@ const versionEntries = Object.entries(config.versions);
 const currentVersion = versionEntries[0]?.[0];
 const isAntVSite = config.site.title.trim().toLocaleLowerCase() === 'antv';
 const searchEnabled = config.search.enabled;
+// The layout owns the page canvas, including the default product homepage.
+const homeBackgroundClass = pageType === 'home' && !isAntVSite
+  ? '[background:radial-gradient(circle_at_74%_8%,color-mix(in_srgb,var(--brand)_10%,transparent),transparent_32%),radial-gradient(circle_at_12%_28%,color-mix(in_srgb,#8aa7ff_8%,transparent),transparent_28%),var(--home-background)]'
+  : '';
 const footerHref = config.footer.groups === null ? withBase : localHref;
 const footerGroups = (config.footer.groups ?? defaultFooterGroups).map((group) => ({
   ...group,
@@ -153,12 +157,12 @@ const navItemClass = [
     {themeOverrides && <style is:inline set:html={themeOverrides} />}
     <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
   </head>
-  <body class:list={[`page-${pageType}`, isAntVSite && 'antv-site', '[@media(width<=900px)]:[&.mobile-nav-open]:overflow-hidden']}>
+  <body class:list={[`page-${pageType}`, isAntVSite && 'antv-site', homeBackgroundClass, pageType === 'qa' && 'h-dvh min-h-dvh overflow-hidden', '[@media(width<=900px)]:[&.mobile-nav-open]:overflow-hidden']}>
     <a class="fixed top-2.5 left-2.5 z-500 py-2.5 px-3.5 rounded-[var(--radius-small)] bg-[var(--text-strong)] text-[var(--surface)] [transform:translateY(-160%)] focus:transform-none" href="#main-content">
       {locale === 'zh' ? '跳到主要内容' : 'Skip to content'}
     </a>
     <Loading locale={locale} page />
-    <div class:list={["site-canvas", pageType === 'demo' && "[@media(width>1080px)]:flex [@media(width>1080px)]:h-dvh [@media(width>1080px)]:flex-col [@media(width>1080px)]:overflow-hidden [&>header]:shrink-0 [&>antv-announcement]:shrink-0"]}>
+    <div class:list={["site-canvas min-h-dvh", homeBackgroundClass || "bg-[var(--surface-raised)]", pageType === 'demo' && "[@media(width>1080px)]:flex [@media(width>1080px)]:h-dvh [@media(width>1080px)]:flex-col [@media(width>1080px)]:overflow-hidden [&>header]:shrink-0 [&>antv-announcement]:shrink-0"]}>
     <Announcement locale={locale} />
     <header class:list={['site-header top-0 z-200 h-[var(--header-height)] [border-bottom:1px_solid_var(--border-soft)] [transition:background_0.3s,box-shadow_0.3s]', pageType === 'home' ? 'home-header shadow-none' : 'sticky bg-[color-mix(in_srgb,var(--surface-raised)_96%,transparent)] shadow-[var(--header-shadow,0_2px_8px_#f0f1f2)]', pageType === 'home' && (isAntVSite ? 'relative mb-[calc(-1*var(--header-height))] border-b-black/10 bg-transparent has-[[data-products-menu][open]]:bg-[var(--surface-raised)] has-[#primary-nav[data-open]]:bg-[var(--surface-raised)] has-[#primary-nav[data-open]]:sticky' : 'sticky bg-[var(--home-background)]'), isAntVSite && 'antv-site-header']} data-pagefind-ignore>
       <div class:list={["flex items-center justify-between h-full mx-auto py-0", isAntVSite && pageType === "home" ? "w-full px-5" : "w-[var(--content-width)] [@media(width<=900px)]:w-[calc(100%_-_32px)]", pageType !== "home" ? "px-10 [@media(width<=900px)]:px-0" : !isAntVSite && "px-6"]}>
@@ -226,10 +230,10 @@ const navItemClass = [
         </nav>
       </div>
     </header>
-    <main id="main-content" class:list={[pageType === 'demo' && "[@media(width>1080px)]:min-h-0 [@media(width>1080px)]:flex-1"]} data-pagefind-body={isRootHome ? undefined : true}>
+    <main id="main-content" class:list={[pageType === 'home' && "overflow-hidden", pageType === 'qa' && "h-[calc(100dvh_-_var(--header-height))] min-h-0 overflow-hidden", pageType === 'demo' && "[@media(width>1080px)]:min-h-0 [@media(width>1080px)]:flex-1"]} data-pagefind-body={isRootHome ? undefined : true}>
       <slot />
     </main>
-    {pageType !== 'demo' && <SiteFooter
+    {pageType !== 'demo' && pageType !== 'qa' && <SiteFooter
       locale={locale}
       groups={footerGroups}
       description={localize(config.footer.description, locale)}

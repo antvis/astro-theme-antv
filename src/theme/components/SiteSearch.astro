@@ -456,3 +456,16 @@ const developmentSearch = import.meta.env.ANTV_SITE_DEVELOPMENT === 'true';
 
   mountSiteSearch();
 </script>
+
+<style>
+  .search-dialog {
+    animation: search-dialog-in 160ms ease-out;
+  }
+
+  @keyframes search-dialog-in {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.99);
+    }
+  }
+</style>
