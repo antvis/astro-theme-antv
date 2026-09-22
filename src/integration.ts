@@ -60,8 +60,22 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration {
         updateConfig({
           site: config.site.origin,
           trailingSlash: "always",
-          build: { format: "directory", assets: "_assets" },
-          markdown: { processor: theme.markdownProcessor },
+          build: {
+            format: "directory",
+            assets: "_assets",
+            // Keep compiled CSS out of the readable document/example HTML.
+            inlineStylesheets: "never",
+          },
+          markdown: {
+            processor: theme.markdownProcessor,
+            shikiConfig: {
+              langAlias: {
+                // Legacy API docs use `sign` for TypeScript method signatures.
+                sign: "typescript",
+                ...astroConfig.markdown.shikiConfig?.langAlias,
+              },
+            },
+          },
           vite: {
             define: {
               "import.meta.env.ANTV_SITE_DEVELOPMENT": JSON.stringify(
