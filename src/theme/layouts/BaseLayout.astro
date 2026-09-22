@@ -18,6 +18,7 @@ import { withBase } from '../lib/paths';
 import { getGeneratedRoutes } from '../lib/routes';
 import { config } from '../lib/site';
 import '../styles/global.css';
+import '../styles/markdown.css';
 import '../styles/tailwind.css';
 
 interface Props {
@@ -83,6 +84,10 @@ const versionEntries = Object.entries(config.versions);
 const currentVersion = versionEntries[0]?.[0];
 const isAntVSite = config.site.title.trim().toLocaleLowerCase() === 'antv';
 const searchEnabled = config.search.enabled;
+// The layout owns the page canvas, including the default product homepage.
+const homeBackgroundClass = pageType === 'home' && !isAntVSite
+  ? '[background:radial-gradient(circle_at_74%_8%,color-mix(in_srgb,var(--brand)_10%,transparent),transparent_32%),radial-gradient(circle_at_12%_28%,color-mix(in_srgb,#8aa7ff_8%,transparent),transparent_28%),var(--home-background)]'
+  : '';
 const footerHref = config.footer.groups === null ? withBase : localHref;
 const footerGroups = (config.footer.groups ?? defaultFooterGroups).map((group) => ({
   ...group,
@@ -115,6 +120,14 @@ const structuredData = {
     url: new URL(withBase('/'), config.site.origin).href,
   },
 };
+const navItemClass = [
+  'inline-flex items-center h-full m-0 py-0 border-0 rounded-none bg-transparent shadow-none text-[#697b8c] [font-family:inherit] text-[14px] font-normal tracking-normal no-underline cursor-pointer [transition:color_0.3s,box-shadow_0.3s] hover:text-[var(--brand)] aria-[current=page]:shadow-[inset_0_2px_0_var(--brand)] aria-[current=page]:text-[var(--brand-strong)]',
+  '[@media(width<=900px)]:w-full [@media(width<=900px)]:min-h-[58px] [@media(width<=900px)]:h-auto [@media(width<=900px)]:px-6 [@media(width<=900px)]:text-[16px] [@media(width<=900px)]:aria-[current=page]:bg-[var(--brand-soft)] [@media(width<=900px)]:aria-[current=page]:shadow-none',
+  isAntVSite && pageType === 'home'
+    ? '[@media(width>=901px)]:h-8 [@media(width>=901px)]:px-3 [@media(width>=901px)]:rounded-md [@media(width>=901px)]:text-[#424e66] [@media(width>=901px)]:text-[16px] [@media(width>=901px)]:shadow-none [@media(width>=901px)]:hover:text-[#424e66] [@media(width>=901px)]:hover:bg-white [@media(width>=901px)]:hover:shadow-[0_2px_5px_rgb(0_0_0/10%)]'
+    : '[@media(width>1320px)]:px-[9px] [@media(900px<width<=1320px)]:px-2',
+].join(' ');
+
 ---
 
 <!doctype html>
@@ -145,22 +158,22 @@ const structuredData = {
     {themeOverrides && <style is:inline set:html={themeOverrides} />}
     <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
   </head>
-  <body class:list={[`page-${pageType}`, isAntVSite && 'antv-site']}>
-    <a class="skip-link" href="#main-content">
+  <body class:list={[`page-${pageType}`, isAntVSite && 'antv-site', homeBackgroundClass, pageType === 'qa' && 'h-dvh min-h-dvh overflow-hidden', '[@media(width<=900px)]:[&.mobile-nav-open]:overflow-hidden']}>
+    <a class="fixed top-2.5 left-2.5 z-500 py-2.5 px-3.5 rounded-[var(--radius-small)] bg-[var(--text-strong)] text-[var(--surface)] [transform:translateY(-160%)] focus:transform-none" href="#main-content">
       {locale === 'zh' ? '跳到主要内容' : 'Skip to content'}
     </a>
     <Loading locale={locale} page />
-    <div class:list={["site-canvas", pageType === 'demo' && "[@media(width>1080px)]:flex [@media(width>1080px)]:h-dvh [@media(width>1080px)]:flex-col [@media(width>1080px)]:overflow-hidden [&>header]:shrink-0 [&>antv-announcement]:shrink-0"]}>
+    <div class:list={["site-canvas min-h-dvh", homeBackgroundClass || "bg-[var(--surface-raised)]", pageType === 'demo' && "[@media(width>1080px)]:flex [@media(width>1080px)]:h-dvh [@media(width>1080px)]:flex-col [@media(width>1080px)]:overflow-hidden [&>header]:shrink-0 [&>antv-announcement]:shrink-0"]}>
     <Announcement locale={locale} />
-    <header class:list={['site-header', pageType === 'home' && 'home-header', isAntVSite && 'antv-site-header']} data-pagefind-ignore>
-      <div class="header-inner">
+    <header class:list={['site-header top-0 z-200 h-[var(--header-height)] [border-bottom:1px_solid_var(--border-soft)] [transition:background_0.3s,box-shadow_0.3s]', pageType === 'home' ? 'home-header shadow-none' : 'sticky bg-[color-mix(in_srgb,var(--surface-raised)_96%,transparent)] shadow-[var(--header-shadow,0_2px_8px_#f0f1f2)]', pageType === 'home' && (isAntVSite ? 'relative mb-[calc(-1*var(--header-height))] border-b-black/10 bg-transparent has-[[data-products-menu][open]]:bg-[var(--surface-raised)] has-[#primary-nav[data-open]]:bg-[var(--surface-raised)] has-[#primary-nav[data-open]]:sticky' : 'sticky bg-[var(--home-background)]'), isAntVSite && 'antv-site-header']} data-pagefind-ignore>
+      <div class:list={["flex items-center justify-between h-full mx-auto py-0", isAntVSite && pageType === "home" ? "w-full px-5" : "w-[var(--content-width)] [@media(width<=900px)]:w-[calc(100%_-_32px)]", pageType !== "home" ? "px-10 [@media(width<=900px)]:px-0" : !isAntVSite && "px-6"]}>
         <a class="brand inline-flex items-center h-full text-[var(--text-strong)] whitespace-nowrap" href={withBase(`/${locale}/`)} aria-label={`${config.site.title} home`}>
           {config.site.logo ? (
             <img class="brand-logo w-auto h-7.5 object-contain" src={withBase(config.site.logo)} alt="AntV" />
           ) : (
             <span class="brand-wordmark text-[var(--text-strong)] text-[20px] font-bold" aria-hidden="true">AntV</span>
           )}
-          {!isAntVSite && <span class="brand-divider w-[1px] h-6 mx-5 my-0 [@media(width<=700px)]:mx-3" aria-hidden="true"></span>}
+          {!isAntVSite && <span class="bg-[var(--border-strong)] w-[1px] h-6 mx-5 my-0 [@media(width<=700px)]:mx-3" aria-hidden="true"></span>}
           {!isAntVSite && <span class="brand-product text-[var(--text-strong)] text-[18px] font-medium [@media(width<=700px)]:text-[16px]">{config.site.title}</span>}
         </a>
         {searchEnabled && (
@@ -176,28 +189,35 @@ const structuredData = {
             <span>{locale === 'zh' ? '搜索…' : 'Search…'}</span>
           </button>
         )}
-        <button class="mobile-nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label={locale === 'zh' ? '菜单' : 'Menu'}>
+        <button data-mobile-nav-toggle class="hidden [@media(width<=900px)]:inline-flex items-center justify-center size-10 p-2 border-0 rounded-md bg-transparent text-[var(--text)] cursor-pointer [&_span]:block [&_span]:size-6 [&_svg]:block [&_svg]:size-6" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label={locale === 'zh' ? '菜单' : 'Menu'}>
           <span aria-hidden="true" set:html={menuIcon}></span>
         </button>
-        <nav id="primary-nav" class="primary-nav" aria-label={navLabel}>
+        <nav id="primary-nav" class="flex items-center gap-2 h-full text-[var(--muted)] whitespace-nowrap [@media(width<=900px)]:fixed [@media(width<=900px)]:top-[var(--mobile-nav-top,var(--header-height))] [@media(width<=900px)]:inset-x-0 [@media(width<=900px)]:hidden [@media(width<=900px)]:h-[calc(100dvh_-_var(--mobile-nav-top,var(--header-height)))] [@media(width<=900px)]:flex-col [@media(width<=900px)]:items-stretch [@media(width<=900px)]:pt-2 [@media(width<=900px)]:pb-6 [@media(width<=900px)]:px-0 [@media(width<=900px)]:overflow-auto [@media(width<=900px)]:bg-[var(--surface-raised)] [@media(width<=900px)]:shadow-[var(--header-shadow)] [@media(width<=900px)]:data-open:flex" aria-label={navLabel}>
           {navigation.map((item) => (
-            <a href={item.href} aria-current={item.active ? 'page' : undefined}>{localize(item.text, locale)}</a>
+            <a class={navItemClass} href={item.href} aria-current={item.active ? 'page' : undefined}>{localize(item.text, locale)}</a>
           ))}
-          <ProductMenu locale={locale} />
+          <ProductMenu locale={locale} summaryClass={navItemClass} />
           {versionEntries.length > 0 && (
-            <details class="header-menu version-menu">
-              <summary>
+            <details class="relative h-full [@media(900px<width<=1080px)]:hidden [@media(width<=900px)]:block [@media(width<=900px)]:w-full [@media(width<=900px)]:h-auto [.antv-site-header.home-header_&]:[@media(width>=901px)]:flex [.antv-site-header.home-header_&]:[@media(width>=901px)]:items-center [&>summary]:gap-[7px] [@media(width<=900px)]:[&>summary]:justify-between [&>summary]:list-none [&>summary::-webkit-details-marker]:hidden">
+              <summary class={navItemClass}>
                 <span>{currentVersion}</span>
-                <span class="nav-chevron" aria-hidden="true"></span>
+                <span class="size-[7px] [border-right:1.5px_solid_currentColor] [border-bottom:1.5px_solid_currentColor] text-[var(--muted-light)] [transform:translateY(-2px)_rotate(45deg)] origin-center [transition:transform_0.2s_ease] [[open]>summary_&]:[transform:translateY(2px)_rotate(225deg)]" aria-hidden="true"></span>
               </summary>
-              <div>
+              <div class="[@media(width<=900px)]:static [@media(width<=900px)]:[border-width:1px_0] [@media(width<=900px)]:rounded-none [@media(width<=900px)]:shadow-none absolute top-[54px] right-0 grid min-w-30 p-2 [border:1px_solid_var(--border)] rounded-[var(--radius-medium)] bg-[var(--surface-raised)] shadow-[var(--shadow-soft)] [&_a]:py-2 [&_a]:px-2.5 [&_a]:rounded-[var(--radius-small)] [&_a]:text-[var(--text)] [&_a:hover]:bg-[var(--brand-soft)] [&_a:hover]:text-[var(--brand-strong)]">
                 {versionEntries.map(([label, href]) => <a href={withBase(href)}>{label}</a>)}
               </div>
             </details>
           )}
           {localeSwitch && (
             <a
-              class="nav-icon-action"
+              data-nav-icon
+              class:list={[
+                'inline-flex items-center justify-center size-8 m-0 p-0 border-0 bg-transparent shadow-none font-normal tracking-normal no-underline cursor-pointer [transition:background_0.2s,color_0.2s,transform_0.2s] active:[transform:scale(0.96)]',
+                '[@media(width<=900px)]:w-full [@media(width<=900px)]:min-h-[58px] [@media(width<=900px)]:justify-start [@media(width<=900px)]:gap-3 [@media(width<=900px)]:px-6 [@media(width<=900px)]:rounded-none [@media(width<=900px)]:text-[16px]',
+                isAntVSite && pageType === 'home'
+                  ? 'rounded-md text-[#424e66] text-[16px] hover:text-[#424e66] hover:bg-white hover:shadow-[0_2px_5px_rgb(0_0_0/10%)] [@media(width<=900px)]:text-[var(--muted)] [@media(width<=900px)]:hover:text-[var(--brand-strong)] [@media(width<=900px)]:hover:bg-[var(--brand-soft)] [@media(width<=900px)]:hover:shadow-none'
+                  : 'rounded-[var(--radius-small)] text-[var(--muted)] text-[14px] hover:bg-[var(--brand-soft)] hover:text-[var(--brand-strong)]',
+              ]}
               href={withBase(localeSwitch.route)}
               hreflang={localeSwitch.locale}
               aria-label={localeSwitch.locale === 'en' ? 'Switch to English' : '切换到中文'}
@@ -211,10 +231,10 @@ const structuredData = {
         </nav>
       </div>
     </header>
-    <main id="main-content" class:list={[pageType === 'demo' && "[@media(width>1080px)]:min-h-0 [@media(width>1080px)]:flex-1"]} data-pagefind-body={isRootHome ? undefined : true}>
+    <main id="main-content" class:list={[pageType === 'home' && "overflow-hidden", pageType === 'qa' && "h-[calc(100dvh_-_var(--header-height))] min-h-0 overflow-hidden", pageType === 'demo' && "[@media(width>1080px)]:min-h-0 [@media(width>1080px)]:flex-1"]} data-pagefind-body={isRootHome ? undefined : true}>
       <slot />
     </main>
-    {pageType !== 'demo' && <SiteFooter
+    {pageType !== 'demo' && pageType !== 'qa' && <SiteFooter
       locale={locale}
       groups={footerGroups}
       description={localize(config.footer.description, locale)}
@@ -232,7 +252,7 @@ const structuredData = {
     )}
     <script is:inline>
       (() => {
-        const navButton = document.querySelector('.mobile-nav-toggle');
+        const navButton = document.querySelector('[data-mobile-nav-toggle]');
         const nav = document.querySelector('#primary-nav');
         const header = document.querySelector('.site-header');
         const updateNavPosition = () => {
@@ -309,23 +329,24 @@ const structuredData = {
         });
         document.querySelectorAll('.markdown-body pre').forEach((pre) => {
           const code = pre.querySelector(':scope > code');
-          if (!code || pre.closest('.markdown-code-block') || pre.hasAttribute('data-demo-source')) return;
+          if (!code || pre.closest('[data-code-block]') || pre.hasAttribute('data-demo-source')) return;
           const wrapper = document.createElement('div');
-          wrapper.className = 'markdown-code-block';
+          wrapper.setAttribute('data-code-block', '');
+          wrapper.className = 'group/code-block relative max-w-full my-[0.5em]';
           pre.before(wrapper);
           wrapper.append(pre);
 
           const button = document.createElement('button');
-          button.className = 'markdown-code-copy';
+          button.className = 'group/code-copy absolute z-2 top-2 right-2 grid size-8 p-0 place-items-center [border:1px_solid_color-mix(in_srgb,var(--border-strong)_58%,transparent)] rounded-lg bg-[color-mix(in_srgb,var(--surface-raised)_90%,transparent)] shadow-[0_3px_10px_rgb(30_27_41/6%)] text-[var(--muted-light)] cursor-pointer [transition:opacity_0.16s,color_0.16s,border-color_0.16s,background_0.16s,transform_0.16s] hover:border-[color-mix(in_srgb,var(--brand)_34%,var(--border))] hover:bg-[var(--surface-raised)] hover:text-[var(--brand-strong)] data-[copy-state=success]:border-[color-mix(in_srgb,var(--success)_40%,var(--border))] data-[copy-state=success]:text-[var(--success)] data-[copy-state=error]:border-[color-mix(in_srgb,var(--danger)_38%,var(--border))] data-[copy-state=error]:text-[var(--danger)] opacity-0 pointer-events-none [transform:translateY(-3px)] group-hover/code-block:opacity-100 group-hover/code-block:pointer-events-auto group-hover/code-block:transform-none group-focus-within/code-block:opacity-100 group-focus-within/code-block:pointer-events-auto group-focus-within/code-block:transform-none focus-visible:opacity-100 [@media(hover:none)]:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:transform-none';
           button.type = 'button';
           button.setAttribute('aria-label', copyLabels.idle);
           button.title = copyLabels.idle;
           button.innerHTML = `
-            <svg class="markdown-code-copy-icon is-copy" viewBox="0 0 24 24" aria-hidden="true">
+            <svg class="size-4 fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8] block group-data-[copy-state=success]/code-copy:hidden" viewBox="0 0 24 24" aria-hidden="true">
               <rect x="8" y="8" width="14" height="14" rx="2"></rect>
               <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
             </svg>
-            <svg class="markdown-code-copy-icon is-success" viewBox="0 0 24 24" aria-hidden="true">
+            <svg class="size-4 fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8] hidden group-data-[copy-state=success]/code-copy:block" viewBox="0 0 24 24" aria-hidden="true">
               <path d="m5 12 4 4L19 6"></path>
             </svg>
           `;

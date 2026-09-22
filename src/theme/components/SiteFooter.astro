@@ -34,28 +34,32 @@ interface Props {
   tagline: string;
 }
 const { locale, groups, description, copyright, tagline } = Astro.props;
+const footerClass = 'w-[min(1440px,calc(100%_-_80px))] mx-auto my-0 text-black/85 text-[14px] [@media(width<=767px)]:w-[calc(100%_-_32px)]';
+const linkClass = 'text-inherit text-[14px] font-normal no-underline [transition:color_0.2s] [overflow-wrap:anywhere] hover:text-[var(--brand)] focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-[var(--brand)] focus-visible:outline-offset-4';
+const iconClass = 'inline-block size-4 mr-[0.4em] align-[-2px] object-contain [&_svg]:block [&_svg]:size-full';
+const headingIconClass = 'inline-flex shrink-0 size-[22px] object-contain [&_svg]:block [&_svg]:size-full [&_svg]:[stroke-width:1.5]';
 const isImageLink = (href: string) => /\.(?:avif|bmp|gif|ico|jpe?g|png|svg|webp)$/i.test(href.split(/[?#]/, 1)[0]);
 ---
 
-<footer class="site-footer" data-pagefind-ignore>
-  <div class="footer-columns">
+<footer class:list={[footerClass, "leading-[1.5] pt-20 pb-5 px-0 [@media(width<=767px)]:py-10"]} data-pagefind-ignore>
+  <div class="flex justify-around gap-8 flex-wrap [@media(width<=767px)]:block [@media(width<=767px)]:text-center">
     {groups.map((group) => (
-      <section class="footer-group">
-        <h2>
+      <section class="min-w-0 mb-15 [@media(768px<=width<=1100px)]:basis-[calc(50%_-_32px)] [@media(width<=767px)]:mb-10 [@media(width<=767px)]:last:mb-0">
+        <h2 class="flex items-center gap-2 m-0 text-[16px] font-bold leading-6 [@media(width<=767px)]:justify-center">
           {group.icon && (icons.has(group.icon)
-            ? <span class="footer-heading-icon" aria-hidden="true" set:html={icons.get(group.icon)} />
-            : <img class="footer-heading-icon" src={group.icon} width="22" height="22" alt="" loading="lazy" />)}
+            ? <span class={headingIconClass} aria-hidden="true" set:html={icons.get(group.icon)} />
+            : <img class={headingIconClass} src={group.icon} width="22" height="22" alt="" loading="lazy" />)}
           {localize(group.title, locale)}
         </h2>
-        <ul>
+        <ul class="m-0 p-0 list-none">
           {group.links.map((link) => (
-            <li>
-              <a class:list={{ 'group/footer-image relative inline-block': isImageLink(link.href) }} href={link.href} target={link.target ?? (/^https?:\/\//.test(link.href) ? '_blank' : undefined)} rel={link.target === '_blank' || /^https?:\/\//.test(link.href) ? 'noopener noreferrer' : undefined}>
+            <li class="my-3 mx-0">
+              <a class:list={[linkClass, { 'group/footer-image relative inline-block': isImageLink(link.href) }]} href={link.href} target={link.target ?? (/^https?:\/\//.test(link.href) ? '_blank' : undefined)} rel={link.target === '_blank' || /^https?:\/\//.test(link.href) ? 'noopener noreferrer' : undefined}>
                 {link.icon && (icons.has(link.icon)
-                  ? <span class:list={['footer-icon', { 'footer-zhihu': link.icon === 'zhihu' }]} aria-hidden="true" set:html={icons.get(link.icon)} />
-                  : <img class="footer-icon" src={link.icon} width="16" height="16" alt="" loading="lazy" />)}
+                  ? <span class:list={[iconClass, link.icon === 'zhihu' && 'text-[#0084ff] font-semibold leading-4']} aria-hidden="true" set:html={icons.get(link.icon)} />
+                  : <img class={iconClass} src={link.icon} width="16" height="16" alt="" loading="lazy" />)}
                 <span>{localize(link.text, locale)}</span>
-                {link.description && <span class="footer-description">{localize(link.description, locale)}</span>}
+                {link.description && <span class="ml-[0.5em] opacity-60 font-normal">{localize(link.description, locale)}</span>}
                 {isImageLink(link.href) && (
                   <span class="invisible absolute bottom-full left-1/2 z-20 w-[164px] -translate-x-1/2 pb-3 group-hover/footer-image:visible group-focus-visible/footer-image:visible" aria-hidden="true">
                     <span class="block rounded bg-white p-4 shadow-[0_3px_12px_rgb(0_0_0/16%)]">
@@ -70,149 +74,9 @@ const isImageLink = (href: string) => /\.(?:avif|bmp|gif|ico|jpe?g|png|svg|webp)
       </section>
     ))}
   </div>
-  {description && <p class="footer-site-description">{description}</p>}
+  {description && <p class="mt-0 mx-0 mb-5 text-center text-[var(--muted)] [@media(width<=767px)]:mt-8 [@media(width<=767px)]:mb-0">{description}</p>}
 </footer>
-<div class="footer-meta" data-pagefind-ignore>
+<div class:list={[footerClass, "flex flex-wrap justify-center gap-x-6 gap-y-0 py-4 px-0 border-t border-t-[#e8e8e8] leading-8 text-center [@media(width<=767px)]:flex-col"]} data-pagefind-ignore>
   <span>{copyright}</span>
   {tagline && <span>{tagline}</span>}
 </div>
-
-<style>
-  .site-footer,
-  .footer-meta {
-    width: min(1440px, calc(100% - 80px));
-    margin: 0 auto;
-    color: rgb(0 0 0 / 85%);
-    font-size: 14px;
-    line-height: 1.5;
-  }
-  .site-footer {
-    padding: 80px 0 20px;
-  }
-  .footer-columns {
-    display: flex;
-    justify-content: space-around;
-    gap: 32px;
-    flex-wrap: wrap;
-  }
-  .footer-group {
-    min-width: 0;
-    margin-bottom: 60px;
-  }
-  h2 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0;
-    font-size: 16px;
-    font-weight: 700;
-    line-height: 24px;
-  }
-  ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  li {
-    margin: 12px 0;
-  }
-  a {
-    color: inherit;
-    font-size: 14px;
-    font-weight: 400;
-    text-decoration: none;
-    transition: color 0.2s;
-    overflow-wrap: anywhere;
-  }
-  a:hover {
-    color: #691eff;
-  }
-  a:focus-visible {
-    outline: 2px solid var(--brand);
-    outline-offset: 4px;
-  }
-  .footer-icon {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    margin-right: 0.4em;
-    vertical-align: -2px;
-    object-fit: contain;
-  }
-  .footer-icon :global(svg) {
-    display: block;
-    width: 100%;
-    height: 100%;
-  }
-  .footer-zhihu {
-    color: #0084ff;
-    font-weight: 600;
-    line-height: 16px;
-  }
-  .footer-heading-icon {
-    display: inline-flex;
-    flex: none;
-    width: 22px;
-    height: 22px;
-    object-fit: contain;
-  }
-  .footer-heading-icon :global(svg) {
-    display: block;
-    width: 100%;
-    height: 100%;
-    stroke-width: 1.5;
-  }
-  .footer-description {
-    margin-left: 0.5em;
-    opacity: 0.6;
-    font-weight: 400;
-  }
-  .footer-site-description {
-    margin: 0 0 20px;
-    text-align: center;
-    color: #697b8c;
-  }
-  .footer-meta {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0 24px;
-    padding: 16px 0;
-    border-top: 1px solid #e8e8e8;
-    line-height: 32px;
-    text-align: center;
-  }
-  @media (max-width: 1100px) and (min-width: 768px) {
-    .footer-group {
-      flex-basis: calc(50% - 32px);
-    }
-  }
-  @media (max-width: 767px) {
-    .site-footer,
-    .footer-meta {
-      width: calc(100% - 32px);
-    }
-    .site-footer {
-      padding: 40px 0;
-    }
-    .footer-columns {
-      display: block;
-      text-align: center;
-    }
-    .footer-group {
-      margin-bottom: 40px;
-    }
-    .footer-group:last-child {
-      margin-bottom: 0;
-    }
-    h2 {
-      justify-content: center;
-    }
-    .footer-meta {
-      flex-direction: column;
-    }
-    .footer-site-description {
-      margin: 32px 0 0;
-    }
-  }
-</style>

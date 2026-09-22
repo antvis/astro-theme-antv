@@ -128,10 +128,10 @@ if (page.type === 'document') {
 
 <BaseLayout locale={locale} title={title} description={description} route={page.route} pageType={page.type === 'document' ? 'document' : demo ? 'demo' : 'page'} image={page.type === 'document' ? page.entry.data.screenshot : demo?.screenshot} openGraph={page.type === 'document' ? page.entry.data.openGraph : demo?.openGraph}>
   {page.type === 'document' && (
-    <div class="docs-shell">
+    <div class="grid grid-cols-[var(--docs-sidebar-width)_minmax(0,1fr)_var(--toc-width)] w-[var(--content-width)] mx-auto pt-6 pb-16 bg-[var(--surface-raised)] [@media(900px<width<=1320px)]:grid-cols-[240px_minmax(0,1fr)] [@media(width<=900px)]:block [@media(width<=900px)]:w-[min(100%_-_36px,820px)]">
       <DocsSidebar items={documentItems} currentRoute={page.route} locale={locale} labels={config.content.sidebar} />
       <article class="markdown-body">
-        <h1 class="document-title" data-pagefind-meta="title">{page.title}</h1>
+        <h1 data-pagefind-meta="title">{page.title}</h1>
         <div class="flex flex-wrap items-center justify-end gap-4 mb-6 pb-3 [border-bottom:1px_solid_var(--border-soft)] text-[12px] leading-[1.5] [@media(width<=700px)]:justify-start" data-pagefind-ignore>
           <a href={markdownHref} type="text/markdown" class="inline-flex items-center gap-1.5 text-[var(--muted)] hover:text-[var(--muted)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current">
             <span class="inline-flex size-3.5 [&_svg]:size-full" aria-hidden="true" set:html={markdownIcon} />
@@ -162,38 +162,38 @@ if (page.type === 'document') {
   )}
 
   {page.type === 'examples' && (
-    <div class="examples-shell example-catalog-shell">
+    <div class="grid w-[var(--content-width)] mx-auto bg-[var(--surface-raised)] [@media(width<=900px)]:block [@media(width<=900px)]:w-[min(100%_-_36px,820px)] grid-cols-[var(--docs-sidebar-width)_minmax(0,1fr)] [@media(900px<width<=1320px)]:grid-cols-[240px_minmax(0,1fr)]">
       <ExampleSidebar categories={registry.categories} locale={locale} currentRoute={page.route} />
-      <section class="listing-page example-catalog">
+      <section class="min-w-0 pt-8 px-12 pb-24 bg-[var(--surface-raised)] [@media(width<=900px)]:px-0">
         <div class="grid gap-16 [@media(width<=700px)]:gap-y-12 [@media(width<=700px)]:gap-x-12">
           {registry.categories.map((item) => {
             const demoCount = item.groups.reduce((sum, entry) => sum + entry.demos.length, 0);
             if (!demoCount) return null;
             return (
               <section class="[scroll-margin-top:calc(var(--header-height)_+_24px)]" id={`category-${item.slug}`} data-example-category={item.slug}>
-                <header class="catalog-category-header flex items-baseline justify-between gap-6 mb-7 pb-3.5 [border-bottom:1px_solid_var(--border-soft)] [@media(width<=700px)]:gap-y-4 [@media(width<=700px)]:gap-x-4 [&_h2]:text-[var(--text-strong)] [&_h2]:font-medium [&_h2]:text-[24px] [&_h2]:m-0 [&_span]:[flex:none] [&_span]:text-[var(--muted-light)] [&_span]:text-[11px]">
+                <header class="[&_span]:[font-family:SFMono-Regular,Consolas,monospace] flex items-baseline justify-between gap-6 mb-7 pb-3.5 [border-bottom:1px_solid_var(--border-soft)] [@media(width<=700px)]:gap-y-4 [@media(width<=700px)]:gap-x-4 [&_h2]:text-[var(--text-strong)] [&_h2]:font-medium [&_h2]:text-[24px] [&_h2]:m-0 [&_span]:[flex:none] [&_span]:text-[var(--muted-light)] [&_span]:text-[11px]">
                   <h2>{localize(item.title, locale)}</h2>
                   <span>{demoCount} {isZh ? '个示例' : 'examples'}</span>
                 </header>
                 {item.groups.map((entry) => (
                   <section class="catalog-group [scroll-margin-top:calc(var(--header-height)_+_24px)] [&_+_.catalog-group]:mt-11" id={groupAnchor(item.slug, entry.slug)} data-example-group={`${item.slug}/${entry.slug}`}>
-                    <header class="catalog-group-header flex items-baseline justify-between gap-6 mb-4.5 [@media(width<=700px)]:gap-y-4 [@media(width<=700px)]:gap-x-4 [&_h3]:text-[var(--text-strong)] [&_h3]:font-medium [&_h3]:text-[20px] [&_h3]:leading-[30px] [&_h3]:m-0 [&_a]:[flex:none] [&_a]:text-[var(--muted-light)] [&_a]:text-[11px] [&_a:hover]:text-[var(--brand)]">
+                    <header class="[&_a]:[font-family:SFMono-Regular,Consolas,monospace] flex items-baseline justify-between gap-6 mb-4.5 [@media(width<=700px)]:gap-y-4 [@media(width<=700px)]:gap-x-4 [&_h3]:text-[var(--text-strong)] [&_h3]:font-medium [&_h3]:text-[20px] [&_h3]:leading-[30px] [&_h3]:m-0 [&_a]:[flex:none] [&_a]:text-[var(--muted-light)] [&_a]:text-[11px] [&_a:hover]:text-[var(--brand)]">
                       <h3>{localize(entry.title, locale)}</h3>
                       <a href={withBase(entry.demos[0] ? `/${locale}/examples/${entry.demos[0].key}/` : `/${locale}/examples/`)}>
                         {entry.demos.length} {isZh ? '个示例' : 'examples'}
                       </a>
                     </header>
-                    <div class="demo-grid catalog-demo-grid">
+                    <div class="grid grid-cols-4 gap-x-6 gap-y-7 [@media(900px<width<=1320px)]:grid-cols-3 [@media(700px<width<=900px)]:grid-cols-2 [@media(width<=700px)]:grid-cols-1">
                       {entry.demos.map((demoItem) => {
                         const demoTitle = localize(demoItem.title, locale, demoItem.slug);
                         return (
-                          <a href={withBase(`/${locale}/examples/${demoItem.key}/`)} aria-label={demoTitle}>
-                            <div class="demo-image flex [aspect-ratio:16_/_10] items-center justify-center mb-3.5 overflow-hidden [border:1px_solid_var(--border-soft)] rounded-[var(--radius-small)] [&_img]:w-full [&_img]:h-full [&_img]:[object-fit:scale-down] [.demo-grid_a:hover_&]:[box-shadow:var(--shadow-hover)] [.demo-grid_a:hover_&]:[transform:translateY(-4px)]">
+                          <a href={withBase(`/${locale}/examples/${demoItem.key}/`)} aria-label={demoTitle} class="group/demo min-w-0 text-[var(--text-strong)] hover:text-[var(--text-strong)]">
+                            <div class="bg-[var(--surface-raised)] [transition:border-color_0.25s,box-shadow_0.25s,transform_0.25s] flex [aspect-ratio:16_/_10] items-center justify-center mb-3.5 overflow-hidden [border:1px_solid_var(--border-soft)] rounded-[var(--radius-small)] [&_img]:w-full [&_img]:h-full [&_img]:[object-fit:scale-down] group-hover/demo:[box-shadow:var(--shadow-hover)] group-hover/demo:[transform:translateY(-4px)]">
                               {demoItem.screenshot && (
                                 <img src={withBase(demoItem.screenshot)} alt={`${demoTitle}${isZh ? '缩略图' : ' thumbnail'}`} loading="lazy" decoding="async" />
                               )}
                             </div>
-                            <strong class="font-semibold!">{demoTitle}</strong>
+                            <strong class="block truncate text-[16px] font-semibold text-center">{demoTitle}</strong>
                           </a>
                         );
                       })}
@@ -209,9 +209,9 @@ if (page.type === 'document') {
   )}
 
   {demo && (
-    <div class="examples-shell demo-shell">
+    <div class="grid w-[var(--content-width)] mx-auto bg-[var(--surface-raised)] [@media(width<=900px)]:block [@media(width<=900px)]:w-[min(100%_-_36px,820px)] grid-cols-[250px_minmax(0,1fr)] h-full [@media(900px<width<=1320px)]:grid-cols-[240px_minmax(0,1fr)] [@media(width<=1080px)]:h-auto">
       <ExampleSidebar categories={registry.categories} locale={locale} currentRoute={page.route} />
-      <article class="demo-page">
+      <article class="min-w-0 h-full p-0 overflow-hidden bg-[var(--surface-raised)] [@media(width<=1080px)]:h-auto [@media(width<=1080px)]:overflow-visible">
         <Demo
           demo={demo}
           locale={locale}

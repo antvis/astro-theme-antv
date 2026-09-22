@@ -41,23 +41,7 @@ const loadError = locale === 'zh'
 </script>
 
 <style>
-  :global(body.page-qa) {
-    height: 100dvh;
-    min-height: 100dvh;
-    overflow: hidden;
-  }
-
-  :global(body.page-qa .site-footer),
-  :global(body.page-qa .footer-meta) {
-    display: none;
-  }
-
-  :global(body.page-qa #main-content) {
-    height: calc(100dvh - var(--header-height));
-    min-height: 0;
-    overflow: hidden;
-  }
-
+  /* The SDK root is outside theme utilities; keep its sizing at this boundary. */
   .antv-qa-page,
   .antv-qa-root {
     width: 100%;

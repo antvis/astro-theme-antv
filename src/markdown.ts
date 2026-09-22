@@ -91,9 +91,9 @@ const safeCardCover = (cover: string | undefined, base: string) => {
 
 const cardLayoutClass = (width: string | undefined) => {
   const percentage = Number.parseFloat(width ?? "");
-  if (Number.isFinite(percentage) && percentage <= 35) return "is-third";
-  if (Number.isFinite(percentage) && percentage <= 55) return "is-half";
-  return "is-full";
+  if (Number.isFinite(percentage) && percentage <= 35) return "col-span-2 [@media(640px<width<=900px)]:col-span-3";
+  if (Number.isFinite(percentage) && percentage <= 55) return "col-span-3";
+  return "col-span-full";
 };
 
 const renderLinkCard = (
@@ -109,16 +109,16 @@ const renderLinkCard = (
   const action = locale === "zh" ? "查看详情" : "View details";
   const title = attributes.title || href;
   return [
-    `<a class="document-card ${cardLayoutClass(attributes.width)}" href="${escapeHtml(href)}"${external ? ' target="_blank" rel="noreferrer"' : ""}>`,
+    `<a class="group/card flex min-w-0 min-h-47 flex-col overflow-hidden [border:1px_solid_var(--border)] rounded-[var(--radius-medium)] bg-[var(--surface-raised)] text-[var(--text)] no-underline [transition:border-color_160ms_ease,box-shadow_160ms_ease,transform_160ms_ease] hover:border-[color-mix(in_srgb,var(--brand)_36%,var(--border))] hover:shadow-[0_12px_30px_color-mix(in_srgb,var(--brand)_9%,transparent)] hover:text-[var(--text)] hover:[transform:translateY(-2px)] active:[transform:translateY(0)] focus-visible:[outline:2px_solid_var(--brand)] focus-visible:outline-offset-3 [@media(width<=640px)]:min-h-0 [@media(width<=640px)]:col-span-full motion-reduce:transition-none motion-reduce:hover:transform-none ${cardLayoutClass(attributes.width)}" href="${escapeHtml(href)}"${external ? ' target="_blank" rel="noreferrer"' : ""}>`,
     cover
-      ? `  <span class="document-card__cover"><img src="${escapeHtml(cover)}" alt="" loading="lazy" decoding="async"></span>`
+      ? `  <span class="block h-31 overflow-hidden [border-bottom:1px_solid_var(--border-soft)] bg-[var(--surface-subtle)] [@media(width<=640px)]:h-28"><img class="block size-full object-cover [transition:transform_240ms_ease] group-hover/card:[transform:scale(1.025)] motion-reduce:transition-none motion-reduce:group-hover/card:transform-none" src="${escapeHtml(cover)}" alt="" loading="lazy" decoding="async"></span>`
       : "",
-    '  <span class="document-card__content">',
-    `    <strong class="document-card__title">${escapeHtml(title)}</strong>`,
+    '  <span class="flex min-h-0 flex-1 flex-col items-start pt-4.5 px-5 pb-[17px]">',
+    `    <strong class="text-[var(--text-strong)] text-[16px] font-medium leading-6">${escapeHtml(title)}</strong>`,
     attributes.description
-      ? `    <span class="document-card__description">${escapeHtml(attributes.description)}</span>`
+      ? `    <span class="line-clamp-3 mt-2 text-[var(--muted)] text-[14px] leading-[22px]">${escapeHtml(attributes.description)}</span>`
       : "",
-    `    <span class="document-card__action">${escapeHtml(action)} <span aria-hidden="true">→</span></span>`,
+    `    <span class="inline-flex items-center gap-[5px] mt-auto pt-4 text-[var(--brand-strong)] text-[13px] font-medium [&_span]:[transition:transform_160ms_ease] group-hover/card:[&_span]:[transform:translateX(2px)] motion-reduce:[&_span]:transition-none motion-reduce:group-hover/card:[&_span]:transform-none">${escapeHtml(action)} <span aria-hidden="true">→</span></span>`,
     "  </span>",
     "</a>",
   ]
@@ -166,7 +166,7 @@ function expandLinkCards(
       .filter(Boolean);
     if (cards.length) {
       output.push(
-        `<div class="document-card-grid">\n${cards.join("\n")}\n</div>`,
+        `<div class="grid grid-cols-6 gap-4 mt-5 mb-7 [@media(width<=640px)]:grid-cols-1 [@media(width<=640px)]:gap-3">\n${cards.join("\n")}\n</div>`,
       );
     }
     cursor = group.at(-1)!.index! + group.at(-1)![0].length;
@@ -213,8 +213,8 @@ async function expandLegacyCodeSources(
     const source = await readFile(sourcePath, "utf8");
     const language = extname(sourcePath).replace(/^\./, "") || "text";
     const replacement = [
-      `<figure class="legacy-code-reference" data-code-src="${escapeHtml(match[1])}">`,
-      `<figcaption>${escapeHtml(match[1])}</figcaption>`,
+      `<figure data-code-src="${escapeHtml(match[1])}">`,
+      `<figcaption class="mb-[4px] text-[var(--muted-light)] [font-family:SFMono-Regular,Consolas,monospace] text-[12px]">${escapeHtml(match[1])}</figcaption>`,
       `<pre><code class="language-${escapeHtml(language)}">${escapeHtml(source)}</code></pre>`,
       "</figure>",
     ].join("\n");
