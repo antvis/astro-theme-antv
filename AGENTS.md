@@ -8,7 +8,7 @@
 ## 样式与组件
 
 - 新增局部 UI 样式在所属页面或组件中使用 Tailwind utilities；hover、focus 和响应式优先使用状态变体，不为简单交互新增 CSS 类或 JavaScript。复杂装饰和动画保留在所属页面或组件的 scoped `<style>` 中，响应式规则随所属模块维护，不将同一功能的局部样式分散到 `global.css` 和 utilities 中。
-- `global.css` 只保留全局主题 token、reset、基础元素和生成文档排版；`tailwind.css` 负责 utilities 生成、第三方 SDK 样式隔离和无障碍层级，不承载功能模块样式，不引入 Less。
+- `global.css` 只保留全局主题 token、reset 和基础元素；`markdown.css` 集中维护生成文档排版及对应响应式规则；`tailwind.css` 负责 utilities 生成、第三方 SDK 样式隔离和无障碍层级，不承载功能模块样式，不引入 Less。
 - 页面画布、背景、主区域尺寸和页脚显隐由 `BaseLayout` 管理，子组件不通过全局选择器反向修改页面布局。默认首页效果限定于内置内容，不影响产品自定义 slot；Demo iframe 和导出文档保留独立运行所需的最小样式。
 - 复用现有 Astro 组件、主题 token、本地图标和 `@tabler/icons`；保持图标尺寸、线宽、对齐和文字层级一致。
 - 样式迁移只处理当前功能涉及的规则，并删除被替代的类名和 CSS，不重写无关样式。
