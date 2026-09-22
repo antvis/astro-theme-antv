@@ -1,5 +1,5 @@
 import { access } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import type { InjectedRoute } from "astro";
@@ -91,6 +91,7 @@ export async function prepareThemeIntegration({
     ),
     plugins: [
       ...tailwindcss(),
+      createCssAssetNamingPlugin(),
       ...(config.qa ? [createQaRoutingPlugin(config, getBase)] : []),
       createSlotsPlugin(() => config),
       createDemoPlugin(registry),
@@ -104,6 +105,30 @@ export async function prepareThemeIntegration({
     restartRoots: [...examplePaths, ...slotPaths],
     routes,
     watchFiles: [...examplePaths, ...slotPaths],
+  };
+}
+
+function createCssAssetNamingPlugin(): Plugin {
+  return {
+    name: "antv-site-css-assets",
+    apply: "build",
+    outputOptions(output) {
+      const assetFileNames = output.assetFileNames;
+      return {
+        ...output,
+        // Native content hashes stay correct when CSS references other assets.
+        hashCharacters: "hex",
+        assetFileNames(asset) {
+          const name = basename(asset.names[0] ?? "").toLowerCase();
+          if (name.endsWith(".css")) {
+            return `_assets/${name.slice(0, -4)}.[hash].css`;
+          }
+          return typeof assetFileNames === "function"
+            ? assetFileNames(asset)
+            : assetFileNames ?? "assets/[name]-[hash][extname]";
+        },
+      };
+    },
   };
 }
 

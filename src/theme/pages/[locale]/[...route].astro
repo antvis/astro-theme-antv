@@ -13,7 +13,7 @@ import { markdownRouteFor, withBase } from '../../lib/paths';
 import DocsSidebar from '../../components/DocsSidebar.astro';
 import ExampleSidebar from '../../components/ExampleSidebar.astro';
 import Toc from '../../components/Toc.astro';
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import Layout from '../../layouts/Layout.astro';
 import Demo from '../../components/Demo.astro';
 import {
   categoriesBySlug,
@@ -126,7 +126,7 @@ if (page.type === 'document') {
 }
 ---
 
-<BaseLayout locale={locale} title={title} description={description} route={page.route} pageType={page.type === 'document' ? 'document' : demo ? 'demo' : 'page'} image={page.type === 'document' ? page.entry.data.screenshot : demo?.screenshot} openGraph={page.type === 'document' ? page.entry.data.openGraph : demo?.openGraph}>
+<Layout locale={locale} title={title} description={description} route={page.route} pageType={page.type === 'document' ? 'document' : demo ? 'demo' : 'page'} image={page.type === 'document' ? page.entry.data.screenshot : demo?.screenshot} openGraph={page.type === 'document' ? page.entry.data.openGraph : demo?.openGraph}>
   {page.type === 'document' && (
     <div class="grid grid-cols-[var(--docs-sidebar-width)_minmax(0,1fr)_var(--toc-width)] w-[var(--content-width)] mx-auto pt-6 pb-16 bg-[var(--surface-raised)] [@media(900px<width<=1320px)]:grid-cols-[240px_minmax(0,1fr)] [@media(width<=900px)]:block [@media(width<=900px)]:w-[min(100%_-_36px,820px)]">
       <DocsSidebar items={documentItems} currentRoute={page.route} locale={locale} labels={config.content.sidebar} />
@@ -221,4 +221,4 @@ if (page.type === 'document') {
     </div>
   )}
 
-</BaseLayout>
+</Layout>

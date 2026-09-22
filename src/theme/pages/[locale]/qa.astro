@@ -2,7 +2,7 @@
 import type { SitePage } from '../../../compiler/content.js';
 import { config, registry } from '../../lib/site';
 import Qa from '../../components/Qa.astro';
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import Layout from '../../layouts/Layout.astro';
 
 type QaPage = Extract<SitePage, { type: 'qa' }>;
 
@@ -28,7 +28,7 @@ const description = isZh
   : 'Ask the AI assistant for help creating visualizations and using charts.';
 ---
 
-<BaseLayout
+<Layout
   locale={locale}
   title={title}
   description={description}
@@ -36,4 +36,4 @@ const description = isZh
   pageType="qa"
 >
   {config.qa && <Qa locale={locale} service={config.qa.service} route={page.route} />}
-</BaseLayout>
+</Layout>

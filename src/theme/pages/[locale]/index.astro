@@ -4,7 +4,7 @@ import arrowRightIcon from '@tabler/icons/outline/arrow-right.svg?raw';
 import bracesIcon from '@tabler/icons/outline/braces.svg?raw';
 import codeIcon from '@tabler/icons/outline/code.svg?raw';
 import componentsIcon from '@tabler/icons/outline/components.svg?raw';
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import Layout from '../../layouts/Layout.astro';
 import QaEntry from '../../components/QaEntry.astro';
 import { withBase } from '../../lib/paths';
 import { config, registry } from '../../lib/site';
@@ -39,7 +39,7 @@ const imageAlt = localize(
 );
 ---
 
-<BaseLayout locale={locale} title={config.site.title} description={localize(config.site.description, locale)} route={route} pageType="home" image={home.image} imageAlt={imageAlt} openGraph={home.openGraph}>
+<Layout locale={locale} title={config.site.title} description={localize(config.site.description, locale)} route={route} pageType="home" image={home.image} imageAlt={imageAlt} openGraph={home.openGraph}>
   {homeSlots.beforeHero.map((SlotComponent) => (
     <SlotComponent locale={locale} config={config} registry={registry} slotName="beforeHero" />
   ))}
@@ -152,7 +152,7 @@ const imageAlt = localize(
   {homeSlots.beforeFooter.map((SlotComponent) => (
     <SlotComponent locale={locale} config={config} registry={registry} slotName="beforeFooter" />
   ))}
-</BaseLayout>
+</Layout>
 
 <style>
   /* Default homepage decoration; layout and interaction utilities stay above. */
