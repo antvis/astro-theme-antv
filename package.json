@@ -1,6 +1,6 @@
 {
   "name": "@antv/astro-theme-antv",
-  "version": "0.1.0-beta.5",
+  "version": "0.1.0-beta.6",
   "description": "Astro integration for static open-source documentation and examples",
   "license": "MIT",
   "repository": {
