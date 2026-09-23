@@ -109,7 +109,7 @@ docs/
     advanced.en.mdx
 ```
 
-Frontmatter must contain `title`; `description`, `order`, `draft`, and `sidebar.label` / `sidebar.hidden` / `sidebar.icon` are optional. `sidebar.icon` uses the same icon names or image URLs as example categories. Use standard Astro/MDX syntax for components in `.mdx` files.
+Frontmatter must contain `title`; `description`, `order`, `draft`, and `sidebar.label` / `sidebar.hidden` / `sidebar.icon` are optional. `sidebar.icon` uses the same icon names or image URLs as example categories. Use standard Astro/MDX syntax for components in `.mdx` files. Set `template: page` for a full-width custom page under the shared site header and footer, without the document sidebar, visible title, toolbar, table of contents, or Markdown typography. The default `template: doc` preserves the document layout; Markdown endpoints remain available with either template.
 
 Each published document has a Markdown URL alongside its HTML page: `/zh/guide/` is exported as `/zh/guide.md` (and `/en/guide/` as `/en/guide.md`). The document toolbar, copy action, and `llms.txt` index use this same URL, including the configured Astro `base` prefix.
 

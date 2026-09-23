@@ -167,14 +167,14 @@ const navItemClass = [
     <Announcement locale={locale} />
     <header class:list={['site-header top-0 z-200 h-[var(--header-height)] [border-bottom:1px_solid_var(--border-soft)] [transition:background_0.3s,box-shadow_0.3s]', pageType === 'home' ? 'home-header shadow-none' : 'sticky bg-[color-mix(in_srgb,var(--surface-raised)_96%,transparent)] shadow-[var(--header-shadow,0_2px_8px_#f0f1f2)]', pageType === 'home' && (isAntVSite ? 'relative mb-[calc(-1*var(--header-height))] border-b-black/10 bg-transparent has-[[data-products-menu][open]]:bg-[var(--surface-raised)] has-[#primary-nav[data-open]]:bg-[var(--surface-raised)] has-[#primary-nav[data-open]]:sticky' : 'sticky bg-[var(--home-background)]'), isAntVSite && 'antv-site-header']} data-pagefind-ignore>
       <div class:list={["flex items-center justify-between h-full mx-auto py-0", isAntVSite && pageType === "home" ? "w-full px-5" : "w-[var(--content-width)] [@media(width<=900px)]:w-[calc(100%_-_32px)]", pageType !== "home" ? "px-10 [@media(width<=900px)]:px-0" : !isAntVSite && "px-6"]}>
-        <a class="brand inline-flex items-center h-full text-[var(--text-strong)] whitespace-nowrap" href={withBase(`/${locale}/`)} aria-label={`${config.site.title} home`}>
+        <a class="brand inline-flex min-w-0 items-center h-full text-[var(--text-strong)] whitespace-nowrap" href={withBase(`/${locale}/`)} aria-label={`${config.site.title} home`}>
           {config.site.logo ? (
-            <img class="brand-logo w-auto h-7.5 object-contain" src={withBase(config.site.logo)} alt="AntV" />
+            <img class="brand-logo shrink-0 w-auto h-7.5 object-contain" src={withBase(config.site.logo)} alt="AntV" />
           ) : (
             <span class="brand-wordmark text-[var(--text-strong)] text-[20px] font-bold" aria-hidden="true">AntV</span>
           )}
-          {!isAntVSite && <span class="bg-[var(--border-strong)] w-[1px] h-6 mx-5 my-0 [@media(width<=700px)]:mx-3" aria-hidden="true"></span>}
-          {!isAntVSite && <span class="brand-product text-[var(--text-strong)] text-[18px] font-medium [@media(width<=700px)]:text-[16px]">{config.site.title}</span>}
+          {!isAntVSite && <span class="bg-[var(--border-strong)] shrink-0 w-[1px] h-6 mx-5 my-0 [@media(width<=700px)]:mx-3" aria-hidden="true"></span>}
+          {!isAntVSite && <span class="brand-product truncate text-[var(--text-strong)] text-[18px] font-medium [@media(width<=700px)]:text-[16px]">{config.site.title}</span>}
         </a>
         {searchEnabled && (
           <button

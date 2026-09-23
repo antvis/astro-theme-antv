@@ -1,6 +1,5 @@
 ---
 import sendIcon from '@tabler/icons/filled/send.svg?raw';
-import assistantIcon from '../assets/icons/qa-assistant.svg?url';
 import { withBase } from '../lib/paths';
 import { config } from '../lib/site';
 
@@ -12,6 +11,7 @@ interface Props {
 
 const { locale, placeholder, suggestions = [] } = Astro.props;
 const qa = config.qa;
+const assistantIcon = 'https://mdn.alipayobjects.com/huamei_qa8qxu/afts/img/A*7svFR6wkPMoAAAAAAAAAAAAADmJ7AQ/original';
 const isZh = locale === 'zh';
 const prompt = placeholder ?? (isZh
   ? '问问AI助手  帮我生成可交互柱形图'
