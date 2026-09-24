@@ -77,6 +77,18 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration {
             },
           },
           vite: {
+            build: {
+              assetsInlineLimit(filePath, content) {
+                // Keep compiled modules external without changing image/font policy.
+                if (/\.[cm]?js$/.test(filePath)) return false;
+                const limit = astroConfig.vite?.build?.assetsInlineLimit;
+                return typeof limit === "function"
+                  ? limit(filePath, content)
+                  : typeof limit === "number"
+                    ? content.byteLength < limit
+                    : undefined;
+              },
+            },
             define: {
               "import.meta.env.ANTV_SITE_DEVELOPMENT": JSON.stringify(
                 command === "dev" ? "true" : "false",

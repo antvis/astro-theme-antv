@@ -20,6 +20,7 @@ export interface AntvDocIdentity {
 export const antvDocsSchema = z.looseObject({
   title: z.string().min(1),
   description: z.string().optional(),
+  template: z.enum(["doc", "page"]).default("doc"),
   screenshot: z.string().optional(),
   openGraph: openGraphSchema.optional(),
   order: z.number().default(0),
