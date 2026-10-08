@@ -34,7 +34,10 @@ interface Props {
 
 const { locale, title, description, route, pageType = 'page', image, imageAlt, openGraph } = Astro.props;
 const canonical = new URL(withBase(route), config.site.origin);
-const documentTitle = title === config.site.title ? title : `${title} · ${config.site.title}`;
+const metaTitle = localize(config.site.metaTitle, locale, config.site.title);
+const documentTitle = pageType === 'home' || title === config.site.title || title === metaTitle
+  ? metaTitle
+  : `${title} · ${metaTitle}`;
 const openGraphTags = createOpenGraphTags({
   site: config.site,
   locale,

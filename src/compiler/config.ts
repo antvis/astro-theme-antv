@@ -50,6 +50,8 @@ export type HomeSlotName = (typeof homeSlotNames)[number];
 export interface AntVSiteConfig {
   site: {
     title: string;
+    /** Browser title for the homepage and title suffix for other pages. Defaults to title. */
+    metaTitle?: string | LocalizedText;
     origin: string;
     repository: string;
     description: LocalizedText;
@@ -143,6 +145,7 @@ export interface ResolvedSiteConfig {
   root: string;
   site: {
     title: string;
+    metaTitle?: string | LocalizedText;
     origin: string;
     repository: string;
     description: LocalizedText;
@@ -312,6 +315,13 @@ const configSchema = z
   .strictObject({
     site: z.strictObject({
       title: z.string().min(1),
+      metaTitle: z.union([
+        z.string().trim().min(1),
+        z.strictObject({
+          zh: z.string().trim().min(1),
+          en: z.string().trim().min(1),
+        }),
+      ]).optional(),
       origin: siteOriginSchema,
       repository: httpUrlSchema,
       description: localizedTextSchema,

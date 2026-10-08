@@ -37,6 +37,10 @@ import { defineConfig } from "@antv/astro-theme-antv";
 export default defineConfig({
   site: {
     title: "My Library",
+    metaTitle: {
+      zh: "My Library 可视化工具库 | AntV",
+      en: "My Library Visualization Toolkit | AntV",
+    },
     origin: "https://example.com",
     repository: "https://github.com/example/my-library",
     description: {
@@ -66,6 +70,13 @@ export default defineConfig({
   },
 });
 ```
+
+`site.title` is the short product name used in the header and other visible branding.
+Optional `site.metaTitle` accepts a non-empty string or `{ zh, en }` translations and
+controls the browser title: the homepage uses it directly, while other pages use
+`Page title · metaTitle`. It defaults to `site.title` when omitted. The default
+Open Graph sharing title follows the browser title; `home.openGraph.title` only
+overrides the sharing title. `home.title` controls the visible homepage heading.
 
 `site.origin` must be an HTTP(S) origin, such as `https://example.com`, without a path, query, or fragment.
 
@@ -264,7 +275,7 @@ Pages automatically reuse their existing metadata:
 
 | Page | Title and description | Image fallback |
 | --- | --- | --- |
-| Homepage | Existing site title and localized description | `home.image`, then site default |
+| Homepage | `site.metaTitle` (falls back to `site.title`) and localized description | `home.image`, then site default |
 | Documentation / chart guide | Document title and description | Frontmatter `screenshot`, then site default |
 | Example detail | Example title and generated description | Example `screenshot`, then site default |
 | Example category / group / list | Existing page title and description | Site default |
