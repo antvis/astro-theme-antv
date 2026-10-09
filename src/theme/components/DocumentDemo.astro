@@ -8,6 +8,7 @@ import { extname, relative, resolve } from 'node:path';
 import { assertRealpathWithin, assertWithin, pathKey } from '../../util.js';
 import { config } from '../lib/site';
 import { withBase } from '../lib/paths';
+import DemoSource from './DemoSource.astro';
 import { serializeAgentMarkdown } from '../../agent-markdown.js';
 
 interface Props {
@@ -70,8 +71,7 @@ const toolClass = 'flex size-7 shrink-0 cursor-pointer items-center justify-cent
       <span class="size-4 fill-none stroke-current [stroke-linecap:round] [stroke-linejoin:round] [stroke-width:1.8] hidden group-data-[copy-state=success]/code-copy:block" set:html={checkIcon}></span>
       <span data-demo-copy-label class="sr-only" aria-live="polite">{copyLabel}</span>
     </button>
-    <pre data-demo-source class="max-h-130 overflow-auto [&[hidden]]:hidden"><code class="language-ts">{source}</code></pre>
-    <div data-demo-editor data-label={isZh ? `${title} 源码编辑器` : `${title} source editor`}></div>
+    <DemoSource source={source} label={isZh ? `${title} 源码编辑器` : `${title} source editor`} isZh={isZh} />
   </div>
 </section>
 <script>

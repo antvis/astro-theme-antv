@@ -5,7 +5,8 @@ import { localize } from '../../compiler/localization.js';
 import { getDocsCollection } from './docs';
 import { markdownRouteFor, withBase } from './paths';
 import { config } from './site';
-import { serializeAgentMarkdown } from '../../agent-markdown.js';
+import { demoFiles } from './demo-dependencies';
+import { fencedCode, serializeAgentMarkdown } from '../../agent-markdown.js';
 
 type SiteLocale = 'zh' | 'en';
 
@@ -121,7 +122,7 @@ export async function serializeAgentDocument(
       ? [`version: ${JSON.stringify(currentSiteVersion)}`]
       : []),
   ];
-  const body = await serializeAgentMarkdown(document.entry.body.trim(), {
+  const body = await serializeAgentMarkdown((document.entry.body ?? '').trim(), {
     filePath: document.entry.filePath ?? '',
     canonical: absoluteSiteUrl(document.route),
     components: config.content.agentComponents,
@@ -145,5 +146,7 @@ export async function serializeAgentDocument(
         : undefined;
     },
   });
-  return ['---', ...metadata, '---', '', body, ''].join('\n');
+  const sharedSources = Object.entries(demoFiles).filter(([name]) => body.includes(`/${name}`))
+    .map(([name, code]) => `### ${name}\n\n${fencedCode(code, name.split('.').pop())}`);
+  return ['---', ...metadata, '---', '', body, ...sharedSources, ''].join('\n');
 }

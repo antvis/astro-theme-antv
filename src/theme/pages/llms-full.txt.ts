@@ -10,6 +10,7 @@ import {
   serializeAgentDocument,
 } from '../lib/agent-content';
 import { config, registry } from '../lib/site';
+import { demoFiles } from '../lib/demo-dependencies';
 import { fencedCode } from '../../agent-markdown.js';
 
 export const GET: APIRoute = async () => {
@@ -57,6 +58,8 @@ export const GET: APIRoute = async () => {
           `- Source path: ${demo.relativeSourcePath}`,
         ].join('\n'),
         fencedCode(demo.source, demo.filename.split('.').pop() || 'text'),
+        ...Object.entries(demoFiles).filter(([name]) => demo.source.includes(`/${name}`))
+          .map(([name, code]) => `### ${name}\n\n${fencedCode(code, name.split('.').pop())}`),
       );
     }
   }

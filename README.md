@@ -163,6 +163,9 @@ demo: {
 
 For JSX using the automatic React runtime, configure `react` and `react/jsx-runtime` as Demo dependencies. Development import maps use Vite’s optimized ESM wrappers when available. For legacy packages without an optimized wrapper, map to their ESM entry when using named imports.
 
+Gallery previews show the shared loading indicator until the iframe completes or reports an error, including when switching examples or rerunning code. Use top-level `await` for asynchronous setup that must finish before the preview is ready. StackBlitz export creates a Vite project with `index.ts` or `index.tsx` matching the source syntax, a module entry in `index.html`, and the configured package dependencies.
+
+Shared demo modules can use a root-relative import with an explicit extension, such as `import { createGraph } from '/demo-runtime.ts'`. Map it in `demo.dependencies` as `'/demo-runtime.ts': './src/demo-runtime.ts'`, and add the same exact Vite alias for initial gallery previews. These configured local files are included in StackBlitz exports and exposed in read-only, syntax-highlighted file tabs when referenced by the current demo. The source tab remains editable and is selected by default; copying uses the selected file, while running and exporting use the demo source. Keep local imports among these modules explicitly configured as well.
 StackBlitz export creates a Vite project with `index.ts` or `index.tsx` matching the source syntax, a module entry in `index.html`, and the configured package dependencies.
 
 For data previews, the built-in table helper needs no dependency configuration:

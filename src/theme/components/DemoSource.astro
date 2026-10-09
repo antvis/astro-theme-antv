@@ -1,0 +1,29 @@
+---
+import { Code } from 'astro:components';
+import { demoFiles } from '../lib/demo-dependencies';
+
+interface Props {
+  source: string;
+  label: string;
+  isZh: boolean;
+  gallery?: boolean;
+}
+const { source, label, isZh, gallery = false } = Astro.props;
+const id = `demo-code-${crypto.randomUUID()}`;
+const files = Object.entries(demoFiles);
+const hasFiles = files.some(([name]) => source.includes(`/${name}`));
+const tabClass = 'h-9 shrink-0 cursor-pointer border-0 border-b-2 border-solid border-transparent bg-transparent px-3 text-[13px] text-[var(--muted)] hover:text-[var(--text-strong)] aria-selected:border-[var(--brand)] aria-selected:text-[var(--brand)] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--brand)] [&[hidden]]:hidden';
+---
+<div class="flex min-h-0 min-w-0 flex-1 flex-col">
+  <div data-demo-tabs role="tablist" aria-label={isZh ? '示例文件' : 'Example files'} hidden={!hasFiles} class="flex shrink-0 overflow-x-auto border-b border-[var(--border-soft)] bg-[var(--surface)] pl-1 pr-12 [&[hidden]]:hidden">
+    <button type="button" role="tab" id={`${id}-tab-source`} aria-controls={`${id}-source`} aria-selected="true" data-demo-tab="" class={tabClass}>{isZh ? '源码' : 'Source'}</button>
+    {files.map(([name], index) => <button type="button" role="tab" id={`${id}-tab-${index}`} aria-controls={`${id}-${index}`} aria-selected="false" tabindex="-1" data-demo-tab={name} hidden={!source.includes(`/${name}`)} class={tabClass}>{name}</button>)}
+  </div>
+  <div data-demo-code-panel="" id={`${id}-source`} role="tabpanel" aria-labelledby={`${id}-tab-source`} class="flex min-h-0 min-w-0 flex-1 flex-col [&[hidden]]:hidden">
+    <pre data-demo-source class="m-0! max-h-130 overflow-auto p-4 text-[13px] [&[hidden]]:hidden"><code class="language-ts">{source}</code></pre>
+    <div data-demo-editor data-label={label} class:list={['min-h-0 min-w-0 flex-1', gallery && '[&_.cm-editor]:h-full [&_.cm-scroller]:max-h-none! [@media(width<=1080px)]:h-120 [@media(width<=1080px)]:flex-none']}></div>
+  </div>
+  {files.map(([name, code], index) => <div data-demo-code-panel={name} id={`${id}-${index}`} role="tabpanel" aria-labelledby={`${id}-tab-${index}`} tabindex="0" hidden class:list={['min-h-0 min-w-0 flex-1 overflow-auto [&[hidden]]:hidden', !gallery && 'max-h-130']}>
+    <Code code={code} lang={/\.jsx?$/.test(name) ? 'js' : 'ts'} theme="one-light" class="m-0! rounded-none! border-0! p-4! text-[13px]! leading-relaxed" />
+  </div>)}
+</div>
