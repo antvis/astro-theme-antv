@@ -71,6 +71,11 @@ export async function prepareThemeIntegration({
   const examplePaths = config.content.examples
     ? [config.content.examples]
     : [];
+  // Shared source is read outside Vite's module graph for tabs and exported documents.
+  const sharedSources = Object.entries(config.demo.dependencies)
+    .filter(([name, source]) => name.startsWith("/") && source.startsWith("."))
+    .map(([, source]) => resolve(config.root, source));
+  const watchFiles = [...examplePaths, ...slotPaths, ...sharedSources];
   const routes: InjectedRoute[] = themeRoutes.map(([pattern, entrypoint]) => ({
     pattern,
     entrypoint: pathToFileURL(resolve(themeRoot, entrypoint)),
@@ -101,9 +106,9 @@ export async function prepareThemeIntegration({
       ...examplePaths,
       ...slotPaths.map(dirname),
     ],
-    restartRoots: [...examplePaths, ...slotPaths],
+    restartRoots: watchFiles,
     routes,
-    watchFiles: [...examplePaths, ...slotPaths],
+    watchFiles,
   };
 }
 

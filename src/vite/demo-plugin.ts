@@ -104,11 +104,11 @@ export function createDemoPlugin(registry: SiteRegistry): Plugin {
                   preserveSignature: "strict",
                 })}`
               : JSON.stringify(`${base}@fs${resolved.id}`);
-            const key = name.startsWith("/") ? `${base}${name.slice(1)}` : name;
+            // Root-relative specifiers ignore the document base; only their target URLs use it.
             const keys =
               name.startsWith("/") && !extname(name)
-                ? [key, `${key}.ts`]
-                : [key];
+                ? [name, `${name}.ts`]
+                : [name];
             return keys
               .map((key) => `[${JSON.stringify(key)}]: ${url}`)
               .join(",");

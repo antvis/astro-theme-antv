@@ -28,12 +28,47 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
   panel.hidden = toggle ? toggle.getAttribute('aria-expanded') !== 'true' : false;
 
   const getSource = () => editor?.state.doc.toString() ?? originalSource;
+  const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-demo-tab]')];
+  const codePanels = [...root.querySelectorAll<HTMLElement>('[data-demo-code-panel]')];
+  let activeFile = '';
+  const selectFile = (name: string) => {
+    activeFile = name;
+    tabs.forEach((tab) => {
+      const selected = tab.dataset.demoTab === name;
+      tab.setAttribute('aria-selected', String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+    });
+    codePanels.forEach((panel) => { panel.hidden = panel.dataset.demoCodePanel !== name; });
+    resetCopy();
+    if (!name) editor?.requestMeasure();
+  };
+  const syncSharedFiles = () => {
+    const source = getSource();
+    tabs.forEach((tab) => {
+      tab.hidden = Boolean(tab.dataset.demoTab) && !source.includes(`/${tab.dataset.demoTab}`);
+    });
+    root.querySelector<HTMLElement>('[data-demo-tabs]')!.hidden = !tabs.some((tab) => tab.dataset.demoTab && !tab.hidden);
+    if (tabs.find((tab) => tab.dataset.demoTab === activeFile)?.hidden) selectFile('');
+  };
   const resetCopy = () => {
     clearTimeout(copyTimer);
     copyLabel.textContent = copyText;
     copyButton.setAttribute(copyHintAttribute, copyText);
     delete copyButton.dataset.copyState;
   };
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => selectFile(tab.dataset.demoTab!));
+    tab.addEventListener('keydown', (event) => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const visible = tabs.filter((item) => !item.hidden);
+      const index = visible.indexOf(tab);
+      const target = visible[event.key === 'Home' ? 0 : event.key === 'End' ? visible.length - 1
+        : (index + (event.key === 'ArrowRight' ? 1 : -1) + visible.length) % visible.length]!;
+      target.focus();
+      selectFile(target.dataset.demoTab!);
+    });
+  });
   const discardPending = () => {
     pendingFrame?.remove();
     pendingFrame = undefined;
@@ -56,6 +91,7 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
   };
   window.addEventListener('message', receive);
   const run = () => {
+    syncSharedFiles();
     observer.disconnect();
     clearTimeout(timer);
     discardPending();
@@ -68,6 +104,7 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
   };
   root.querySelector('[data-demo-run]')!.addEventListener('click', run);
   const schedule = () => {
+    syncSharedFiles();
     // Removing the pending browsing context cancels obsolete runs immediately.
     discardPending();
     clearTimeout(timer);
@@ -87,6 +124,7 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
     mountEditor();
   });
   root.querySelector('[data-demo-reset]')?.addEventListener('click', () => {
+    selectFile('');
     editor?.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: originalSource } });
     run();
   });
@@ -110,7 +148,11 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
   copyButton.addEventListener('click', async () => {
     clearTimeout(copyTimer);
     try {
-      await navigator.clipboard.writeText(getSource());
+      const code = activeFile
+        ? codePanels.find((panel) => panel.dataset.demoCodePanel === activeFile)!.querySelector('code')!.textContent!
+        : getSource();
+      await navigator.clipboard.writeText(code);
+
       copyLabel.textContent = copyButton.dataset.copied!;
       copyButton.dataset.copyState = 'success';
     } catch {
@@ -168,7 +210,9 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
       // Reset per-example editor history without replacing the persistent toolbar or panel.
       editor?.destroy();
       editor = undefined;
+      selectFile('');
       mountEditor();
+      syncSharedFiles();
       const form = root.querySelector<HTMLFormElement>('[data-demo-stackblitz]')!;
       const nextForm = next.querySelector<HTMLFormElement>('[data-demo-stackblitz]')!;
       form.action = nextForm.action;

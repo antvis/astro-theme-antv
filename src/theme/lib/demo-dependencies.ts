@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { config } from './site';
 
 function findVersion(directory: string, name: string): string | undefined {
@@ -19,7 +19,12 @@ function findVersion(directory: string, name: string): string | undefined {
 // Read manifests directly: Vite aliases and import-only exports need not resolve in Node.
 const require = createRequire(join(config.root, 'package.json'));
 export const demoDependencies: Record<string, string> = {};
-for (const name of Object.keys(config.demo.dependencies)) {
+export const demoFiles: Record<string, string> = {};
+for (const [name, source] of Object.entries(config.demo.dependencies)) {
+  // Root-relative local modules retain their import paths in exported projects.
+  if (name.startsWith('/') && source.startsWith('.')) {
+    demoFiles[name.slice(1)] = readFileSync(resolve(config.root, source), 'utf8');
+  }
   if (name.startsWith('.') || name.startsWith('/') || name.includes(':')) continue;
   const packageName = name.startsWith('@') ? name.split('/').slice(0, 2).join('/') : name.split('/')[0]!;
   if (demoDependencies[packageName]) continue;

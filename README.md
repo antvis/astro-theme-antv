@@ -152,6 +152,8 @@ For JSX using the automatic React runtime, configure `react` and `react/jsx-runt
 
 StackBlitz export creates a Vite project with `index.ts` or `index.tsx` matching the source syntax, a module entry in `index.html`, and the configured package dependencies.
 
+Shared demo modules can use a root-relative import with an explicit extension, such as `import { createGraph } from '/demo-runtime.ts'`. Map it in `demo.dependencies` as `'/demo-runtime.ts': './src/demo-runtime.ts'`, and add the same exact Vite alias for initial gallery previews. These configured local files are included in StackBlitz exports and exposed in read-only, syntax-highlighted file tabs when referenced by the current demo. The source tab remains editable and is selected by default; copying uses the selected file, while running and exporting use the demo source. Keep local imports among these modules explicitly configured as well.
+
 For data previews, the built-in table helper needs no dependency configuration:
 
 ```ts
