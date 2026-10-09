@@ -1,6 +1,7 @@
 import type { EditorView } from 'codemirror';
 import { createEditor } from './editor';
 import { createFrameDocument } from './frame';
+import { compileDemoSource } from '../../demo-source.js';
 
 for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo], [data-example-demo]')) {
   const preview = root.querySelector<HTMLElement>('[data-demo-preview]')!;
@@ -89,8 +90,22 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
     editor?.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: originalSource } });
     run();
   });
-  root.querySelector('[data-demo-stackblitz]')?.addEventListener('submit', () => {
-    root.querySelector<HTMLInputElement>('[data-demo-export-source]')!.value = getSource();
+  root.querySelector<HTMLFormElement>('[data-demo-stackblitz]')?.addEventListener('submit', (event) => {
+    try {
+      const source = getSource();
+      const filename = `index.${compileDemoSource(source, root.dataset.demoPath!).sourceExtension}`;
+      const form = event.currentTarget as HTMLFormElement;
+      const input = form.querySelector<HTMLInputElement>('[data-demo-export-source]')!;
+      const html = form.querySelector<HTMLInputElement>('[data-demo-export-html]')!;
+      input.name = `project[files][${filename}]`;
+      input.value = source;
+      html.value = html.value.replace(/src="\/index\.tsx?"/, `src="/${filename}"`);
+      form.action = `https://stackblitz.com/run?file=${filename}`;
+    } catch (error) {
+      event.preventDefault();
+      errorTarget.textContent = error instanceof Error ? error.message : String(error);
+      errorTarget.hidden = false;
+    }
   });
   copyButton.addEventListener('click', async () => {
     clearTimeout(copyTimer);
@@ -155,7 +170,10 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
       editor = undefined;
       mountEditor();
       const form = root.querySelector<HTMLFormElement>('[data-demo-stackblitz]')!;
-      new FormData(next.querySelector<HTMLFormElement>('[data-demo-stackblitz]')!).forEach((value, name) => {
+      const nextForm = next.querySelector<HTMLFormElement>('[data-demo-stackblitz]')!;
+      form.action = nextForm.action;
+      form.querySelector<HTMLInputElement>('[data-demo-export-source]')!.name = nextForm.querySelector<HTMLInputElement>('[data-demo-export-source]')!.name;
+      new FormData(nextForm).forEach((value, name) => {
         (form.elements.namedItem(name) as HTMLInputElement).value = String(value);
       });
       errorTarget.hidden = true;

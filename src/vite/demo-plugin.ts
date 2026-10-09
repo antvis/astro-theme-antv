@@ -1,3 +1,4 @@
+import { compileDemoSource } from "../demo-source.js";
 import { extname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Plugin, ViteDevServer } from "vite";
@@ -85,6 +86,13 @@ export function createDemoPlugin(registry: SiteRegistry): Plugin {
               throw new Error(`Unable to resolve demo dependency: ${name}`);
             // URL-only entries bypass Vite's import analysis; allow the configured entry file.
             if (!isBuild) {
+              // Import-map URLs bypass import analysis; use the optimizer's ESM wrappers for CommonJS.
+              const optimizer = server.environments.client?.depsOptimizer;
+              const optimized =
+                optimizer?.metadata.optimized[source] ??
+                optimizer?.metadata.discovered[source];
+              if (optimizer && optimized)
+                resolved.id = optimizer.getOptimizedDepId(optimized);
               const file = resolved.id.split("?")[0]!;
               if (!server.config.server.fs.allow.includes(file))
                 server.config.server.fs.allow.push(file);
@@ -126,7 +134,7 @@ export function createDemoPlugin(registry: SiteRegistry): Plugin {
       const demo = demos.get(key);
       if (!demo) throw new Error(`Unknown demo entry: ${key}`);
       return {
-        code: demo.source,
+        code: compileDemoSource(demo.source, demo.sourcePath).code,
         map: null,
       };
     },

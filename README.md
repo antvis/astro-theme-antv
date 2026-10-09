@@ -138,7 +138,7 @@ import { Demo } from '@antv/astro-theme-antv/components';
 Provide either static `code` or a `src` path to a `.ts` file relative to `content.docs`.
 Demos run in an iframe using `srcdoc`, without a separate preview route; the parent page retains the complete source in build-time `<pre><code>` HTML and page-level Markdown, readable without JavaScript.
 
-Demos use Sucrase to remove TypeScript types and native ES modules to load dependencies. For package imports, install them in your site and configure their imports in `astro.config.mjs`:
+Demos use Sucrase to compile TypeScript and JSX in both the initial preview and editor runs, with the automatic JSX runtime by default (classic JSX pragmas are supported). They use native ES modules to load dependencies. For package imports, install them in your site and configure their imports in `astro.config.mjs`:
 
 ```js
 demo: {
@@ -148,7 +148,9 @@ demo: {
 },
 ```
 
-For legacy packages, map to their ESM entry when using named imports; CommonJS default imports remain supported through Vite.
+For JSX using the automatic React runtime, configure `react` and `react/jsx-runtime` as Demo dependencies. Development import maps use Vite’s optimized ESM wrappers when available. For legacy packages without an optimized wrapper, map to their ESM entry when using named imports.
+
+StackBlitz export creates a Vite project with `index.ts` or `index.tsx` matching the source syntax, a module entry in `index.html`, and the configured package dependencies.
 
 For data previews, the built-in table helper needs no dependency configuration:
 
