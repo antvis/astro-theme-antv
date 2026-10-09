@@ -1,4 +1,4 @@
-import { transform } from 'sucrase';
+import { compileDemoSource } from '../../demo-source.js';
 import { imports } from 'virtual:antv-demo-dependencies';
 
 export function createFrameDocument(source: string, path: string, fitToFrame = false) {
@@ -39,10 +39,7 @@ if (input) {
   addEventListener('error', (event) => showError(event.error || event.message));
   addEventListener('unhandledrejection', (event) => showError(event.reason));
   try {
-    const { code } = transform(source, {
-      transforms: ['typescript'],
-      filePath: path,
-    });
+    const { code } = compileDemoSource(source, path);
     const script = document.createElement('script');
     script.type = 'module';
     script.textContent = `${code}\n;globalThis.parent.postMessage({ type: 'antv-demo:complete' }, '*');`;

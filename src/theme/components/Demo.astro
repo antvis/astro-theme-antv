@@ -1,6 +1,7 @@
 ---
 import { localize } from '../../compiler/localization.js';
 import type { DemoRecord } from '../../compiler/content.js';
+import { compileDemoSource } from '../../demo-source.js';
 import { withBase } from '../lib/paths';
 import { demoDependencies } from '../lib/demo-dependencies';
 import reloadIcon from '@tabler/icons/outline/reload.svg?raw';
@@ -33,7 +34,8 @@ const toolClass = [
   'after:content-[attr(data-tooltip)] after:invisible after:opacity-0',
   'hover:after:visible hover:after:opacity-100 focus-visible:after:visible focus-visible:after:opacity-100',
 ].join(' ');
-const exportHtml = '<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body,#container{width:100%;height:100%;margin:0}body{font-family:sans-serif}</style></head><body><div id="container"></div></body></html>';
+const exportFilename = `index.${compileDemoSource(demo.source, demo.sourcePath).sourceExtension}`;
+const exportHtml = `<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body,#container{width:100%;height:100%;margin:0}body{font-family:sans-serif}</style></head><body><div id="container"></div><script type="module" src="/${exportFilename}"></script></body></html>`;
 ---
 
 <section class="grid h-full min-h-0 min-w-0 grid-cols-[minmax(0,3fr)_minmax(0,2fr)] [@media(width<=1080px)]:h-auto [@media(width<=1080px)]:grid-cols-1" aria-labelledby="demo-title" data-example-demo data-demo-path={`/${demo.relativeSourcePath}`}>
@@ -49,13 +51,14 @@ const exportHtml = '<!doctype html><html><head><meta charset="UTF-8"><meta name=
       <span class="text-sm leading-none font-medium text-[var(--text)]">{isZh ? '源码' : 'Source'}</span>
       <div data-demo-toolbar hidden class="flex items-center gap-1 [&[hidden]]:hidden">
         <button type="button" class={toolClass} data-demo-reset data-tooltip={isZh ? '还原源码' : 'Reset source'} aria-label={isZh ? '还原源码' : 'Reset source'} set:html={reloadIcon}></button>
-        <form action="https://stackblitz.com/run?file=index.ts" method="post" target="_blank" rel="noopener noreferrer" data-demo-stackblitz class="m-0 flex items-center">
+        <form action={`https://stackblitz.com/run?file=${exportFilename}`} method="post" target="_blank" rel="noopener noreferrer" data-demo-stackblitz class="m-0 flex items-center">
           <input type="hidden" name="project[title]" value={title} />
           <input type="hidden" name="project[description]" value={demo.key} />
-          <input type="hidden" name="project[template]" value="typescript" />
-          <input type="hidden" name="project[dependencies]" value={JSON.stringify(demoDependencies)} />
-          <input type="hidden" name="project[files][index.html]" value={exportHtml} />
-          <input type="hidden" name="project[files][index.ts]" data-demo-export-source />
+          <input type="hidden" name="project[template]" value="node" />
+          <input type="hidden" name="project[files][package.json]" value={JSON.stringify({ private: true, type: 'module', scripts: { dev: 'vite --host 0.0.0.0', start: 'vite --host 0.0.0.0' }, dependencies: demoDependencies, devDependencies: { vite: '^6.0.0', typescript: '^5.0.0' } })} />
+          <input type="hidden" name="project[files][tsconfig.json]" value={JSON.stringify({ compilerOptions: { jsx: 'react-jsx', target: 'ESNext', module: 'ESNext', moduleResolution: 'Bundler', esModuleInterop: true } })} />
+          <input type="hidden" name="project[files][index.html]" value={exportHtml} data-demo-export-html />
+          <input type="hidden" name={`project[files][${exportFilename}]`} data-demo-export-source />
           <button type="submit" class={toolClass} data-tooltip={isZh ? '在 StackBlitz 中打开' : 'Open in StackBlitz'} aria-label={isZh ? '在 StackBlitz 中打开' : 'Open in StackBlitz'} set:html={stackblitzIcon}></button>
         </form>
         <button type="button" class={`${toolClass} group/copy`} data-demo-copy data-copied={isZh ? '已复制' : 'Copied'} data-copy-error={isZh ? '复制失败' : 'Copy failed'} data-tooltip={copyLabel}>
