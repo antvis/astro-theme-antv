@@ -4,6 +4,7 @@ import type { DemoRecord } from '../../compiler/content.js';
 import { compileDemoSource } from '../../demo-source.js';
 import { withBase } from '../lib/paths';
 import { demoDependencies, demoFiles } from '../lib/demo-dependencies';
+import Loading from './Loading.astro';
 import DemoSource from './DemoSource.astro';
 import reloadIcon from '@tabler/icons/outline/reload.svg?raw';
 import stackblitzIcon from '@tabler/icons/outline/bolt.svg?raw';
@@ -44,6 +45,9 @@ const exportHtml = `<!doctype html><html><head><meta charset="UTF-8"><meta name=
     <h1 id="demo-title" class="m-0 mb-4 text-[20px] font-semibold text-[var(--text-strong)]">{title}</h1>
     <div data-demo-preview class="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-white [@media(width<=1080px)]:min-h-80 [@media(width<=1080px)]:flex-none [@media(width<=1080px)]:h-[var(--demo-height)]" style={`--demo-height:${height}px`} aria-label={`${title} ${isZh ? '运行结果' : 'result'}`}>
       <iframe title={`${title} ${isZh ? '运行结果' : 'result'}`} src={withBase(`/demos/${demo.key}/`)} class="absolute inset-0 block size-full border-0" loading="eager" data-demo-frame></iframe>
+      <div data-demo-loading class="absolute inset-0 z-1 grid place-items-center bg-white/90 [&[hidden]]:hidden">
+        <Loading locale={locale} label={isZh ? '示例加载中…' : 'Loading example…'} />
+      </div>
       <pre data-demo-error role="alert" hidden class="absolute inset-x-3 top-3 z-1 m-0 max-h-full overflow-auto whitespace-pre-wrap bg-red-50 p-3 text-red-700 [&[hidden]]:hidden"></pre>
     </div>
   </div>
