@@ -19,8 +19,18 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
   let editor: EditorView | undefined;
   let frame = root.querySelector<HTMLIFrameElement>('[data-demo-frame]') ?? undefined;
   let pendingFrame: HTMLIFrameElement | undefined;
+  let frameSettled = Boolean(frame?.contentDocument?.documentElement?.classList.contains('preview-ready'));
   let timer: ReturnType<typeof setTimeout> | undefined;
   let copyTimer: ReturnType<typeof setTimeout> | undefined;
+  let request: AbortController | undefined;
+  const loading = root.querySelector<HTMLElement>('[data-demo-loading]');
+  const setLoading = (busy: boolean) => {
+    if (loading) loading.hidden = !busy;
+    preview.setAttribute('aria-busy', String(busy));
+    if (busy) root.setAttribute('aria-busy', 'true');
+    else root.removeAttribute('aria-busy');
+  };
+  setLoading(Boolean(frame) && !frameSettled);
 
   preview.hidden = false;
   root.querySelector<HTMLElement>('[data-demo-toolbar]')!.hidden = false;
@@ -77,21 +87,40 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
     const target = pendingFrame?.contentWindow === event.source ? pendingFrame
       : frame?.contentWindow === event.source ? frame : undefined;
     if (!target) return;
-    if (event.data?.type === 'antv-demo:complete' && target === pendingFrame) {
-      frame?.remove();
-      frame = target;
-      pendingFrame = undefined;
-      frame.style.visibility = '';
+    if (target === frame && ['antv-demo:complete', 'antv-demo:error'].includes(event.data?.type)) frameSettled = true;
+    if (target === frame && (request || pendingFrame)) return;
+    if (event.data?.type === 'antv-demo:complete') {
+      if (target === pendingFrame) {
+        frame?.remove();
+        frame = target;
+        pendingFrame = undefined;
+        frame.style.visibility = '';
+      }
+      frameSettled = true;
+      setLoading(false);
       errorTarget.hidden = true;
     } else if (event.data?.type === 'antv-demo:error' && typeof event.data.error === 'string') {
       if (target === pendingFrame) discardPending();
       errorTarget.textContent = event.data.error;
       errorTarget.hidden = false;
+      setLoading(false);
     }
   };
   window.addEventListener('message', receive);
+  // The initial iframe may finish before the editor bundle attaches its listener.
+  const initialError = frame?.contentDocument?.querySelector<HTMLElement>('#demo-error');
+  if (initialError && !initialError.hidden) {
+    frameSettled = true;
+    errorTarget.textContent = initialError.textContent;
+    errorTarget.hidden = false;
+    setLoading(false);
+  }
   const run = () => {
     syncSharedFiles();
+    request?.abort();
+    request = undefined;
+    setLoading(true);
+    errorTarget.hidden = true;
     observer.disconnect();
     clearTimeout(timer);
     discardPending();
@@ -152,7 +181,6 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
         ? codePanels.find((panel) => panel.dataset.demoCodePanel === activeFile)!.querySelector('code')!.textContent!
         : getSource();
       await navigator.clipboard.writeText(code);
-
       copyLabel.textContent = copyButton.dataset.copied!;
       copyButton.dataset.copyState = 'success';
     } catch {
@@ -175,20 +203,22 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
   const sidebar = document.querySelector<HTMLElement>('[data-example-sidebar]');
   if (!sidebar) continue;
   const links = new Map([...sidebar.querySelectorAll<HTMLAnchorElement>('[data-demo-link]')].map((link) => [link.href, link]));
-  let request: AbortController | undefined;
   let currentUrl = location.href;
 
   const navigate = async (url: string, push: boolean) => {
     request?.abort();
     request = undefined;
-    root.removeAttribute('aria-busy');
     if (url === currentUrl) {
+      setLoading(Boolean(pendingFrame) || !frameSettled);
       // A pending popstate may already have changed the address without updating the view.
       if (push && location.href !== url) history.pushState(null, '', url);
       return;
     }
+    clearTimeout(timer);
+    discardPending();
     const controller = request = new AbortController();
-    root.setAttribute('aria-busy', 'true');
+    setLoading(true);
+    errorTarget.hidden = true;
     try {
       const response = await fetch(url, { signal: controller.signal });
       if (!response.ok) throw new Error(`Unable to load example: ${response.status}`);
@@ -243,7 +273,7 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
     } catch {
       if (!controller.signal.aborted) location.assign(url);
     } finally {
-      if (request === controller) root.removeAttribute('aria-busy');
+      if (request === controller) request = undefined;
     }
   };
   sidebar.addEventListener('click', (event) => {

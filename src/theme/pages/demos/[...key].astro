@@ -67,7 +67,9 @@ const { demo } = Astro.props;
 
       const key = document.body.dataset.demoKey || '';
       const errorTarget = document.querySelector('#demo-error');
+      let failed = false;
       const showError = (error: unknown) => {
+        failed = true;
         if (!(errorTarget instanceof HTMLElement)) return;
         errorTarget.hidden = false;
         errorTarget.textContent = error instanceof Error ? error.stack || error.message : String(error);
@@ -82,6 +84,7 @@ const { demo } = Astro.props;
       else load().then(() => {
         // Allow the renderer's first layout to settle before revealing the preview.
         requestAnimationFrame(() => requestAnimationFrame(() => {
+          if (failed) return;
           document.documentElement.classList.add('preview-ready');
           if (parent !== window) parent.postMessage({ type: 'antv-demo:complete' }, location.origin);
         }));
