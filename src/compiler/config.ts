@@ -59,6 +59,8 @@ export interface AntVSiteConfig {
     locales?: SiteLocale[];
     favicon?: string;
     logo?: string;
+    /** Site ownership verification meta names mapped to their tokens. */
+    verification?: Record<string, string>;
     openGraph?: Pick<OpenGraphOptions, "image" | "imageAlt">;
   };
   content: {
@@ -153,6 +155,7 @@ export interface ResolvedSiteConfig {
     locales: SiteLocale[];
     favicon?: string;
     logo?: string;
+    verification?: Record<string, string>;
     openGraph?: Pick<OpenGraphOptions, "image" | "imageAlt">;
   };
   content: {
@@ -332,6 +335,7 @@ const configSchema = z
         .default(["zh", "en"]),
       favicon: z.string().optional(),
       logo: z.string().optional(),
+      verification: z.record(z.string().trim().min(1), z.string().trim().min(1)).optional(),
       openGraph: openGraphSchema.pick({ image: true, imageAlt: true }).optional(),
     }),
     content: z.strictObject({
