@@ -80,6 +80,19 @@ overrides the sharing title. `home.title` controls the visible homepage heading.
 
 `site.origin` must be an HTTP(S) origin, such as `https://example.com`, without a path, query, or fragment.
 
+Optional `site.verification` maps site ownership verification meta names to non-empty tokens:
+
+```js
+site: {
+  // ...other site settings
+  verification: {
+    'google-site-verification': 'your-verification-token',
+  },
+},
+```
+
+The theme renders these tags in the shared page `<head>`, including static output. Omit this option to emit no verification tags; consumer middleware is unnecessary.
+
 Configure analytics using component names exported by [astro-analytics](https://github.com/Destiner/astro-analytics). Each value is passed directly as that component's props. Include only the services you use:
 
 ```js
@@ -153,6 +166,7 @@ For JSX using the automatic React runtime, configure `react` and `react/jsx-runt
 Gallery previews show the shared loading indicator until the iframe completes or reports an error, including when switching examples or rerunning code. Use top-level `await` for asynchronous setup that must finish before the preview is ready. StackBlitz export creates a Vite project with `index.ts` or `index.tsx` matching the source syntax, a module entry in `index.html`, and the configured package dependencies.
 
 Shared demo modules can use a root-relative import with an explicit extension, such as `import { createGraph } from '/demo-runtime.ts'`. Map it in `demo.dependencies` as `'/demo-runtime.ts': './src/demo-runtime.ts'`, and add the same exact Vite alias for initial gallery previews. These configured local files are included in StackBlitz exports and exposed in read-only, syntax-highlighted file tabs when referenced by the current demo. The source tab remains editable and is selected by default; copying uses the selected file, while running and exporting use the demo source. Keep local imports among these modules explicitly configured as well.
+StackBlitz export creates a Vite project with `index.ts` or `index.tsx` matching the source syntax, a module entry in `index.html`, and the configured package dependencies.
 
 For data previews, the built-in table helper needs no dependency configuration:
 
