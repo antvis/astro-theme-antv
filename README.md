@@ -80,6 +80,19 @@ overrides the sharing title. `home.title` controls the visible homepage heading.
 
 `site.origin` must be an HTTP(S) origin, such as `https://example.com`, without a path, query, or fragment.
 
+Optional `site.verification` maps site ownership verification meta names to non-empty tokens:
+
+```js
+site: {
+  // ...other site settings
+  verification: {
+    'google-site-verification': 'your-verification-token',
+  },
+},
+```
+
+The theme renders these tags in the shared page `<head>`, including static output. Omit this option to emit no verification tags; consumer middleware is unnecessary.
+
 Configure analytics using component names exported by [astro-analytics](https://github.com/Destiner/astro-analytics). Each value is passed directly as that component's props. Include only the services you use:
 
 ```js
