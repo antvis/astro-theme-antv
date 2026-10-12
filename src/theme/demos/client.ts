@@ -1,6 +1,7 @@
 import type { EditorView } from 'codemirror';
 import { createEditor } from './editor';
 import { createFrameDocument } from './frame';
+import { createDemoSplit } from './split';
 import { compileDemoSource } from '../../demo-source.js';
 
 for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo], [data-example-demo]')) {
@@ -200,6 +201,8 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
   observer.observe(root);
 
   if (!isExample) continue;
+  const destroySplit = createDemoSplit(root, () => editor?.requestMeasure());
+  if (import.meta.hot) import.meta.hot.dispose(destroySplit);
   const sidebar = document.querySelector<HTMLElement>('[data-example-sidebar]');
   if (!sidebar) continue;
   const links = new Map([...sidebar.querySelectorAll<HTMLAnchorElement>('[data-demo-link]')].map((link) => [link.href, link]));

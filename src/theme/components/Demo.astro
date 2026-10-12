@@ -40,8 +40,8 @@ const exportFilename = `index.${compileDemoSource(demo.source, demo.sourcePath).
 const exportHtml = `<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body,#container{width:100%;height:100%;margin:0}body{font-family:sans-serif}</style></head><body><div id="container"></div><script type="module" src="/${exportFilename}"></script></body></html>`;
 ---
 
-<section class="grid h-full min-h-0 min-w-0 grid-cols-[minmax(0,3fr)_minmax(0,2fr)] [@media(width<=1080px)]:h-auto [@media(width<=1080px)]:grid-cols-1" aria-labelledby="demo-title" data-example-demo data-demo-path={`/${demo.relativeSourcePath}`}>
-  <div class="flex min-h-0 min-w-0 flex-col p-6 [@media(width<=700px)]:p-4">
+<section class="group/demo flex h-full min-h-0 min-w-0 [@media(width<=1080px)]:h-auto [@media(width<=1080px)]:flex-col data-[resizing]:cursor-col-resize data-[resizing]:select-none data-[resizing]:[&_iframe]:pointer-events-none" aria-labelledby="demo-title" data-example-demo data-demo-path={`/${demo.relativeSourcePath}`}>
+  <div id="demo-canvas" data-demo-canvas class="flex min-h-0 min-w-0 w-3/5 shrink-0 flex-col p-6 [@media(width<=1080px)]:w-full [@media(width<=700px)]:p-4">
     <h1 id="demo-title" class="m-0 mb-4 text-[20px] font-semibold text-[var(--text-strong)]">{title}</h1>
     <div data-demo-preview class="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-white [@media(width<=1080px)]:min-h-80 [@media(width<=1080px)]:flex-none [@media(width<=1080px)]:h-[var(--demo-height)]" style={`--demo-height:${height}px`} aria-label={`${title} ${isZh ? '运行结果' : 'result'}`}>
       <iframe title={`${title} ${isZh ? '运行结果' : 'result'}`} src={withBase(`/demos/${demo.key}/`)} class="absolute inset-0 block size-full border-0" loading="eager" data-demo-frame></iframe>
@@ -51,7 +51,8 @@ const exportHtml = `<!doctype html><html><head><meta charset="UTF-8"><meta name=
       <pre data-demo-error role="alert" hidden class="absolute inset-x-3 top-3 z-1 m-0 max-h-full overflow-auto whitespace-pre-wrap bg-red-50 p-3 text-red-700 [&[hidden]]:hidden"></pre>
     </div>
   </div>
-  <div data-demo-panel class="flex min-h-0 min-w-0 flex-col border-l border-[var(--border-soft)] [@media(width<=1080px)]:border-t [@media(width<=1080px)]:border-l-0">
+  <div data-demo-divider hidden role="separator" tabindex="0" aria-orientation="vertical" aria-controls="demo-canvas" aria-label={isZh ? '调整画布和源码区域宽度' : 'Resize canvas and source panels'} class="relative z-10 w-px shrink-0 cursor-col-resize touch-none bg-black/10 outline-none after:absolute after:inset-y-0 after:-inset-x-[5px] after:border-x-[5px] after:border-solid after:border-transparent after:transition-colors after:duration-150 motion-reduce:after:transition-none hover:after:border-black/5 focus-visible:after:border-black/5 group-data-[resizing]/demo:after:border-black/5 [&[hidden]]:hidden [@media(width<=1080px)]:hidden"></div>
+  <div data-demo-panel class="flex min-h-0 min-w-0 w-2/5 shrink-0 flex-col border-[var(--border-soft)] [@media(width<=1080px)]:w-full [@media(width<=1080px)]:border-t">
     <header class="relative z-20 flex h-10 shrink-0 items-center justify-between gap-2 border-b border-[var(--border-soft)] px-3">
       <span class="text-sm leading-none font-medium text-[var(--text)]">{isZh ? '源码' : 'Source'}</span>
       <div data-demo-toolbar hidden class="flex items-center gap-1 [&[hidden]]:hidden">
