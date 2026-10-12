@@ -30,9 +30,12 @@ interface Props {
   image?: string;
   imageAlt?: string;
   openGraph?: OpenGraphOptions;
+  markdownHref?: string;
 }
 
-const { locale, title, description, route, pageType = 'page', image, imageAlt, openGraph } = Astro.props;
+const { locale, title, description, route, pageType = 'page', image, imageAlt, openGraph, markdownHref } = Astro.props;
+const hasContentMain = pageType === 'demo' || pageType === 'document';
+const ContentContainer = hasContentMain ? 'div' : 'main';
 const canonical = new URL(withBase(route), config.site.origin);
 const metaTitle = localize(config.site.metaTitle, locale, config.site.title);
 const documentTitle = pageType === 'home' || title === config.site.title || title === metaTitle
@@ -146,6 +149,7 @@ const navItemClass = [
     <link rel="stylesheet" href="https://assets.antv.antgroup.com/AlibabaPuHuiTi-Regular/result.css" />
     <link rel="stylesheet" href="https://assets.antv.antgroup.com/AlibabaPuHuiTi-Bold/result.css" />
     <link rel="canonical" href={canonical} />
+    {markdownHref && <link rel="alternate" type="text/markdown" href={markdownHref} title={title} />}
     <link rel="help" type="text/plain" href={withBase('/llms.txt')} title="Agent resources" />
     {alternateLocales.map((entry) => (
       <link
@@ -235,9 +239,9 @@ const navItemClass = [
         </nav>
       </div>
     </header>
-    <main id="main-content" class:list={[pageType === 'home' && "overflow-hidden", pageType === 'qa' && "h-[calc(100dvh_-_var(--header-height))] min-h-0 overflow-hidden", pageType === 'demo' && "[@media(width>1080px)]:min-h-0 [@media(width>1080px)]:flex-1"]} data-pagefind-body={isRootHome ? undefined : true}>
+    <ContentContainer id={hasContentMain ? undefined : 'main-content'} class:list={[pageType === 'home' && "overflow-hidden", pageType === 'qa' && "h-[calc(100dvh_-_var(--header-height))] min-h-0 overflow-hidden", pageType === 'demo' && "[@media(width>1080px)]:min-h-0 [@media(width>1080px)]:flex-1"]} data-pagefind-body={isRootHome || hasContentMain ? undefined : true}>
       <slot />
-    </main>
+    </ContentContainer>
     {pageType !== 'demo' && pageType !== 'qa' && <SiteFooter
       locale={locale}
       groups={footerGroups}

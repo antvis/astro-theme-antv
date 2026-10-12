@@ -6,7 +6,7 @@ import checkIcon from '@tabler/icons/outline/check.svg?raw';
 import markdownIcon from '@tabler/icons/outline/markdown.svg?raw';
 import { localize } from '../../../compiler/localization.js';
 import type { SitePage } from '../../../compiler/content.js';
-import { getDocsCollection } from '../../lib/docs';
+import { getDocsCollection, getDocumentItems } from '../../lib/docs';
 import { toDocumentPage } from '../../lib/documents';
 import type { DocumentPage } from '../../lib/documents';
 import { markdownRouteFor, withBase } from '../../lib/paths';
@@ -62,19 +62,9 @@ if (page.type === 'document') Astro.locals.antvDocument = page.entry;
 const locale = page.locale;
 const isZh = locale === 'zh';
 const documentSection = page.type === 'document' ? page.section : undefined;
-const documentEntries = page.type === 'document'
-  ? await getDocsCollection()
+const documentItems = page.type === 'document'
+  ? (await getDocumentItems()).filter((item) => item.locale === locale && item.section === documentSection)
   : [];
-const documentItems = documentEntries
-  .filter((entry) => !entry.data.sidebar.hidden)
-  .map((entry) => toDocumentPage(entry, config))
-  .filter((item) => item.locale === locale && item.section === documentSection)
-  .map((item) => ({
-    ...item,
-    title: item.entry.data.sidebar.label || item.title,
-    icon: item.entry.data.sidebar.icon,
-  }))
-  .sort((a, b) => a.order - b.order || a.slug.localeCompare(b.slug));
 const renderedDocument = page.type === 'document' ? await render(page.entry) : undefined;
 const DocumentContent = renderedDocument?.Content;
 const category = page.type === 'example-category'
@@ -92,7 +82,7 @@ const demo = page.type === 'demo' ? demosByKey.get(page.demoKey) : undefined;
 const editConfig = config.content.edit;
 const markdownHref = page.type === 'document'
   ? withBase(markdownRouteFor(locale, page.slug))
-  : undefined;
+  : demo ? withBase(markdownRouteFor(locale, `examples/${demo.key}`)) : undefined;
 const repositoryPath = (...parts: string[]) =>
   parts
     .flatMap((part) => part.split('/'))
@@ -126,42 +116,44 @@ if (page.type === 'document') {
 }
 ---
 
-<BaseLayout locale={locale} title={title} description={description} route={page.route} pageType={page.type === 'document' ? 'document' : demo ? 'demo' : 'page'} image={page.type === 'document' ? page.entry.data.screenshot : demo?.screenshot} openGraph={page.type === 'document' ? page.entry.data.openGraph : demo?.openGraph}>
+<BaseLayout markdownHref={markdownHref} locale={locale} title={title} description={description} route={page.route} pageType={page.type === 'document' ? 'document' : demo ? 'demo' : 'page'} image={page.type === 'document' ? page.entry.data.screenshot : demo?.screenshot} openGraph={page.type === 'document' ? page.entry.data.openGraph : demo?.openGraph}>
   {page.type === 'document' && (page.entry.data.template === 'page' ? (
-    <section aria-label={page.title}>
+    <main id="main-content" data-pagefind-body aria-label={page.title}>
       <h1 class="sr-only" data-pagefind-meta="title">{page.title}</h1>
       {DocumentContent && <DocumentContent />}
-    </section>
+    </main>
   ) : (
     <div class="grid grid-cols-[var(--docs-sidebar-width)_minmax(0,1fr)_var(--toc-width)] w-[var(--content-width)] mx-auto pt-6 pb-16 bg-[var(--surface-raised)] [@media(900px<width<=1320px)]:grid-cols-[240px_minmax(0,1fr)] [@media(width<=900px)]:block [@media(width<=900px)]:w-[min(100%_-_36px,820px)]">
       <DocsSidebar items={documentItems} currentRoute={page.route} locale={locale} labels={config.content.sidebar} />
-      <article class="markdown-body">
-        <h1 data-pagefind-meta="title">{page.title}</h1>
-        <div class="flex flex-wrap items-center justify-end gap-4 mb-6 pb-3 [border-bottom:1px_solid_var(--border-soft)] text-[12px] leading-[1.5] [@media(width<=700px)]:justify-start" data-pagefind-ignore>
-          <a href={markdownHref} type="text/markdown" class="inline-flex items-center gap-1.5 text-[var(--muted)] hover:text-[var(--muted)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current">
-            <span class="inline-flex size-3.5 [&_svg]:size-full" aria-hidden="true" set:html={markdownIcon} />
-            {isZh ? '查看 Markdown' : 'View Markdown'}
-          </a>
-          <button
-            type="button"
-            hidden
-            data-copy-document={markdownHref}
-            class="group/copy inline-flex items-center gap-1.5 border-0 bg-transparent p-0 [font:inherit] text-[var(--muted)] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current [&[hidden]]:hidden"
-            title={isZh ? '复制当前文档的 Markdown' : 'Copy this document as Markdown'}
-          >
-            <span class="inline-flex size-3.5 [&_svg]:size-full group-data-[copy-state=success]/copy:hidden" aria-hidden="true" set:html={copyIcon} />
-            <span class="hidden size-3.5 [&_svg]:size-full group-data-[copy-state=success]/copy:inline-flex" aria-hidden="true" set:html={checkIcon} />
-            <span data-copy-label role="status" aria-live="polite">{isZh ? '复制文档' : 'Copy document'}</span>
-          </button>
-          {editHref && (
-            <a href={editHref} class="inline-flex items-center gap-1.5 text-[var(--muted)] hover:text-[var(--muted)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current">
-              <span class="inline-flex size-3.5 [&_svg]:size-full" aria-hidden="true" set:html={editIcon} />
-              {localize(editConfig?.label, locale, isZh ? '编辑此页' : 'Edit this page')}
+      <main id="main-content" data-pagefind-body class="min-w-0">
+        <article class="markdown-body">
+          <h1 data-pagefind-meta="title">{page.title}</h1>
+          <div class="flex flex-wrap items-center justify-end gap-4 mb-6 pb-3 [border-bottom:1px_solid_var(--border-soft)] text-[12px] leading-[1.5] [@media(width<=700px)]:justify-start" data-pagefind-ignore>
+            <a href={markdownHref} type="text/markdown" class="inline-flex items-center gap-1.5 text-[var(--muted)] hover:text-[var(--muted)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current">
+              <span class="inline-flex size-3.5 [&_svg]:size-full" aria-hidden="true" set:html={markdownIcon} />
+              {isZh ? '查看 Markdown' : 'View Markdown'}
             </a>
-          )}
-        </div>
-        {DocumentContent && <DocumentContent />}
-      </article>
+            <button
+              type="button"
+              hidden
+              data-copy-document={markdownHref}
+              class="group/copy inline-flex items-center gap-1.5 border-0 bg-transparent p-0 [font:inherit] text-[var(--muted)] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current [&[hidden]]:hidden"
+              title={isZh ? '复制当前文档的 Markdown' : 'Copy this document as Markdown'}
+            >
+              <span class="inline-flex size-3.5 [&_svg]:size-full group-data-[copy-state=success]/copy:hidden" aria-hidden="true" set:html={copyIcon} />
+              <span class="hidden size-3.5 [&_svg]:size-full group-data-[copy-state=success]/copy:inline-flex" aria-hidden="true" set:html={checkIcon} />
+              <span data-copy-label role="status" aria-live="polite">{isZh ? '复制文档' : 'Copy document'}</span>
+            </button>
+            {editHref && (
+              <a href={editHref} class="inline-flex items-center gap-1.5 text-[var(--muted)] hover:text-[var(--muted)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current">
+                <span class="inline-flex size-3.5 [&_svg]:size-full" aria-hidden="true" set:html={editIcon} />
+                {localize(editConfig?.label, locale, isZh ? '编辑此页' : 'Edit this page')}
+              </a>
+            )}
+          </div>
+          {DocumentContent && <DocumentContent />}
+        </article>
+      </main>
       <Toc headings={renderedDocument?.headings || []} locale={locale} />
     </div>
   ))}
@@ -216,13 +208,15 @@ if (page.type === 'document') {
   {demo && (
     <div class="grid w-[var(--content-width)] mx-auto bg-[var(--surface-raised)] [@media(width<=900px)]:block [@media(width<=900px)]:w-[min(100%_-_36px,820px)] grid-cols-[250px_minmax(0,1fr)] h-full [@media(900px<width<=1320px)]:grid-cols-[240px_minmax(0,1fr)] [@media(width<=1080px)]:h-auto">
       <ExampleSidebar categories={registry.categories} locale={locale} currentRoute={page.route} />
-      <article class="min-w-0 h-full p-0 overflow-hidden bg-[var(--surface-raised)] [@media(width<=1080px)]:h-auto [@media(width<=1080px)]:overflow-visible">
-        <Demo
-          demo={demo}
-          locale={locale}
-          height={config.demo.height}
-        />
-      </article>
+      <main id="main-content" data-pagefind-body class="min-w-0 h-full p-0 overflow-hidden bg-[var(--surface-raised)] [@media(width<=1080px)]:h-auto [@media(width<=1080px)]:overflow-visible">
+        <article class="h-full">
+          <Demo
+            demo={demo}
+            locale={locale}
+            height={config.demo.height}
+          />
+        </article>
+      </main>
     </div>
   )}
 

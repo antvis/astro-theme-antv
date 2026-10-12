@@ -5,6 +5,7 @@ import { localize } from '../../compiler/localization.js';
 import { getDocsCollection } from './docs';
 import { markdownRouteFor, withBase } from './paths';
 import { config } from './site';
+import type { DemoRecord } from '../../compiler/content.js';
 import { demoFiles } from './demo-dependencies';
 import { fencedCode, serializeAgentMarkdown } from '../../agent-markdown.js';
 
@@ -149,4 +150,33 @@ export async function serializeAgentDocument(
   const sharedSources = Object.entries(demoFiles).filter(([name]) => body.includes(`/${name}`))
     .map(([name, code]) => `### ${name}\n\n${fencedCode(code, name.split('.').pop())}`);
   return ['---', ...metadata, '---', '', body, ...sharedSources, ''].join('\n');
+}
+
+/** Export the same source and supporting files as the runnable example. */
+export function serializeAgentExample(demo: DemoRecord, locale: SiteLocale): string {
+  const title = localize(demo.title, locale, demo.slug);
+  const isZh = locale === 'zh';
+  const canonical = absoluteSiteUrl(`/${locale}/examples/${demo.key}/`);
+  return [
+    '---',
+    `title: ${JSON.stringify(title)}`,
+    `language: ${JSON.stringify(locale)}`,
+    `canonical: ${JSON.stringify(canonical)}`,
+    ...(currentSiteVersion ? [`version: ${JSON.stringify(currentSiteVersion)}`] : []),
+    '---',
+    '',
+    `# ${markdownLinkText(title)}`,
+    '',
+    `[${isZh ? '运行示例' : 'Live example'}](${canonical})`,
+    '',
+    isZh ? '页面需要一个 `id="container"` 的 DOM 元素。以下为原始示例源码。' : 'Provide a DOM element with `id="container"`. The original example source follows.',
+    '',
+    `## ${isZh ? '源码' : 'Source'}`,
+    '',
+    fencedCode(demo.source, demo.filename.split('.').pop()),
+    '',
+    ...Object.entries(demoFiles).flatMap(([name, source]) => [
+      `## ${markdownLinkText(name)}`, '', fencedCode(source, name.split('.').pop()), '',
+    ]),
+  ].join('\n');
 }

@@ -1,6 +1,7 @@
 import { getCollection } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
 import { config } from './site';
+import { toDocumentPage } from './documents';
 
 type DocsCollectionEntry = CollectionEntry<'docs'>;
 
@@ -15,4 +16,17 @@ type DocsCollectionEntry = CollectionEntry<'docs'>;
 export async function getDocsCollection(): Promise<DocsCollectionEntry[]> {
   const entries = await getCollection(config.content.collectionName) as DocsCollectionEntry[];
   return entries.filter((entry) => !entry.data.draft);
+}
+
+/** Shared by detail sidebars and their static, per-section directory. */
+export async function getDocumentItems() {
+  return (await getDocsCollection())
+    .filter((entry) => !entry.data.sidebar.hidden)
+    .map((entry) => toDocumentPage(entry, config))
+    .map((item) => ({
+      ...item,
+      title: item.entry.data.sidebar.label || item.title,
+      icon: item.entry.data.sidebar.icon,
+    }))
+    .sort((a, b) => a.order - b.order || a.slug.localeCompare(b.slug));
 }

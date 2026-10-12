@@ -137,6 +137,12 @@ Frontmatter must contain `title`; `description`, `order`, `draft`, and `sidebar.
 
 Each published document has a Markdown URL alongside its HTML page: `/zh/guide/` is exported as `/zh/guide.md` (and `/en/guide/` as `/en/guide.md`). The document toolbar, copy action, and `llms.txt` index use this same URL, including the configured Astro `base` prefix.
 
+Example detail pages also expose Markdown containing source and supporting files (for example, `/zh/examples/general/line/basic.md`), discoverable from the page, a `text/markdown` alternate link, and `llms.txt`.
+
+Example sidebars statically render top-level categories and the current group, with links to the static catalog. Expansion or search loads shared localized JSON and renders only open branches or matching results. Sidebar navigation is excluded from the main content and search index.
+
+Document sidebars retain top-level entries and the current branch in HTML. Other branches load on expansion from a shared static directory at `/[locale]/_docs/[section]/`, which also provides complete navigation without JavaScript. Both sidebars are excluded from the document’s main content and search index.
+
 ## Interactive document demos
 
 Import `Demo` in MDX to add an editable example:

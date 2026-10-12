@@ -205,7 +205,7 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
   if (import.meta.hot) import.meta.hot.dispose(destroySplit);
   const sidebar = document.querySelector<HTMLElement>('[data-example-sidebar]');
   if (!sidebar) continue;
-  const links = new Map([...sidebar.querySelectorAll<HTMLAnchorElement>('[data-demo-link]')].map((link) => [link.href, link]));
+  const visited = new Set([location.href]);
   let currentUrl = location.href;
 
   const navigate = async (url: string, push: boolean) => {
@@ -259,16 +259,15 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
       pendingFrame = nextFrame;
       preview.append(nextFrame);
       document.title = page.title;
-      const metadata = 'link[rel="canonical"], link[rel="alternate"][hreflang], meta[property^="og:"], meta[name^="twitter:"], meta[name="description"], script[type="application/ld+json"]';
+      root.querySelector<HTMLAnchorElement>('[data-demo-markdown]')!.href = next.querySelector<HTMLAnchorElement>('[data-demo-markdown]')!.href;
+      const metadata = 'link[rel="alternate"][type="text/markdown"], link[rel="canonical"], link[rel="alternate"][hreflang], meta[property^="og:"], meta[name^="twitter:"], meta[name="description"], script[type="application/ld+json"]';
       document.head.querySelectorAll(metadata).forEach((element) => element.remove());
       page.head.querySelectorAll(metadata).forEach((element) => document.head.append(element));
       const localeLink = document.querySelector<HTMLAnchorElement>('[data-nav-icon][hreflang]');
       const nextLocaleLink = page.querySelector<HTMLAnchorElement>('[data-nav-icon][hreflang]');
       if (localeLink && nextLocaleLink) localeLink.href = nextLocaleLink.href;
-      sidebar.querySelector('[data-demo-link][aria-current="page"]')?.removeAttribute('aria-current');
-      const selected = links.get(url)!;
-      selected.setAttribute('aria-current', 'page');
-      sidebar.dispatchEvent(new CustomEvent('antv:example-selected', { detail: selected }));
+      visited.add(url);
+      sidebar.dispatchEvent(new CustomEvent('antv:example-selected', { detail: url }));
       const tooltip = sidebar.querySelector<HTMLElement>('[role="tooltip"]');
       if (tooltip) tooltip.hidden = true;
       if (push) history.pushState(null, '', url);
@@ -286,7 +285,7 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
     void navigate(link.href, true);
   });
   window.addEventListener('popstate', () => {
-    if (links.has(location.href)) void navigate(location.href, false);
+    if (visited.has(location.href)) void navigate(location.href, false);
     else location.reload();
   });
 }

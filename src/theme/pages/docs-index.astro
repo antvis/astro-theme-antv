@@ -1,0 +1,30 @@
+---
+import { localize } from '../../compiler/localization.js';
+import DocsSidebar from '../components/DocsSidebar.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getDocumentItems } from '../lib/docs';
+import { config } from '../lib/site';
+
+export async function getStaticPaths() {
+  const items = await getDocumentItems();
+  return config.site.locales.flatMap((locale) => {
+    const localized = items.filter((item) => item.locale === locale);
+    return [...new Set(localized.map((item) => item.section))].map((section) => ({
+      params: { locale, section: section || 'index' },
+      props: { locale, section, items: localized.filter((item) => item.section === section) },
+    }));
+  });
+}
+
+const { locale, section, items } = Astro.props;
+const sectionTitle = localize(config.content.sidebar[section], locale, section);
+const title = `${locale === 'zh' ? '文档目录' : 'Documentation index'}${sectionTitle ? ` · ${sectionTitle}` : ''}`;
+const route = `/${locale}/_docs/${section || 'index'}/`;
+---
+
+<BaseLayout locale={locale} title={title} description={title} route={route}>
+  <section class="max-w-4xl mx-auto px-6 py-8" data-pagefind-ignore>
+    <h1 class="mb-6 text-2xl font-semibold">{title}</h1>
+    <DocsSidebar catalog items={items} currentRoute="" locale={locale} labels={config.content.sidebar} />
+  </section>
+</BaseLayout>

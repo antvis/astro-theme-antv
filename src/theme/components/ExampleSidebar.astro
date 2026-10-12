@@ -1,5 +1,5 @@
 ---
-import { localize } from '../../compiler/localization.js';
+import { exampleMenu } from '../lib/example-menu';
 import type { ExampleCategory } from '../../compiler/content.js';
 import { withBase } from '../lib/paths';
 import SidebarMenu from './SidebarMenu.astro';
@@ -14,58 +14,14 @@ interface Props {
 const { categories, locale, currentRoute } = Astro.props;
 const catalogRoute = `/${locale}/examples/`;
 const isCatalog = currentRoute === catalogRoute;
-const groupAnchor = (categorySlug: string, groupSlug: string) =>
-  `group-${categorySlug}-${groupSlug.replaceAll('/', '-')}`;
-const categoryDemoCount = (category: ExampleCategory) =>
-  category.groups.reduce(
-    (sum, group) => sum + group.demos.length,
-    0,
-  );
-const navigationCategories = isCatalog
-  ? categories.filter((category) => categoryDemoCount(category) > 0)
-  : categories;
-const nodes = navigationCategories.map((category) => ({
-  key: category.slug,
-  label: localize(category.title, locale),
-  href: isCatalog
-    ? `#category-${category.slug}`
-    : undefined,
-  icon: category.icon,
-  open: !isCatalog && currentRoute.includes(`/examples/${category.slug}/`),
-  children: category.groups.map((group) => {
-    const route = `/${locale}/examples/${category.slug}/${group.slug}/`;
-    const groupIsCurrent =
-      !isCatalog &&
-      (route === currentRoute || currentRoute.startsWith(route));
-    return {
-      key: `${category.slug}/${group.slug}`,
-      label: localize(group.title, locale),
-      href: isCatalog
-        ? `#${groupAnchor(category.slug, group.slug)}`
-        : undefined,
-      open: groupIsCurrent,
-      children:
-        !isCatalog
-          ? group.demos.map((demo) => {
-              const demoRoute = `/${locale}/examples/${demo.key}/`;
-              return {
-                key: demo.key,
-                label: localize(demo.title, locale, demo.slug),
-                href: withBase(demoRoute),
-                thumbnail: demo.screenshot ? withBase(demo.screenshot) : undefined,
-                current: demoRoute === currentRoute,
-                children: [],
-              };
-            })
-          : [],
-    };
-  }),
-}));
+const nodes = exampleMenu(categories, locale, currentRoute);
 ---
 
 <aside
   class:list={["sticky top-[var(--header-height)] self-start max-h-[calc(100dvh_-_var(--header-height))] overflow-x-hidden overflow-y-auto pb-12 [border-right:1px_solid_var(--border-soft)] bg-[var(--surface-raised)] [@media(width<=900px)]:static [@media(width<=900px)]:max-h-85 [@media(width<=900px)]:mt-6 [@media(width<=900px)]:mb-8 [@media(width<=900px)]:p-4 [@media(width<=900px)]:overflow-auto [@media(width<=900px)]:[border:1px_solid_var(--border)] [@media(width<=900px)]:rounded-[var(--radius-medium)] [@media(width<=900px)]:bg-[var(--surface-subtle)] pt-6", !isCatalog && "z-10 [@media(width>1080px)]:h-full [@media(width>1080px)]:max-h-full"]}
   data-example-sidebar
+  data-pagefind-ignore
+  data-menu-url={!isCatalog ? withBase(`/_antv/examples/${locale}/menu.json`) : undefined}
   data-example-catalog={isCatalog ? 'true' : undefined}
 >
   {!isCatalog && <div data-example-controls hidden class="sticky top-0 z-1 flex items-center gap-2 bg-white px-4 pb-3 [&[hidden]]:hidden">
@@ -75,62 +31,29 @@ const nodes = navigationCategories.map((category) => ({
     </label>
     <button data-example-collapse type="button" title={locale === 'zh' ? '全部收起' : 'Collapse all'} aria-label={locale === 'zh' ? '全部收起' : 'Collapse all'} class="inline-flex size-7 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-1 text-[var(--text)] hover:text-[var(--brand)] [&_svg]:size-4" set:html={collapseIcon} />
   </div>}
+  {!isCatalog && <p data-example-load-error hidden role="status" class="m-0 px-4 py-3 text-xs text-[var(--muted)] [&[hidden]]:hidden">{locale === 'zh' ? '目录加载失败，请重新展开分类或搜索。' : 'Menu unavailable. Expand a category or search again to retry.'}</p>}
   <p data-example-empty hidden class="m-0 px-4 py-3 text-xs text-[var(--muted)] [&[hidden]]:hidden" role="status">{locale === 'zh' ? '没有匹配的示例' : 'No matching examples'}</p>
   <nav aria-label={locale === 'zh' ? '示例目录' : 'Examples'}>
     <SidebarMenu nodes={nodes} variant="examples" />
+    {!isCatalog && <ul data-example-results hidden class="m-0 p-0 list-none [&[hidden]]:hidden" />}
   </nav>
+  {!isCatalog && <>
+    <template data-example-template="group"><SidebarMenu template variant="examples" depth={1} nodes={[{key: '', label: '', href: '#', lazy: true}]} /></template>
+    <template data-example-template="thumbnail"><SidebarMenu template variant="examples" depth={2} nodes={[{key: '', label: '', href: '#', thumbnail: '#'}]} /></template>
+    <template data-example-template="text"><SidebarMenu template variant="examples" depth={2} nodes={[{key: '', label: '', href: '#'}]} /></template>
+  </>}
   {!isCatalog && <div id="example-thumbnail-tooltip" role="tooltip" hidden class="pointer-events-none fixed z-300 max-w-64 -translate-y-1/2 rounded-lg bg-[#262626] px-3 py-2 text-sm text-white shadow-xl [&[hidden]]:hidden before:absolute before:top-1/2 before:-left-1 before:size-2 before:-translate-y-1/2 before:rotate-45 before:bg-[#262626]"></div>}
 </aside>
 
 <script>
+  import { setupExampleMenu } from '../lib/example-menu-client';
   const sidebars = document.querySelectorAll<HTMLElement>(
     '[data-example-sidebar]',
   );
 
   for (const sidebar of sidebars) {
-    const controls = sidebar.querySelector<HTMLElement>('[data-example-controls]');
-    if (controls) {
-      controls.hidden = false;
-      const search = controls.querySelector<HTMLInputElement>('input')!;
-      const empty = sidebar.querySelector<HTMLElement>('[data-example-empty]')!;
-      const details = [...sidebar.querySelectorAll<HTMLDetailsElement>('details')];
-      const examples = [...sidebar.querySelectorAll<HTMLAnchorElement>('[data-demo-link]')].map((link) => {
-        const labels = [link.getAttribute('aria-label') ?? link.textContent, link.getAttribute('href')];
-        for (let branch = link.closest('details'); branch; branch = branch.parentElement!.closest('details')) {
-          labels.push(branch.querySelector('summary')!.textContent);
-        }
-        return { item: link.parentElement!, label: labels.join(' ').toLocaleLowerCase() };
-      });
-      let savedOpen: boolean[] | undefined;
-      const filter = () => {
-        const query = search.value.trim().toLocaleLowerCase();
-        if (query && !savedOpen) savedOpen = details.map((item) => item.open);
-        examples.forEach(({ item, label }) => { item.hidden = !label.includes(query); });
-        for (const branch of [...details].reverse()) {
-          branch.parentElement!.hidden = !branch.querySelector(':scope > ul > li:not([hidden])');
-          if (query) branch.open = !branch.parentElement!.hidden;
-        }
-        empty.hidden = examples.some(({ item }) => !item.hidden);
-        if (!query && savedOpen) {
-          details.forEach((item, index) => { item.open = savedOpen![index]!; });
-          savedOpen = undefined;
-        }
-      };
-      search.addEventListener('input', filter);
-      controls.querySelector('button')!.addEventListener('click', () => {
-        search.value = '';
-        filter();
-        details.forEach((item) => { item.open = false; });
-      });
-      sidebar.addEventListener('antv:example-selected', (event) => {
-        const link = (event as CustomEvent<HTMLAnchorElement>).detail;
-        if (link.closest('[hidden]')) {
-          search.value = '';
-          filter();
-        }
-        for (let branch = link.closest('details'); branch; branch = branch.parentElement!.closest('details')) branch.open = true;
-        ensureMenuItemVisible(link);
-      });
+    if (sidebar.dataset.exampleCatalog !== 'true') {
+      setupExampleMenu(sidebar, (link) => ensureMenuItemVisible(link));
     }
     const tooltip = sidebar.querySelector<HTMLElement>('[role="tooltip"]');
     if (tooltip) {
