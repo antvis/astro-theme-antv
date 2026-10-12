@@ -8,7 +8,7 @@ const visible = headings.filter((heading) => heading.depth >= 2 && heading.depth
 ---
 
 {visible.length > 0 && (
-  <aside class="sticky top-[var(--header-height)] self-start max-h-[calc(100dvh_-_var(--header-height))] overflow-x-hidden overflow-y-auto w-[var(--toc-width)] pt-2 pr-0 pb-12 pl-6 [border-left:1px_solid_var(--border-soft)] bg-[var(--surface-raised)] text-[12px] [@media(width<=1320px)]:hidden">
+  <aside data-pagefind-ignore class="sticky top-[var(--header-height)] self-start max-h-[calc(100dvh_-_var(--header-height))] overflow-x-hidden overflow-y-auto w-[var(--toc-width)] pt-2 pr-0 pb-12 pl-6 [border-left:1px_solid_var(--border-soft)] bg-[var(--surface-raised)] text-[12px] [@media(width<=1320px)]:hidden">
     <div class="sidebar-title">{locale === 'zh' ? '本页内容' : 'On this page'}</div>
     <ol class="m-0 p-0 list-none">
       {visible.map((heading) => (

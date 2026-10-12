@@ -2,6 +2,7 @@
 import { localize } from '../../compiler/localization.js';
 import { withBase } from '../lib/paths';
 import SidebarMenu from './SidebarMenu.astro';
+import type { SidebarMenuNode } from './SidebarMenu.astro';
 
 interface Item {
   route: string;
@@ -14,6 +15,7 @@ interface Props {
   items: Item[];
   currentRoute: string;
   locale: 'zh' | 'en';
+  catalog?: boolean;
   labels?: Record<string, { zh: string; en: string; order?: number }>;
 }
 interface Node {
@@ -29,7 +31,7 @@ interface Node {
   children: Node[];
 }
 
-const { items, currentRoute, locale, labels = {} } = Astro.props;
+const { items, currentRoute, locale, labels = {}, catalog = false } = Astro.props;
 const section = items[0]?.slug.split('/')[0] || '';
 const nodes: Node[] = [];
 const configuredIndexes = new Map(
@@ -119,10 +121,102 @@ const prepareNodes = (entries: Node[]): number => {
   );
 };
 prepareNodes(nodes);
+const catalogHref = withBase(`/${locale}/_docs/${section || 'index'}/`);
+const containsCurrent = (node: Node): boolean =>
+  Boolean(node.current || node.children.some(containsCurrent));
+const visibleNodes = (entries: Node[]): SidebarMenuNode[] => entries.map((node) => {
+  const open = catalog || containsCurrent(node);
+  return {
+    ...node,
+    id: catalog ? node.key : undefined,
+    href: node.href || `${catalogHref}#${node.key}`,
+    open,
+    lazy: node.children.length > 0,
+    children: open ? visibleNodes(node.children) : [],
+  };
+});
 ---
 
-<aside class="sticky top-[var(--header-height)] self-start max-h-[calc(100dvh_-_var(--header-height))] overflow-x-hidden overflow-y-auto pb-12 [border-right:1px_solid_var(--border-soft)] bg-[var(--surface-raised)] [@media(width<=900px)]:static [@media(width<=900px)]:max-h-85 [@media(width<=900px)]:mt-6 [@media(width<=900px)]:mb-8 [@media(width<=900px)]:p-4 [@media(width<=900px)]:overflow-auto [@media(width<=900px)]:[border:1px_solid_var(--border)] [@media(width<=900px)]:rounded-[var(--radius-medium)] [@media(width<=900px)]:bg-[var(--surface-subtle)] pt-2">
+<aside data-doc-sidebar={!catalog || undefined} data-doc-catalog={catalog || undefined} data-menu-url={!catalog ? catalogHref : undefined} data-pagefind-ignore class={!catalog ? "sticky top-[var(--header-height)] self-start max-h-[calc(100dvh_-_var(--header-height))] overflow-x-hidden overflow-y-auto pb-12 [border-right:1px_solid_var(--border-soft)] bg-[var(--surface-raised)] [@media(width<=900px)]:static [@media(width<=900px)]:max-h-85 [@media(width<=900px)]:mt-6 [@media(width<=900px)]:mb-8 [@media(width<=900px)]:p-4 [@media(width<=900px)]:overflow-auto [@media(width<=900px)]:[border:1px_solid_var(--border)] [@media(width<=900px)]:rounded-[var(--radius-medium)] [@media(width<=900px)]:bg-[var(--surface-subtle)] pt-2" : undefined}>
+  {!catalog && items.length > 0 && <a href={catalogHref} class="block px-6 py-2 text-sm text-[var(--muted)] hover:text-[var(--brand)] focus-visible:outline-2 focus-visible:outline-[var(--brand)]">{locale === 'zh' ? '完整文档目录' : 'Full documentation index'}</a>}
+  <p data-doc-load-error hidden role="status" class="m-0 px-6 py-2 text-xs text-[var(--muted)] [&[hidden]]:hidden">{locale === 'zh' ? '目录加载失败，请重新展开或访问完整文档目录。' : 'Menu unavailable. Expand again or visit the full documentation index.'}</p>
   <nav aria-label={locale === 'zh' ? '文档目录' : 'Documentation'}>
-    <SidebarMenu nodes={nodes} variant="docs" />
+    <SidebarMenu nodes={visibleNodes(nodes)} variant="docs" />
   </nav>
 </aside>
+
+<script>
+  for (const sidebar of document.querySelectorAll<HTMLElement>('[data-doc-sidebar]')) {
+    const nav = sidebar.querySelector('nav')!;
+    const error = sidebar.querySelector<HTMLElement>('[data-doc-load-error]')!;
+    const expanded = new Set([...nav.querySelectorAll('details[open]')]
+      .map((details) => (details.parentElement as HTMLElement).dataset.sidebarKey!));
+    let branches: Map<string, HTMLElement> | undefined;
+    let pending: Promise<void> | undefined;
+    const children = (details: Element) => details.querySelector<HTMLElement>(':scope > [data-sidebar-menu]')!;
+    const load = () => {
+      if (branches) return Promise.resolve();
+      if (pending) return pending;
+      nav.setAttribute('aria-busy', 'true');
+      error.hidden = true;
+      pending = (async () => {
+        try {
+          const response = await fetch(sidebar.dataset.menuUrl!);
+          if (!response.ok) throw new Error(`Menu: ${response.status}`);
+          const page = new DOMParser().parseFromString(await response.text(), 'text/html');
+          const catalog = page.querySelector('[data-doc-catalog]');
+          if (!catalog) throw new Error('Missing document directory');
+          branches = new Map([...catalog.querySelectorAll<HTMLElement>('[data-sidebar-key]')]
+            .map((item) => [item.dataset.sidebarKey!, item]));
+        } catch {
+          error.hidden = false;
+        } finally {
+          pending = undefined;
+          nav.removeAttribute('aria-busy');
+        }
+      })();
+      return pending;
+    };
+    const prepare = (item: HTMLElement) => {
+      item.removeAttribute('id');
+      const details = item.querySelector<HTMLDetailsElement>(':scope > details');
+      const link = item.querySelector<HTMLAnchorElement>(':scope > a, :scope > details > summary a');
+      if (link && new URL(link.getAttribute('href')!, location.href).pathname === location.pathname) {
+        link.setAttribute('aria-current', 'page');
+        details?.querySelector('summary')!.setAttribute('data-current', 'true');
+      }
+      if (!details) return;
+      details.open = expanded.has(item.dataset.sidebarKey!);
+      if (!details.open) children(details).replaceChildren();
+      else for (const child of children(details).children) prepare(child as HTMLElement);
+    };
+    nav.addEventListener('click', async (event) => {
+      const target = event.target as Element;
+      const summary = target.closest<HTMLElement>('[data-sidebar-summary]');
+      if (!summary || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const link = target.closest('a');
+      // Document titles remain navigable; directory fallback links expand in place.
+      if (link && !link.getAttribute('href')?.startsWith(`${sidebar.dataset.menuUrl}#`)) return;
+      event.preventDefault();
+      const details = summary.parentElement as HTMLDetailsElement;
+      const key = details.parentElement!.dataset.sidebarKey!;
+      details.open = !details.open;
+      if (!details.open) {
+        expanded.delete(key);
+        children(details).replaceChildren();
+        return;
+      }
+      expanded.add(key);
+      await load();
+      if (!details.isConnected || !details.open) return;
+      const source = branches?.get(key)?.querySelector('details');
+      if (!source) return;
+      const items = [...children(source).children].map((child) => {
+        const item = child.cloneNode(true) as HTMLElement;
+        prepare(item);
+        return item;
+      });
+      children(details).replaceChildren(...items);
+    });
+  }
+</script>

@@ -8,6 +8,7 @@ import {
   inlineText,
   markdownLinkText,
 } from '../lib/agent-content';
+import { markdownRouteFor } from '../lib/paths';
 import { config, registry } from '../lib/site';
 
 export const GET: APIRoute = async () => {
@@ -54,7 +55,7 @@ export const GET: APIRoute = async () => {
         [...registry.demos]
           .sort((left, right) => left.key.localeCompare(right.key))
           .map((demo) =>
-            `- [${markdownLinkText(localize(demo.title, locale, demo.slug))}](${absoluteSiteUrl(`/${locale}/examples/${demo.key}/`)}): ${description}`,
+            `- [${markdownLinkText(localize(demo.title, locale, demo.slug))}](${absoluteSiteUrl(markdownRouteFor(locale, `examples/${demo.key}`))}): ${description} — [${locale === 'zh' ? '页面' : 'Canonical page'}](${absoluteSiteUrl(`/${locale}/examples/${demo.key}/`)})`,
           )
           .join('\n'),
       );

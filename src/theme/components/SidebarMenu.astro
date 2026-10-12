@@ -3,12 +3,14 @@ import ExampleCategoryIcon from './ExampleCategoryIcon.astro';
 
 export interface SidebarMenuNode {
   key: string;
+  id?: string;
   label: string;
   href?: string;
   icon?: string;
   thumbnail?: string;
   current?: boolean;
   open?: boolean;
+  lazy?: boolean;
   children?: SidebarMenuNode[];
 }
 
@@ -17,12 +19,14 @@ interface Props {
   variant?: 'docs' | 'examples';
   depth?: number;
   indent?: number;
+  template?: boolean;
 }
 
 const {
   nodes,
   variant = 'docs',
   depth = 0,
+  template = false,
   indent = variant === 'examples' ? 24 : 16,
 } = Astro.props;
 const offset = 24 + depth * indent;
@@ -35,11 +39,12 @@ const menuItemClass = "relative box-border flex items-center w-full min-h-10 m-0
 <ul data-sidebar-menu class:list={["m-0 p-0 list-none", variant === "examples" && depth > 0 && "pb-2"]}>
   {nodes.map((node) => {
     const children = node.children || [];
-    const hasChildren = children.length > 0;
+    const hasChildren = Boolean(node.lazy || children.length);
     const isOpen = node.open ?? containsCurrent(node);
     return (
       <li
         class="m-0 list-none"
+        id={node.id}
         data-sidebar-key={node.key}
         style={`--sidebar-menu-offset: ${offset}px;`}
       >
@@ -54,7 +59,7 @@ const menuItemClass = "relative box-border flex items-center w-full min-h-10 m-0
                 {node.href ? (
                   <a
                     data-sidebar-category-link class="min-w-0 truncate text-inherit no-underline focus-visible:[outline:2px_solid_var(--brand)] focus-visible:outline-offset-[-2px]"
-                    href={node.href}
+                    href={template ? undefined : node.href}
                     aria-current={node.current ? 'page' : undefined}
                     title={node.label}
                   >
@@ -73,12 +78,13 @@ const menuItemClass = "relative box-border flex items-center w-full min-h-10 m-0
               variant={variant}
               depth={depth + 1}
               indent={indent}
+              template={template}
             />
           </details>
         ) : node.href && node.thumbnail ? (
           <a
             class="group/thumb block py-1 pl-[var(--sidebar-menu-offset)] hover:bg-black/4 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--brand)] aria-[current=page]:bg-black/5"
-            href={node.href}
+            href={template ? undefined : node.href}
             aria-current={node.current ? 'page' : undefined}
             aria-label={node.label}
             aria-describedby="example-thumbnail-tooltip"
@@ -86,14 +92,14 @@ const menuItemClass = "relative box-border flex items-center w-full min-h-10 m-0
             data-demo-thumbnail
           >
             <span class="block h-17.5 w-25 border border-[var(--border-soft)] bg-white group-aria-[current=page]/thumb:border-[var(--brand)] group-aria-[current=page]/thumb:bg-[var(--brand-soft)]">
-              <img src={node.thumbnail} alt="" loading="lazy" decoding="async" class="block size-full object-contain mix-blend-multiply" />
+              <img src={template ? undefined : node.thumbnail} alt="" loading="lazy" decoding="async" class="block size-full object-contain mix-blend-multiply" />
             </span>
           </a>
         ) : node.href ? (
           <a
             class={`${menuItemClass} focus-visible:[outline:2px_solid_var(--brand)] focus-visible:outline-offset-[-2px]`}
             data-demo-link={variant === 'examples' && depth === 2 ? true : undefined}
-            href={node.href}
+            href={template ? undefined : node.href}
             aria-current={node.current ? 'page' : undefined}
             title={node.label}
           >
