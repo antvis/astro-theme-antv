@@ -20,7 +20,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
         route: document.slug || 'index',
       },
       props: {
-        content: await serializeAgentDocument(document, documents),
+        content: await serializeAgentDocument(document, documents, true),
       } satisfies MarkdownDocumentProps,
     })),
   );

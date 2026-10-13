@@ -11,22 +11,26 @@ import {
 } from '../lib/agent-content';
 import { config, registry } from '../lib/site';
 import { demoFiles } from '../lib/demo-dependencies';
+import { withBase } from '../lib/paths';
 import { fencedCode } from '../../agent-markdown.js';
 
 export const GET: APIRoute = async () => {
   const documents = await getAgentDocuments();
+  const { locales } = config.llms;
+  const primaryLocale = locales[0]!;
   const parts = [
     `# ${markdownLinkText(config.site.title)} — Full Documentation`,
-    `> ${inlineText(localize(config.site.description, config.site.defaultLocale))}`,
+    `> ${inlineText(localize(config.site.description, primaryLocale))}`,
     [
-      `- Canonical site: ${absoluteSiteUrl(`/${config.site.defaultLocale}/`)}`,
+      `- [Resource index](${withBase('/llms.txt')})`,
+      `- Canonical site: ${absoluteSiteUrl(`/${primaryLocale}/`)}`,
       `- Source repository: ${config.site.repository}`,
-      `- Languages: ${config.site.locales.join(', ')}`,
+      `- Languages: ${locales.join(', ')}`,
       ...(currentSiteVersion ? [`- Current version: ${currentSiteVersion}`] : []),
     ].join('\n'),
   ];
 
-  for (const locale of config.site.locales) {
+  for (const locale of locales) {
     parts.push(`## ${locale === 'zh' ? '中文文档' : 'English documentation'}`);
     for (const section of getAgentDocumentSections(documents, locale)) {
       parts.push(`### ${markdownLinkText(section.title)}`);
@@ -50,9 +54,9 @@ export const GET: APIRoute = async () => {
       left.key.localeCompare(right.key),
     )) {
       parts.push(
-        `### ${markdownLinkText(localize(demo.title, config.site.defaultLocale, demo.slug))}`,
+        `### ${markdownLinkText(localize(demo.title, primaryLocale, demo.slug))}`,
         [
-          ...config.site.locales.map((locale) =>
+          ...locales.map((locale) =>
             `- ${locale} page: ${absoluteSiteUrl(`/${locale}/examples/${demo.key}/`)}`,
           ),
           `- Source path: ${demo.relativeSourcePath}`,

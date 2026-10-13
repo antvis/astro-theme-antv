@@ -121,6 +121,7 @@ if (page.type === 'document') {
     <main id="main-content" data-pagefind-body aria-label={page.title}>
       <h1 class="sr-only" data-pagefind-meta="title">{page.title}</h1>
       {DocumentContent && <DocumentContent />}
+      <p class="mx-auto max-w-4xl px-6 py-4 text-sm" data-pagefind-ignore><a href={withBase('/llms.txt')} type="text/plain">{isZh ? '资料索引' : 'Resource index'}</a></p>
     </main>
   ) : (
     <div class="grid grid-cols-[var(--docs-sidebar-width)_minmax(0,1fr)_var(--toc-width)] w-[var(--content-width)] mx-auto pt-6 pb-16 bg-[var(--surface-raised)] [@media(900px<width<=1320px)]:grid-cols-[240px_minmax(0,1fr)] [@media(width<=900px)]:block [@media(width<=900px)]:w-[min(100%_-_36px,820px)]">
@@ -133,6 +134,7 @@ if (page.type === 'document') {
               <span class="inline-flex size-3.5 [&_svg]:size-full" aria-hidden="true" set:html={markdownIcon} />
               {isZh ? '查看 Markdown' : 'View Markdown'}
             </a>
+            <a href={withBase('/llms.txt')} type="text/plain" class="text-[var(--muted)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-4">{isZh ? '资料索引' : 'Resource index'}</a>
             <button
               type="button"
               hidden

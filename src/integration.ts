@@ -62,7 +62,8 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration {
           trailingSlash: "always",
           build: {
             format: "directory",
-            assets: "_assets",
+            // Jekyll excludes underscore-prefixed directories on GitHub Pages.
+            assets: "assets",
             // Keep compiled CSS out of the readable document/example HTML.
             inlineStylesheets: "never",
           },

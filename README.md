@@ -143,6 +143,16 @@ Example sidebars statically render top-level categories and the current group, w
 
 Document sidebars retain top-level entries and the current branch in HTML. Other branches load on expansion from a shared static directory at `/[locale]/_docs/[section]/`, which also provides complete navigation without JavaScript. Both sidebars are excluded from the document’s main content and search index.
 
+Document and example detail pages, and their Markdown exports, link to `/llms.txt` as the shared resource index. It groups documents and examples by language, lists Markdown URLs and document descriptions, and uses site-relative paths with the configured Astro `base`. Read relevant individual pages first; `/llms-full.txt` remains available for the complete documentation.
+
+Both `/llms.txt` and `/llms-full.txt` include only Chinese by default. Configure `llms.locales` to export English or both languages without changing the site's HTML pages or individual Markdown exports:
+
+```ts
+llms: {
+  locales: ['zh'], // Default. Use ['en'] or ['zh', 'en'] as needed.
+},
+```
+
 ## Interactive document demos
 
 Import `Demo` in MDX to add an editable example:
