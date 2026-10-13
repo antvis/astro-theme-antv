@@ -1,33 +1,34 @@
 import type { APIRoute } from 'astro';
 import { localize } from '../../compiler/localization.js';
 import {
-  absoluteSiteUrl,
   currentSiteVersion,
   getAgentDocuments,
   getAgentDocumentSections,
   inlineText,
   markdownLinkText,
 } from '../lib/agent-content';
-import { markdownRouteFor } from '../lib/paths';
+import { markdownRouteFor, withBase } from '../lib/paths';
 import { config, registry } from '../lib/site';
 
 export const GET: APIRoute = async () => {
   const documents = await getAgentDocuments();
+  const { locales } = config.llms;
+  const primaryLocale = locales[0]!;
   const sections = [
     `# ${markdownLinkText(config.site.title)}`,
-    `> ${inlineText(localize(config.site.description, config.site.defaultLocale))}`,
-    'Use the Markdown links below for machine-readable content; canonical page links are the authoritative human-facing URLs.',
+    `> ${inlineText(localize(config.site.description, primaryLocale))}`,
+    'Find relevant documents and examples under your language below, then read their Markdown links for content and source code.',
     '## Agent resources',
     [
-      `- [Full documentation](${absoluteSiteUrl('/llms-full.txt')}): Combined Markdown content for all published documents.`,
-      `- [Canonical site](${absoluteSiteUrl(`/${config.site.defaultLocale}/`)})`,
+      `- [Full documentation](${withBase('/llms-full.txt')}): Combined Markdown content for all published documents.`,
+      `- [Site](${withBase(`/${primaryLocale}/`)})`,
       `- [Source repository](${config.site.repository})`,
-      `- Languages: ${config.site.locales.join(', ')}`,
+      `- Languages: ${locales.join(', ')}`,
       ...(currentSiteVersion ? [`- Current version: ${currentSiteVersion}`] : []),
     ].join('\n'),
   ];
 
-  for (const locale of config.site.locales) {
+  for (const locale of locales) {
     sections.push(`## ${locale === 'zh' ? '中文文档' : 'English documentation'}`);
     for (const section of getAgentDocumentSections(documents, locale)) {
       sections.push(
@@ -35,27 +36,22 @@ export const GET: APIRoute = async () => {
         section.documents
           .map((document) => {
             const description = inlineText(
-              document.entry.data.description || document.entry.data.title,
+              document.entry.data.description || '',
             );
-            const canonicalLabel = locale === 'zh' ? '页面' : 'Canonical page';
-            return `- [${markdownLinkText(document.entry.data.title)}](${absoluteSiteUrl(document.markdownRoute)}): ${description} — [${canonicalLabel}](${absoluteSiteUrl(document.route)})`;
+            const summary = description && description !== inlineText(document.entry.data.title)
+              ? `: ${description}` : '';
+            return `- [${markdownLinkText(document.entry.data.title)}](${withBase(document.markdownRoute)})${summary}`;
           })
           .join('\n'),
       );
     }
-  }
-
-  if (registry.demos.length > 0) {
-    for (const locale of config.site.locales) {
-      const description = locale === 'zh'
-        ? '可运行示例及其源码。'
-        : 'Runnable example with its source code.';
+    if (registry.demos.length > 0) {
       sections.push(
         `## ${locale === 'zh' ? '中文示例' : 'English examples'}`,
         [...registry.demos]
           .sort((left, right) => left.key.localeCompare(right.key))
           .map((demo) =>
-            `- [${markdownLinkText(localize(demo.title, locale, demo.slug))}](${absoluteSiteUrl(markdownRouteFor(locale, `examples/${demo.key}`))}): ${description} — [${locale === 'zh' ? '页面' : 'Canonical page'}](${absoluteSiteUrl(`/${locale}/examples/${demo.key}/`)})`,
+            `- [${markdownLinkText(localize(demo.title, locale, demo.slug))}](${withBase(markdownRouteFor(locale, `examples/${demo.key}`))})`,
           )
           .join('\n'),
       );

@@ -113,6 +113,7 @@ const indexAgentDocumentsByFilePath = (documents: AgentDocument[]) => {
 export async function serializeAgentDocument(
   document: AgentDocument,
   documents: AgentDocument[],
+  includeNavigation = false,
 ): Promise<string> {
   const metadata = [
     `title: ${JSON.stringify(document.entry.data.title)}`,
@@ -149,7 +150,14 @@ export async function serializeAgentDocument(
   });
   const sharedSources = Object.entries(demoFiles).filter(([name]) => body.includes(`/${name}`))
     .map(([name, code]) => `### ${name}\n\n${fencedCode(code, name.split('.').pop())}`);
-  return ['---', ...metadata, '---', '', body, ...sharedSources, ''].join('\n');
+  return ['---', ...metadata, '---', '',
+    ...(includeNavigation ? [agentIndexLink(document.locale), ''] : []),
+    body, ...sharedSources, ''].join('\n');
+}
+
+function agentIndexLink(locale: SiteLocale) {
+  const zh = locale === 'zh';
+  return `[${zh ? '资料索引' : 'Resource index'}](${withBase('/llms.txt')})`;
 }
 
 /** Export the same source and supporting files as the runnable example. */
@@ -168,6 +176,8 @@ export function serializeAgentExample(demo: DemoRecord, locale: SiteLocale): str
     `# ${markdownLinkText(title)}`,
     '',
     `[${isZh ? '运行示例' : 'Live example'}](${canonical})`,
+    '',
+    agentIndexLink(locale),
     '',
     isZh ? '页面需要一个 `id="container"` 的 DOM 元素。以下为原始示例源码。' : 'Provide a DOM element with `id="container"`. The original example source follows.',
     '',

@@ -81,6 +81,10 @@ export interface AntVSiteConfig {
   navigation?: LocalizedLink[];
   versions?: Record<string, string>;
   analytics?: AnalyticsConfig;
+  llms?: {
+    /** Languages in llms.txt and llms-full.txt. Defaults to Chinese when enabled on the site. */
+    locales?: SiteLocale[];
+  };
   search?: {
     enabled?: boolean;
     aliases?: Record<string, string[]>;
@@ -174,6 +178,9 @@ export interface ResolvedSiteConfig {
   navigation: LocalizedLink[];
   versions: Record<string, string>;
   analytics: AnalyticsConfig;
+  llms: {
+    locales: SiteLocale[];
+  };
   search: {
     enabled: boolean;
     aliases: Record<string, string[]>;
@@ -375,6 +382,14 @@ const configSchema = z
     analytics: z
       .record(z.string().min(1), z.record(z.string(), z.unknown()))
       .default({}),
+    llms: z
+      .strictObject({
+        locales: z.array(z.enum(["zh", "en"])).min(1)
+          .refine((locales) => new Set(locales).size === locales.length,
+            "llms.locales must not contain duplicates.")
+          .optional(),
+      })
+      .default({}),
     search: z
       .strictObject({
         enabled: z.boolean().default(true),
@@ -475,6 +490,13 @@ const configSchema = z
         code: "custom",
         path: ["site", "locales"],
         message: "site.locales must not contain duplicates.",
+      });
+    }
+    if (config.llms.locales?.some((locale) => !config.site.locales.includes(locale))) {
+      context.addIssue({
+        code: "custom",
+        path: ["llms", "locales"],
+        message: "llms.locales must be included in site.locales.",
       });
     }
     if (config.content.examples === null && config.examples.length > 0) {
@@ -607,6 +629,11 @@ export async function resolveConfig(
     ...config,
     root,
     content,
+    llms: {
+      locales: config.llms.locales ?? [
+        config.site.locales.includes("zh") ? "zh" : config.site.defaultLocale,
+      ],
+    },
     qa: config.qa?.enabled
       ? {
           path: config.qa.path,
