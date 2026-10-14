@@ -1,13 +1,15 @@
 ---
+import type { HTMLAttributes } from 'astro/types';
 import Carousel from './Carousel.astro';
 
-interface Props { locale: 'zh' | 'en'; }
-const { locale } = Astro.props;
+interface Props { locale: 'zh' | 'en'; style?: HTMLAttributes<'div'>['style']; }
+const { locale, style } = Astro.props;
 const isZh = locale === 'zh';
 ---
 
 <antv-updates
   class="antv-update-carousel"
+  style={style}
   data-locale={locale}
   data-state="loading"
   data-loading={isZh ? '正在加载最新动态…' : 'Loading updates…'}
@@ -21,21 +23,27 @@ const isZh = locale === 'zh';
     pageLabel={isZh ? '查看第 {page} 组最新动态' : 'View updates group {page}'}
     disabled
   >
-    {[0, 1, 2].map(() => <div class="antv-update-card antv-update-skeleton" aria-hidden="true"><span></span><span></span></div>)}
+    <slot name="skeleton">
+      {[0, 1, 2].map(() => <div class="antv-update-card antv-update-skeleton" aria-hidden="true"><span></span><span></span></div>)}
+    </slot>
   </Carousel>
   <div class="antv-update-status">
     <span role="status" data-updates-status>{isZh ? '正在加载最新动态…' : 'Loading updates…'}</span>
     <button type="button" data-updates-retry hidden>{isZh ? '重试' : 'Retry'}</button>
   </div>
   <template data-updates-skeleton>
-    {[0, 1, 2].map(() => <div class="antv-update-card antv-update-skeleton" aria-hidden="true"><span></span><span></span></div>)}
+    <slot name="skeleton">
+      {[0, 1, 2].map(() => <div class="antv-update-card antv-update-skeleton" aria-hidden="true"><span></span><span></span></div>)}
+    </slot>
   </template>
   <template data-updates-card>
-    <a class="antv-update-card" target="_blank" rel="noreferrer">
-      <span class="antv-update-visual"><img alt="" width="36" height="36" loading="lazy" decoding="async" /></span>
-      <strong></strong>
-      <span data-update-description></span>
-    </a>
+    <slot name="card">
+      <a class="antv-update-card" target="_blank" rel="noreferrer">
+        <span class="antv-update-visual"><img alt="" width="36" height="36" loading="lazy" decoding="async" /></span>
+        <strong></strong>
+        <span data-update-description></span>
+      </a>
+    </slot>
   </template>
   <noscript>{isZh ? '启用 JavaScript 以查看最新动态。' : 'Enable JavaScript to view updates.'}</noscript>
 </antv-updates>
@@ -262,7 +270,7 @@ const isZh = locale === 'zh';
 
   .antv-update-status {
     display: flex;
-    min-height: 210px;
+    min-height: inherit;
     justify-content: center;
     align-items: center;
     gap: 12px;

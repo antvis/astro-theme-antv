@@ -1,6 +1,7 @@
 ---
 import type { DemoRecord } from '../../../compiler/content.js';
 import { config, registry } from '../../lib/site';
+import demoBaseCss from '../../demos/base.css?raw';
 import { withBase } from '../../lib/paths';
 
 interface Props {
@@ -28,21 +29,19 @@ const { demo } = Astro.props;
       // Set the embedded layout before parsing the readable source below.
       if (window.parent !== window) document.documentElement.classList.add('embedded-demo');
     </script>
+    <style is:inline set:html={demoBaseCss} />
     <style>
-      :root { color-scheme: light; }
-      * { box-sizing: border-box; }
-      html, body { min-height: 100%; margin: 0; }
-      body { padding: 16px; background: #fff; color: #1d2129; }
+      html, html > body { min-height: 100%; margin: 0; }
+      html > body { padding: 16px; background: #fff; color: #1d2129; }
       #container { width: 100%; min-height: 320px; }
       html.embedded-demo { overflow: hidden; }
-      .embedded-demo body { height: 100dvh; padding: 0; overflow: hidden; }
+      .embedded-demo > body { height: 100dvh; padding: 0; overflow: hidden; }
       .embedded-demo #demo-source { display: none; }
       .embedded-demo #container { height: 100%; min-height: 0; opacity: 0; transition: opacity 160ms ease-out; }
       .embedded-demo.preview-ready #container { opacity: 1; }
       @media (prefers-reduced-motion: reduce) {
         .embedded-demo #container { transition: none; }
       }
-      #container canvas, #container svg { display: block; }
       #demo-error {
         margin: 0;
         padding: 16px;

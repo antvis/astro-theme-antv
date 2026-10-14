@@ -2,7 +2,9 @@ import type { EditorView } from 'codemirror';
 import { createEditor } from './editor';
 import { createFrameDocument } from './frame';
 import { createDemoSplit } from './split';
-import { compileDemoSource } from '../../demo-source.js';
+import { demoFileLabels } from './file-labels';
+import { compileDemoSource, referencedDemoFiles } from '../../demo-source.js';
+import { resolutions } from 'virtual:antv-demo-dependencies';
 
 for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo], [data-example-demo]')) {
   const preview = root.querySelector<HTMLElement>('[data-demo-preview]')!;
@@ -38,9 +40,70 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
   copyButton.hidden = false;
   panel.hidden = toggle ? toggle.getAttribute('aria-expanded') !== 'true' : false;
 
+  const autoHeight = root.dataset.demoAutoHeight === 'true';
+  const fallbackHeight = preview.style.height;
+  let stopSizing = () => {};
+  const fitPreview = () => {
+    stopSizing();
+    if (!autoHeight || !frame?.contentWindow) return;
+    const currentFrame = frame;
+    const view = frame.contentWindow;
+    const container = view.document.getElementById('container');
+    if (!container) return;
+    let scheduled = 0;
+    const measure = () => {
+      scheduled = 0;
+      const bounds = container.getBoundingClientRect();
+      // Measure the outer demo content, not SVG nodes or canvas drawing bounds.
+      // Percentage-height charts keep the configured fallback viewport; intrinsic
+      // wrappers (for example a toolbar above a fixed canvas) can shrink to fit.
+      const children = [...container.children].filter((child) => {
+        const style = view.getComputedStyle(child);
+        return style.display !== 'none' && !['absolute', 'fixed'].includes(style.position)
+          && child.getBoundingClientRect().height > 0;
+      });
+      let height = children.length ? Math.max(...children.map((child) =>
+        child.getBoundingClientRect().bottom - bounds.top
+          + (parseFloat(view.getComputedStyle(child).marginBottom) || 0),
+      )) + (parseFloat(view.getComputedStyle(container).paddingBottom) || 0) : bounds.height;
+      if (container.style.height && !container.style.height.includes('%')) {
+        height = Math.max(height, bounds.height);
+      }
+      if (Number.isFinite(height) && height > 0) {
+        preview.style.height = `${Math.ceil(height)}px`;
+        // Keep the fallback viewport for percentage-based charts, while allowing
+        // taller content to remain visible. Shorter intrinsic demos leave no gap.
+        currentFrame.style.height = `${Math.max(parseFloat(fallbackHeight), Math.ceil(height))}px`;
+      }
+    };
+    const schedule = () => {
+      if (!scheduled) scheduled = requestAnimationFrame(measure);
+    };
+    const resize = new ResizeObserver(schedule);
+    const observe = () => {
+      resize.disconnect();
+      resize.observe(container);
+      for (const child of container.children) resize.observe(child);
+      schedule();
+    };
+    const mutation = new MutationObserver(observe);
+    mutation.observe(container, { childList: true, subtree: true });
+    observe();
+    stopSizing = () => {
+      cancelAnimationFrame(scheduled);
+      resize.disconnect();
+      mutation.disconnect();
+    };
+  };
+  window.addEventListener('pagehide', (event) => {
+    if (!event.persisted) stopSizing();
+  });
+
   const getSource = () => editor?.state.doc.toString() ?? originalSource;
   const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-demo-tab]')];
   const codePanels = [...root.querySelectorAll<HTMLElement>('[data-demo-code-panel]')];
+  const files = Object.fromEntries(codePanels.filter((panel) => panel.dataset.demoCodePanel)
+    .map((panel) => [panel.dataset.demoCodePanel!, panel.querySelector('code')!.textContent!]));
   let activeFile = '';
   const selectFile = (name: string) => {
     activeFile = name;
@@ -55,10 +118,18 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
   };
   const syncSharedFiles = () => {
     const source = getSource();
+    let selected: Record<string, string>;
+    try { selected = referencedDemoFiles(source, root.dataset.demoPath!, files, resolutions); }
+    catch { return; } // Keep the current tabs while the user is typing incomplete syntax.
+    const labels = demoFileLabels(Object.keys(selected));
     tabs.forEach((tab) => {
-      tab.hidden = Boolean(tab.dataset.demoTab) && !source.includes(`/${tab.dataset.demoTab}`);
+      tab.hidden = Boolean(tab.dataset.demoTab) && !(tab.dataset.demoTab! in selected);
+      if (tab.dataset.demoTab && !tab.hidden) tab.textContent = labels[tab.dataset.demoTab]!;
     });
     root.querySelector<HTMLElement>('[data-demo-tabs]')!.hidden = !tabs.some((tab) => tab.dataset.demoTab && !tab.hidden);
+    root.querySelectorAll<HTMLInputElement>('[data-demo-export-file]').forEach((input) => {
+      input.disabled = !(input.dataset.demoExportFile! in selected);
+    });
     if (tabs.find((tab) => tab.dataset.demoTab === activeFile)?.hidden) selectFile('');
   };
   const resetCopy = () => {
@@ -98,6 +169,7 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
         frame.style.visibility = '';
       }
       frameSettled = true;
+      fitPreview();
       setLoading(false);
       errorTarget.hidden = true;
     } else if (event.data?.type === 'antv-demo:error' && typeof event.data.error === 'string') {
@@ -127,9 +199,12 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
     discardPending();
     const next = pendingFrame = document.createElement('iframe');
     next.title = preview.getAttribute('aria-label')!;
-    next.className = 'absolute inset-0 block size-full border-0';
+    // Auto-sized frames use an inline height; size-full would override it with
+    // Tailwind's important height: 100% and reintroduce document scrollbars.
+    next.className = `absolute inset-0 block border-0 ${autoHeight ? 'w-full' : 'size-full'}`;
     next.style.visibility = 'hidden';
-    next.srcdoc = createFrameDocument(getSource(), root.dataset.demoPath!, isExample);
+    if (autoHeight) next.style.height = fallbackHeight;
+    next.srcdoc = createFrameDocument(getSource(), root.dataset.demoPath!, isExample, autoHeight ? parseFloat(fallbackHeight) : undefined);
     preview.append(next);
   };
   root.querySelector('[data-demo-run]')!.addEventListener('click', run);
@@ -161,13 +236,13 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
   root.querySelector<HTMLFormElement>('[data-demo-stackblitz]')?.addEventListener('submit', (event) => {
     try {
       const source = getSource();
-      const filename = `index.${compileDemoSource(source, root.dataset.demoPath!).sourceExtension}`;
+      const filename = root.dataset.demoPath!.slice(1).replace(/\.[^.]+$/, `.${compileDemoSource(source, root.dataset.demoPath!).sourceExtension}`);
       const form = event.currentTarget as HTMLFormElement;
       const input = form.querySelector<HTMLInputElement>('[data-demo-export-source]')!;
       const html = form.querySelector<HTMLInputElement>('[data-demo-export-html]')!;
       input.name = `project[files][${filename}]`;
       input.value = source;
-      html.value = html.value.replace(/src="\/index\.tsx?"/, `src="/${filename}"`);
+      html.value = html.value.replace(/<script type="module" src="[^"]*"/, `<script type="module" src="/${filename}"`);
       form.action = `https://stackblitz.com/run?file=${filename}`;
     } catch (error) {
       event.preventDefault();

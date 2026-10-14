@@ -1,4 +1,5 @@
-import { resolve } from "node:path";
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type { HookParameters, InjectedRoute } from "astro";
 import * as pagefind from "pagefind";
@@ -69,12 +70,17 @@ export async function writeProductionSearch(
       await created.index.addDirectory({ path: outputDirectory }),
       `site indexing for ${outputDirectory}`,
     );
-    assertPagefindResult(
-      await created.index.writeFiles({
-        outputPath: resolve(outputDirectory, "pagefind"),
-      }),
+    // Pagefind's writeFiles can acknowledge before its filesystem writes finish.
+    // Await our writes so shutting down the service cannot leave truncated assets.
+    const { files } = assertPagefindResult(
+      await created.index.getFiles(),
       "production file generation",
     );
+    await Promise.all(files.map(async ({ path, content }) => {
+      const target = resolve(outputDirectory, "pagefind", path);
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, content);
+    }));
   } finally {
     await created.index.deleteIndex();
     await pagefind.close();

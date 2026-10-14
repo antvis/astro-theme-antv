@@ -162,27 +162,35 @@ import { Demo } from '@antv/astro-theme-antv/components';
 
 <Demo code={`document.getElementById('container').textContent = 'Hello';`} />
 <Demo src="guide/demos/shared-chart" />
+<Demo src="guide/demos/shared-chart" height={400} />
 ```
 
-Provide either static `code` or a `src` path to a `.ts` file relative to `content.docs`.
+Provide either static `code` or a `src` path to a JavaScript or TypeScript file relative to `content.docs`.
 Demos run in an iframe using `srcdoc`, without a separate preview route; the parent page retains the complete source in build-time `<pre><code>` HTML and page-level Markdown, readable without JavaScript.
 
-Demos use Sucrase to compile TypeScript and JSX in both the initial preview and editor runs, with the automatic JSX runtime by default (classic JSX pragmas are supported). They use native ES modules to load dependencies. For package imports, install them in your site and configure their imports in `astro.config.mjs`:
+Demos use Sucrase to compile TypeScript and JSX in both the initial preview and editor runs, with the automatic JSX runtime by default (classic JSX pragmas are supported). They use native ES modules to load dependencies. Install packages used by your demos in the site. The theme discovers their imports automatically; use `demo.dependencies` only when overriding module resolution, for example:
 
 ```js
 demo: {
   dependencies: {
-    '@antv/g6': '@antv/g6',
+    'legacy-package': './src/legacy-package-esm.ts',
   },
 },
 ```
 
-For JSX using the automatic React runtime, configure `react` and `react/jsx-runtime` as Demo dependencies. Development import maps use Vite’s optimized ESM wrappers when available. For legacy packages without an optimized wrapper, map to their ESM entry when using named imports.
+Document demos without a `height` prop fit their rendered content. `demo.height` supplies the initial viewport (and the fallback for percentage-sized charts); an explicit `<Demo height={400} />` keeps a fixed preview height. Gallery previews retain their pane layout.
 
-Gallery previews show the shared loading indicator until the iframe completes or reports an error, including when switching examples or rerunning code. Use top-level `await` for asynchronous setup that must finish before the preview is ready. StackBlitz export creates a Vite project with `index.ts` or `index.tsx` matching the source syntax, a module entry in `index.html`, and the configured package dependencies.
+JSX demos also register the automatic JSX runtime. Development import maps use Vite’s optimized ESM wrappers when available. For legacy packages without an optimized wrapper, map to their ESM entry when using named imports.
 
-Shared demo modules can use a root-relative import with an explicit extension, such as `import { createGraph } from '/demo-runtime.ts'`. Map it in `demo.dependencies` as `'/demo-runtime.ts': './src/demo-runtime.ts'`, and add the same exact Vite alias for initial gallery previews. These configured local files are included in StackBlitz exports and exposed in read-only, syntax-highlighted file tabs when referenced by the current demo. The source tab remains editable and is selected by default; copying uses the selected file, while running and exporting use the demo source. Keep local imports among these modules explicitly configured as well.
-StackBlitz export creates a Vite project with `index.ts` or `index.tsx` matching the source syntax, a module entry in `index.html`, and the configured package dependencies.
+Gallery previews show the shared loading indicator until the iframe completes or reports an error, including when switching examples or rerunning code. Use top-level `await` for asynchronous setup that must finish before the preview is ready.
+
+Use normal relative imports for local JavaScript, TypeScript, JSX and JSON modules, for example `import data from '../../../data/dag.json'` or `import Settings from './settings'`. The theme follows static imports, re-exports and literal dynamic imports recursively from gallery entries and document `Demo` components. It resolves file extensions and directory `index` modules, checks that dependencies stay inside the site root, and watches collected files. No per-file `demo.dependencies` entries or Vite aliases are needed. Inline document demos resolve relative imports from their Markdown file.
+
+Referenced local files appear in read-only source tabs and Markdown exports. StackBlitz exports preserve the entry's site-relative path and its transitive supporting files, so relative imports work unchanged; unrelated files are excluded. The source tab remains editable, copying uses the selected file, and running/exporting uses the current entry source. Save new local dependencies in the site source so they can be collected before using them in the browser editor. Computed dynamic import paths and non-module assets are not automatically collected.
+
+Existing demos can also import standalone CSS or Less files (`import './index.less'`). Install `less` in the consuming site for Less compilation. Vite compiles these styles for both initial previews and editor reruns, including static builds; source tabs, Markdown and StackBlitz retain the original style files, and exported projects include the Less compiler when needed. Stylesheet-internal `@import` and `url()` resources are not automatically collected for export; keep these demo styles self-contained. This does not change the theme UI's Tailwind styling.
+
+Keep `demo.dependencies` for deliberate module overrides or dependencies that cannot be inferred from source. The theme pre-optimizes discovered and configured package imports for iframe execution, respecting `optimizeDeps.exclude`; additional compatibility exceptions can still be configured through Vite. Existing explicit root-relative local mappings remain supported (with the corresponding Vite alias for initial gallery previews). Exports retain their physical source directories and include a Vite alias configuration when these mappings are used, so relative imports inside aliased modules keep working.
 
 For data previews, the built-in table helper needs no dependency configuration:
 
@@ -270,6 +278,10 @@ slots: {
 `hero` and `features` replace the default sections. Other slots insert content around them. Components receive the props described by `HomeSlotProps`, available from the package root.
 
 Default homepage decorative effects apply only to the built-in sections. Style your custom slot content in its own Astro components.
+
+The custom `hero` slot disables the default page-wide decorative background.
+
+`Updates` supports optional `card` and `skeleton` slots for product-owned announcement styling while retaining the shared feed loading, retry and carousel behavior. The `card` slot must contain a single `<a>` with `<strong>` (title), `[data-update-description]` (summary) and an `<img>` placeholder (populated or removed by the loader). The `skeleton` slot supplies the loading placeholders. Custom cards should hide images with the `hidden` attribute. The optional `style` prop sets the wrapper's minimum height and existing Carousel variables such as `--carousel-gap` and `--carousel-pagination-margin`; the default appearance is unchanged.
 
 Optional components `QaEntry`, `Updates`, `Carousel`, and `Loading` are available from `@antv/astro-theme-antv/components`. QA requires `qa.enabled: true` and access to Sive's QA service and authentication.
 

@@ -17,6 +17,7 @@ import Announcement from '../components/Announcement.astro';
 import { withBase } from '../lib/paths';
 import { getGeneratedRoutes } from '../lib/routes';
 import { config } from '../lib/site';
+import { homeSlots } from 'virtual:antv-site-home-slots';
 import '../styles/global.css';
 import '../styles/markdown.css';
 import '../styles/tailwind.css';
@@ -91,7 +92,7 @@ const currentVersion = versionEntries[0]?.[0];
 const isAntVSite = config.site.title.trim().toLocaleLowerCase() === 'antv';
 const searchEnabled = config.search.enabled;
 // The layout owns the page canvas, including the default product homepage.
-const homeBackgroundClass = pageType === 'home' && !isAntVSite
+const homeBackgroundClass = pageType === 'home' && !isAntVSite && homeSlots.hero.length === 0
   ? '[background:radial-gradient(circle_at_74%_8%,color-mix(in_srgb,var(--brand)_10%,transparent),transparent_32%),radial-gradient(circle_at_12%_28%,color-mix(in_srgb,#8aa7ff_8%,transparent),transparent_28%),var(--home-background)]'
   : '';
 const footerHref = config.footer.groups === null ? withBase : localHref;
@@ -102,7 +103,6 @@ const footerGroups = (config.footer.groups ?? defaultFooterGroups).map((group) =
 const serializedTokens = Object.entries(config.theme.tokens)
   .map(([name, value]) => `${name}:${value}`)
   .join(';');
-const themeOverrides = serializedTokens && `:root{${serializedTokens}}`;
 const copyright = localize(
   config.footer.copyright,
   locale,
@@ -137,7 +137,7 @@ const navItemClass = [
 ---
 
 <!doctype html>
-<html lang={locale} data-site-title={config.site.title}>
+<html lang={locale} data-site-title={config.site.title} style={serializedTokens || undefined}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -163,7 +163,6 @@ const navItemClass = [
     )}
     {config.site.favicon && <link rel="icon" href={withBase(config.site.favicon)} />}
     <title>{documentTitle}</title>
-    {themeOverrides && <style is:inline set:html={themeOverrides} />}
     <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)} />
   </head>
   <body class:list={[`page-${pageType}`, isAntVSite && 'antv-site', homeBackgroundClass, pageType === 'qa' && 'h-dvh min-h-dvh overflow-hidden', '[@media(width<=900px)]:[&.mobile-nav-open]:overflow-hidden']}>

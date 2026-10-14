@@ -1,7 +1,8 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { dirname, join, resolve } from 'node:path';
-import { config } from './site';
+import { dirname, join } from 'node:path';
+import { config, registry } from './site';
+import { referencedDemoFiles } from '../../demo-source.js';
 
 function findVersion(directory: string, name: string): string | undefined {
   while (true) {
@@ -19,12 +20,20 @@ function findVersion(directory: string, name: string): string | undefined {
 // Read manifests directly: Vite aliases and import-only exports need not resolve in Node.
 const require = createRequire(join(config.root, 'package.json'));
 export const demoDependencies: Record<string, string> = {};
-export const demoFiles: Record<string, string> = {};
-for (const [name, source] of Object.entries(config.demo.dependencies)) {
-  // Root-relative local modules retain their import paths in exported projects.
-  if (name.startsWith('/') && source.startsWith('.')) {
-    demoFiles[name.slice(1)] = readFileSync(resolve(config.root, source), 'utf8');
-  }
+const demoFiles = registry.demoFiles?.files ?? {};
+const demoResolutions = registry.demoFiles?.resolutions ?? {};
+
+// Export the physical module tree and let Vite preserve configured root aliases.
+const aliases = Object.keys(config.demo.dependencies).filter((name) =>
+  name.startsWith('/') && demoResolutions[name],
+).map((name) => `{find:${JSON.stringify(name)},replacement:fileURLToPath(new URL(${JSON.stringify(`./${demoResolutions[name]}`)},import.meta.url))}`);
+export const demoExportConfig = aliases.length
+  ? `import {fileURLToPath} from "node:url";export default {resolve:{alias:[${aliases.join(',')}]}};` : undefined;
+const dependencies = {
+  ...Object.fromEntries((registry.demoFiles?.packages ?? []).map((name) => [name, name])),
+  ...config.demo.dependencies,
+};
+for (const name of Object.keys(dependencies)) {
   if (name.startsWith('.') || name.startsWith('/') || name.includes(':')) continue;
   const packageName = name.startsWith('@') ? name.split('/').slice(0, 2).join('/') : name.split('/')[0]!;
   if (demoDependencies[packageName]) continue;
@@ -36,3 +45,17 @@ for (const [name, source] of Object.entries(config.demo.dependencies)) {
     }, undefined);
   if (version) demoDependencies[packageName] = version;
 }
+// Exported Vite projects must compile the same Less source as the local preview.
+if (Object.keys(demoFiles).some((name) => name.endsWith('.less'))) {
+  const version = findVersion(dirname(require.resolve('less')), 'less');
+  if (version) demoDependencies.less = version;
+}
+
+// Gallery navigation keeps file tabs and export inputs mounted across examples.
+// Include its shared files, without attaching document-only controls to every gallery page.
+export const filesForDemo = (source: string, path: string) =>
+  referencedDemoFiles(source, path, demoFiles, demoResolutions);
+
+export const galleryFiles = Object.assign({}, ...registry.demos.map((demo) =>
+  filesForDemo(demo.source, `/${demo.relativeSourcePath}`),
+)) as Record<string, string>;

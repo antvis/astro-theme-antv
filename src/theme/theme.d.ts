@@ -25,4 +25,5 @@ declare module "virtual:antv-site-home-slots" {
 
 declare module "virtual:antv-demo-dependencies" {
   export const imports: Record<string, string>;
+  export const resolutions: Record<string, string>;
 }
