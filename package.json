@@ -58,6 +58,7 @@
     "acorn": "^8.18.0",
     "astro-analytics": "2.7.0",
     "codemirror": "^6.0.2",
+    "es-module-lexer": "^2.3.2",
     "gray-matter": "4.0.3",
     "pagefind": "1.5.2",
     "split.js": "^1.6.5",

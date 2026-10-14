@@ -1,12 +1,13 @@
 import type { CollectionEntry } from 'astro:content';
-import { posix } from 'node:path';
+import { posix, resolve, relative, extname } from 'node:path';
+import { pathKey } from '../../util.js';
 import { getAntvDocIdentity } from '../../content.js';
 import { localize } from '../../compiler/localization.js';
 import { getDocsCollection } from './docs';
 import { markdownRouteFor, withBase } from './paths';
 import { config } from './site';
 import type { DemoRecord } from '../../compiler/content.js';
-import { demoFiles } from './demo-dependencies';
+import { filesForDemo } from './demo-dependencies';
 import { fencedCode, serializeAgentMarkdown } from '../../agent-markdown.js';
 
 type SiteLocale = 'zh' | 'en';
@@ -124,10 +125,20 @@ export async function serializeAgentDocument(
       ? [`version: ${JSON.stringify(currentSiteVersion)}`]
       : []),
   ];
+  const attached: Record<string, string> = {};
   const body = await serializeAgentMarkdown((document.entry.body ?? '').trim(), {
     filePath: document.entry.filePath ?? '',
     canonical: absoluteSiteUrl(document.route),
     components: config.content.agentComponents,
+    renderCode: ({ name, code, src }) => {
+      const rule = config.content.agentComponents[name];
+      if (name === 'Demo') {
+        const file = src ? resolve(config.content.docs, extname(src) ? src : `${src}.ts`)
+          : resolve(config.root, document.entry.filePath ?? 'inline-demo.ts');
+        Object.assign(attached, filesForDemo(code, `/${pathKey(relative(config.root, file))}`));
+      }
+      return `\n\n${fencedCode(code, rule?.type === 'code' ? rule.language : 'ts')}\n\n`;
+    },
     resolveDocument: (source) => {
       if (!document.entry.filePath) return undefined;
       const match = source.match(/^((?:\.\.?\/)[^?#]+\.(?:zh|en)\.mdx?)([?#].*)?$/);
@@ -148,7 +159,7 @@ export async function serializeAgentDocument(
         : undefined;
     },
   });
-  const sharedSources = Object.entries(demoFiles).filter(([name]) => body.includes(`/${name}`))
+  const sharedSources = Object.entries(attached)
     .map(([name, code]) => `### ${name}\n\n${fencedCode(code, name.split('.').pop())}`);
   return ['---', ...metadata, '---', '',
     ...(includeNavigation ? [agentIndexLink(document.locale), ''] : []),
@@ -185,7 +196,7 @@ export function serializeAgentExample(demo: DemoRecord, locale: SiteLocale): str
     '',
     fencedCode(demo.source, demo.filename.split('.').pop()),
     '',
-    ...Object.entries(demoFiles).flatMap(([name, source]) => [
+    ...Object.entries(filesForDemo(demo.source, `/${demo.relativeSourcePath}`)).flatMap(([name, source]) => [
       `## ${markdownLinkText(name)}`, '', fencedCode(source, name.split('.').pop()), '',
     ]),
   ].join('\n');

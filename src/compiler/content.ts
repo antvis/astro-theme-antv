@@ -85,6 +85,7 @@ export type SitePage =
   | DemoPage;
 
 export interface SiteRegistry {
+  demoFiles?: import("../demo-files.js").DemoFiles;
   config: ResolvedSiteConfig;
   pages: SitePage[];
   categories: ExampleCategory[];

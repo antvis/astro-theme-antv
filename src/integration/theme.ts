@@ -6,6 +6,7 @@ import type { InjectedRoute } from "astro";
 import type { MarkdownProcessor } from "astro/markdown";
 import type { Connect, Plugin, ViteDevServer } from "vite";
 import type { ResolvedSiteConfig } from "../compiler/config.js";
+import { collectDemoFiles } from "../demo-files.js";
 import { scanSite } from "../compiler/content.js";
 import { createLegacyContentMarkdownProcessor } from "../markdown.js";
 import { createDemoPlugin } from "../vite/demo-plugin.js";
@@ -69,6 +70,7 @@ export async function prepareThemeIntegration({
 }: ThemeIntegrationOptions): Promise<ThemeIntegrationContribution> {
   await validateHomeSlots(config);
   const registry = await scanSite(config);
+  registry.demoFiles = await collectDemoFiles(registry);
   const slotPaths = Object.values(config.slots.home).flat();
   const examplePaths = config.content.examples
     ? [config.content.examples]
@@ -77,7 +79,8 @@ export async function prepareThemeIntegration({
   const sharedSources = Object.entries(config.demo.dependencies)
     .filter(([name, source]) => name.startsWith("/") && source.startsWith("."))
     .map(([, source]) => resolve(config.root, source));
-  const watchFiles = [...examplePaths, ...slotPaths, ...sharedSources];
+  const watchFiles = [config.content.docs, ...examplePaths, ...slotPaths, ...sharedSources,
+    ...Object.keys(registry.demoFiles.files).map((file) => resolve(config.root, file))];
   const routes: InjectedRoute[] = themeRoutes.map(([pattern, entrypoint]) => ({
     pattern,
     entrypoint: pathToFileURL(resolve(themeRoot, entrypoint)),

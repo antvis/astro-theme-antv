@@ -1,7 +1,7 @@
 import { createProcessor } from "@mdx-js/mdx";
 import { parseExpressionAt } from "acorn";
 import { readFile } from "node:fs/promises";
-import { basename, resolve } from "node:path";
+import { basename, extname, resolve } from "node:path";
 import type { AgentComponent } from "./compiler/config.js";
 import { assertWithin, assertRealpathWithin } from "./util.js";
 
@@ -159,7 +159,7 @@ export async function serializeAgentMarkdown(
           const extension = rule.sourceExtension ?? "";
           const target = resolve(
             rule.sourceRoot,
-            src.endsWith(extension) ? src : src + extension
+            extname(src) ? src : src + extension
           );
           assertWithin(rule.sourceRoot, target);
           await assertRealpathWithin(rule.sourceRoot, target);
