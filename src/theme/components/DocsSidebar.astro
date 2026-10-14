@@ -121,7 +121,7 @@ const prepareNodes = (entries: Node[]): number => {
   );
 };
 prepareNodes(nodes);
-const catalogHref = withBase(`/${locale}/_docs/${section || 'index'}/`);
+const catalogHref = withBase(`/${locale}/docs/${section || 'index'}/`);
 const containsCurrent = (node: Node): boolean =>
   Boolean(node.current || node.children.some(containsCurrent));
 const visibleNodes = (entries: Node[]): SidebarMenuNode[] => entries.map((node) => {

@@ -19,7 +19,7 @@ export async function getStaticPaths() {
 const { locale, section, items } = Astro.props;
 const sectionTitle = localize(config.content.sidebar[section], locale, section);
 const title = `${locale === 'zh' ? '文档目录' : 'Documentation index'}${sectionTitle ? ` · ${sectionTitle}` : ''}`;
-const route = `/${locale}/_docs/${section || 'index'}/`;
+const route = `/${locale}/docs/${section || 'index'}/`;
 ---
 
 <BaseLayout locale={locale} title={title} description={title} route={route}>

@@ -154,7 +154,7 @@ const errorCode = (error: unknown) =>
     ? String((error as NodeJS.ErrnoException).code)
     : undefined;
 
-function parseMatter(source: string, path: string) {
+export function parseMatter(source: string, path: string) {
   try {
     return matter(source);
   } catch (error) {

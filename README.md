@@ -139,9 +139,9 @@ Each published document has a Markdown URL alongside its HTML page: `/zh/guide/`
 
 Example detail pages also expose Markdown containing source and supporting files (for example, `/zh/examples/general/line/basic.md`), discoverable from the page, a `text/markdown` alternate link, and `llms.txt`.
 
-Example sidebars statically render top-level categories and the current group, with links to the static catalog. Expansion or search loads shared localized JSON and renders only open branches or matching results. Sidebar navigation is excluded from the main content and search index.
+Example sidebars statically render top-level categories and the current group, with links to the static catalog. Expansion or search loads shared localized JSON at `/[locale]/examples/menu.json` and renders only open branches or matching results. Sidebar navigation is excluded from the main content and search index.
 
-Document sidebars retain top-level entries and the current branch in HTML. Other branches load on expansion from a shared static directory at `/[locale]/_docs/[section]/`, which also provides complete navigation without JavaScript. Both sidebars are excluded from the document’s main content and search index.
+Document sidebars retain top-level entries and the current branch in HTML. Other branches load on expansion from a shared static directory at `/[locale]/docs/[section]/`, which also provides complete navigation without JavaScript. Both sidebars are excluded from the document’s main content and search index.
 
 Document and example detail pages, and their Markdown exports, link to `/llms.txt` as the shared resource index. It groups documents and examples by language, lists Markdown URLs and document descriptions, and uses site-relative paths with the configured Astro `base`. Read relevant individual pages first; `/llms-full.txt` remains available for the complete documentation.
 

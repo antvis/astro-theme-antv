@@ -19,8 +19,8 @@ const themeRoot = resolve(runtimeRoot, "theme");
 const themeRoutes = [
   ["/", "pages/[locale]/index.astro"],
   ["/llms.txt", "pages/llms.txt.ts"],
-  ["/_antv/examples/[locale]/menu.json", "pages/example-menu.json.ts"],
-  ["/[locale]/_docs/[section]", "pages/docs-index.astro"],
+  ["/[locale]/examples/menu.json", "pages/example-menu.json.ts"],
+  ["/[locale]/docs/[section]", "pages/docs-index.astro"],
   ["/llms-full.txt", "pages/llms-full.txt.ts"],
   [
     "/[locale]/[...route].md",

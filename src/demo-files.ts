@@ -1,6 +1,7 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { dirname, extname, relative, resolve } from 'node:path';
 import type { SiteRegistry } from './compiler/content.js';
+import { parseMatter } from './compiler/content.js';
 import { serializeAgentMarkdown } from './agent-markdown.js';
 import { demoImports, demoImportPath } from './demo-source.js';
 import { assertWithin, assertRealpathWithin, pathKey } from './util.js';
@@ -60,7 +61,8 @@ export async function collectDemoFiles(registry: SiteRegistry): Promise<DemoFile
       const file = resolve(directory, entry.name);
       if (entry.isDirectory()) await walk(file);
       else if (/\.mdx?$/.test(file)) {
-        await serializeAgentMarkdown(await readFile(file, 'utf8'), {
+        const { content } = parseMatter(await readFile(file, 'utf8'), file);
+        await serializeAgentMarkdown(content, {
           filePath: file, canonical: config.site.origin, components: config.content.agentComponents,
           renderCode: async ({ name, code, src }) => {
             if (name !== 'Demo') return '';

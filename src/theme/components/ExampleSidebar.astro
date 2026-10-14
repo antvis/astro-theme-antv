@@ -21,7 +21,7 @@ const nodes = exampleMenu(categories, locale, currentRoute);
   class:list={["sticky top-[var(--header-height)] self-start max-h-[calc(100dvh_-_var(--header-height))] overflow-x-hidden overflow-y-auto pb-12 [border-right:1px_solid_var(--border-soft)] bg-[var(--surface-raised)] [@media(width<=900px)]:static [@media(width<=900px)]:max-h-85 [@media(width<=900px)]:mt-6 [@media(width<=900px)]:mb-8 [@media(width<=900px)]:p-4 [@media(width<=900px)]:overflow-auto [@media(width<=900px)]:[border:1px_solid_var(--border)] [@media(width<=900px)]:rounded-[var(--radius-medium)] [@media(width<=900px)]:bg-[var(--surface-subtle)] pt-6", !isCatalog && "z-10 [@media(width>1080px)]:h-full [@media(width>1080px)]:max-h-full"]}
   data-example-sidebar
   data-pagefind-ignore
-  data-menu-url={!isCatalog ? withBase(`/_antv/examples/${locale}/menu.json`) : undefined}
+  data-menu-url={!isCatalog ? withBase(`${catalogRoute}menu.json`) : undefined}
   data-example-catalog={isCatalog ? 'true' : undefined}
 >
   {!isCatalog && <div data-example-controls hidden class="sticky top-0 z-1 flex items-center gap-2 bg-white px-4 pb-3 [&[hidden]]:hidden">

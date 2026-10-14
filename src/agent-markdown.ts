@@ -43,9 +43,16 @@ export async function serializeAgentMarkdown(
   body: string,
   options: Options
 ): Promise<string> {
-  const tree = (
-    options.filePath.endsWith(".mdx") ? processor : markdownProcessor
-  ).parse(body);
+  let tree: Node;
+  try {
+    tree = (
+      options.filePath.endsWith(".mdx") ? processor : markdownProcessor
+    ).parse(body);
+  } catch (error) {
+    throw new Error(`Invalid Markdown content: ${options.filePath}: ${String(error)}`, {
+      cause: error,
+    });
+  }
   const imports = new Map<string, { source: string; name?: string }>();
   for (const node of tree.children) {
     if (node.type !== "mdxjsEsm") continue;
