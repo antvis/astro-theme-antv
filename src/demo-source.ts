@@ -57,7 +57,7 @@ export function demoImportPath(name: string, importer: string): string {
 
 /** Keep source tabs, Markdown and exports on the same transitive file set. */
 export function referencedDemoFiles(
-  source: string, path: string, files: Record<string, string>, resolutions: Record<string, string>,
+  source: string, path: string, files: Record<string, string>, resolutions: Record<string, string>, requireFiles = false,
 ): Record<string, string> {
   const result: Record<string, string> = {};
   const visited = new Set([path.replace(/^\//, '')]);
@@ -65,7 +65,11 @@ export function referencedDemoFiles(
     for (const name of demoImports(code, importer)) {
       if (!name.startsWith('.') && !name.startsWith('/')) continue;
       const file = resolutions[demoImportPath(name, importer)];
-      if (!file || visited.has(file) || files[file] === undefined) continue;
+      if (file && visited.has(file)) continue;
+      if (!file || files[file] === undefined) {
+        if (requireFiles) throw new Error(`Save the ${name} dependency in the example source before exporting.`);
+        continue;
+      }
       visited.add(file);
       result[file] = files[file]!;
       if (/\.[cm]?[jt]sx?$/.test(file)) visit(files[file]!, `/${file}`);
@@ -73,4 +77,19 @@ export function referencedDemoFiles(
   };
   visit(source, path);
   return result;
+}
+
+/** Package imports used by an entry and its selected local modules. */
+export function referencedDemoPackages(source: string, path: string, files: Record<string, string>): string[] {
+  const packages = new Set<string>();
+  const modules: [string, string][] = [[path, source], ...Object.entries(files)
+    .filter(([name]) => /\.[cm]?[jt]sx?$/.test(name))];
+  for (const [file, code] of modules) {
+    for (const name of demoImports(code, file)) {
+      if (name.startsWith('.') || name.startsWith('/') || name.includes(':')) continue;
+      packages.add(name.startsWith('@') ? name.split('/').slice(0, 2).join('/') : name.split('/')[0]!);
+    }
+  }
+  if (Object.keys(files).some((name) => name.endsWith('.less'))) packages.add('less');
+  return [...packages];
 }

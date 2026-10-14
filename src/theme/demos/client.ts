@@ -3,15 +3,15 @@ import { createEditor } from './editor';
 import { createFrameDocument } from './frame';
 import { createDemoSplit } from './split';
 import { demoFileLabels } from './file-labels';
-import { compileDemoSource, referencedDemoFiles } from '../../demo-source.js';
+import { compileDemoSource, referencedDemoFiles, referencedDemoPackages } from '../../demo-source.js';
 import { resolutions } from 'virtual:antv-demo-dependencies';
 
 for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo], [data-example-demo]')) {
   const preview = root.querySelector<HTMLElement>('[data-demo-preview]')!;
   const errorTarget = root.querySelector<HTMLElement>('[data-demo-error]')!;
-  const sourceElement = root.querySelector<HTMLElement>('[data-demo-source]')!;
+  let sourceElement = root.querySelector<HTMLElement>('[data-demo-source]')!;
   const panel = root.querySelector<HTMLElement>('[data-demo-panel]')!;
-  const editorTarget = root.querySelector<HTMLElement>('[data-demo-editor]')!;
+  let editorTarget = root.querySelector<HTMLElement>('[data-demo-editor]')!;
   const toggle = root.querySelector<HTMLButtonElement>('[data-demo-toggle]');
   const copyButton = root.querySelector<HTMLButtonElement>('[data-demo-copy]')!;
   const copyLabel = copyButton.querySelector('[data-demo-copy-label]')!;
@@ -100,9 +100,9 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
   });
 
   const getSource = () => editor?.state.doc.toString() ?? originalSource;
-  const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-demo-tab]')];
-  const codePanels = [...root.querySelectorAll<HTMLElement>('[data-demo-code-panel]')];
-  const files = Object.fromEntries(codePanels.filter((panel) => panel.dataset.demoCodePanel)
+  let tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-demo-tab]')];
+  let codePanels = [...root.querySelectorAll<HTMLElement>('[data-demo-code-panel]')];
+  let files = Object.fromEntries(codePanels.filter((panel) => panel.dataset.demoCodePanel)
     .map((panel) => [panel.dataset.demoCodePanel!, panel.querySelector('code')!.textContent!]));
   let activeFile = '';
   const selectFile = (name: string) => {
@@ -138,18 +138,21 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
     copyButton.setAttribute(copyHintAttribute, copyText);
     delete copyButton.dataset.copyState;
   };
-  tabs.forEach((tab) => {
-    tab.addEventListener('click', () => selectFile(tab.dataset.demoTab!));
-    tab.addEventListener('keydown', (event) => {
-      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-      event.preventDefault();
-      const visible = tabs.filter((item) => !item.hidden);
-      const index = visible.indexOf(tab);
-      const target = visible[event.key === 'Home' ? 0 : event.key === 'End' ? visible.length - 1
-        : (index + (event.key === 'ArrowRight' ? 1 : -1) + visible.length) % visible.length]!;
-      target.focus();
-      selectFile(target.dataset.demoTab!);
-    });
+  // Delegate tab events so fetched pages can replace their dependency panels.
+  root.addEventListener('click', (event) => {
+    const tab = (event.target as Element).closest<HTMLButtonElement>('[data-demo-tab]');
+    if (tab) selectFile(tab.dataset.demoTab!);
+  });
+  root.addEventListener('keydown', (event) => {
+    const tab = (event.target as Element).closest<HTMLButtonElement>('[data-demo-tab]');
+    if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const visible = tabs.filter((item) => !item.hidden);
+    const index = visible.indexOf(tab);
+    const target = visible[event.key === 'Home' ? 0 : event.key === 'End' ? visible.length - 1
+      : (index + (event.key === 'ArrowRight' ? 1 : -1) + visible.length) % visible.length]!;
+    target.focus();
+    selectFile(target.dataset.demoTab!);
   });
   const discardPending = () => {
     pendingFrame?.remove();
@@ -233,11 +236,25 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
     editor?.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: originalSource } });
     run();
   });
+  const readExportDependencies = (): Record<string, string> => {
+    const input = root.querySelector<HTMLInputElement>('[data-demo-export-package]');
+    return input ? JSON.parse(input.value).dependencies : {};
+  };
+  let exportDependencies = readExportDependencies();
   root.querySelector<HTMLFormElement>('[data-demo-stackblitz]')?.addEventListener('submit', (event) => {
     try {
       const source = getSource();
       const filename = root.dataset.demoPath!.slice(1).replace(/\.[^.]+$/, `.${compileDemoSource(source, root.dataset.demoPath!).sourceExtension}`);
       const form = event.currentTarget as HTMLFormElement;
+      const selected = referencedDemoFiles(source, root.dataset.demoPath!, files, resolutions, true);
+      const dependencies = Object.fromEntries(referencedDemoPackages(source, root.dataset.demoPath!, selected).map((name) => {
+        const version = exportDependencies[name];
+        if (!version) throw new Error(`Save the ${name} dependency in the example source before exporting.`);
+        return [name, version];
+      }));
+      const manifest = form.querySelector<HTMLInputElement>('[data-demo-export-package]')!;
+      manifest.value = JSON.stringify({ ...JSON.parse(manifest.value), dependencies });
+      syncSharedFiles();
       const input = form.querySelector<HTMLInputElement>('[data-demo-export-source]')!;
       const html = form.querySelector<HTMLInputElement>('[data-demo-export-html]')!;
       input.name = `project[files][${filename}]`;
@@ -309,25 +326,29 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
       resetCopy();
       discardPending();
       originalSource = next.querySelector<HTMLElement>('[data-demo-source]')!.textContent!;
-      sourceElement.querySelector('code')!.textContent = originalSource;
       root.dataset.demoPath = next.dataset.demoPath;
       root.querySelector('#demo-title')!.textContent = next.querySelector('#demo-title')!.textContent;
       const nextPreview = next.querySelector<HTMLElement>('[data-demo-preview]')!;
       preview.setAttribute('aria-label', nextPreview.getAttribute('aria-label')!);
-      editorTarget.dataset.label = next.querySelector<HTMLElement>('[data-demo-editor]')!.dataset.label;
       // Reset per-example editor history without replacing the persistent toolbar or panel.
       editor?.destroy();
       editor = undefined;
-      selectFile('');
-      mountEditor();
-      syncSharedFiles();
+      root.querySelector('[data-demo-source-panel]')!.replaceWith(next.querySelector('[data-demo-source-panel]')!);
+      sourceElement = root.querySelector<HTMLElement>('[data-demo-source]')!;
+      editorTarget = root.querySelector<HTMLElement>('[data-demo-editor]')!;
+      tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-demo-tab]')];
+      codePanels = [...root.querySelectorAll<HTMLElement>('[data-demo-code-panel]')];
+      files = Object.fromEntries(codePanels.filter((panel) => panel.dataset.demoCodePanel)
+        .map((panel) => [panel.dataset.demoCodePanel!, panel.querySelector('code')!.textContent!]));
       const form = root.querySelector<HTMLFormElement>('[data-demo-stackblitz]')!;
       const nextForm = next.querySelector<HTMLFormElement>('[data-demo-stackblitz]')!;
       form.action = nextForm.action;
-      form.querySelector<HTMLInputElement>('[data-demo-export-source]')!.name = nextForm.querySelector<HTMLInputElement>('[data-demo-export-source]')!.name;
-      new FormData(nextForm).forEach((value, name) => {
-        (form.elements.namedItem(name) as HTMLInputElement).value = String(value);
-      });
+      form.querySelectorAll('input').forEach((input) => input.remove());
+      form.prepend(...nextForm.querySelectorAll('input'));
+      exportDependencies = readExportDependencies();
+      selectFile('');
+      mountEditor();
+      syncSharedFiles();
       errorTarget.hidden = true;
       const nextFrame = nextPreview.querySelector<HTMLIFrameElement>('[data-demo-frame]')!;
       nextFrame.style.visibility = 'hidden';
