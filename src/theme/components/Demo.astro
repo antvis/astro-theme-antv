@@ -4,7 +4,7 @@ import { localize } from '../../compiler/localization.js';
 import type { DemoRecord } from '../../compiler/content.js';
 import { compileDemoSource } from '../../demo-source.js';
 import { markdownRouteFor, withBase } from '../lib/paths';
-import { demoDependencies, demoExportConfig, galleryFiles, filesForDemo } from '../lib/demo-dependencies';
+import { dependenciesForDemo, exportConfigForDemo, filesForDemo } from '../lib/demo-dependencies';
 import Loading from './Loading.astro';
 import DemoSource from './DemoSource.astro';
 import reloadIcon from '@tabler/icons/outline/reload.svg?raw';
@@ -38,6 +38,8 @@ const toolClass = [
   'hover:after:visible hover:after:opacity-100 focus-visible:after:visible focus-visible:after:opacity-100',
 ].join(' ');
 const selectedFiles = filesForDemo(demo.source, `/${demo.relativeSourcePath}`);
+const demoDependencies = dependenciesForDemo(demo.source, `/${demo.relativeSourcePath}`, selectedFiles);
+const demoExportConfig = exportConfigForDemo(selectedFiles);
 const exportFilename = demo.relativeSourcePath.replace(/\.[^.]+$/, `.${compileDemoSource(demo.source, demo.sourcePath).sourceExtension}`);
 const exportHtml = `<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${demoBaseCss}html,html>body,#container{width:100%;height:100%;margin:0}</style></head><body><div id="container"></div><script type="module" src="/${exportFilename}"></script></body></html>`;
 ---
@@ -69,12 +71,12 @@ const exportHtml = `<!doctype html><html><head><meta charset="UTF-8"><meta name=
           <input type="hidden" name="project[title]" value={title} />
           <input type="hidden" name="project[description]" value={demo.key} />
           <input type="hidden" name="project[template]" value="node" />
-          <input type="hidden" name="project[files][package.json]" value={JSON.stringify({ private: true, type: 'module', scripts: { dev: 'vite --host 0.0.0.0', start: 'vite --host 0.0.0.0' }, dependencies: demoDependencies, devDependencies: { vite: '^6.0.0', typescript: '^5.0.0' } })} />
+          <input type="hidden" name="project[files][package.json]" data-demo-export-package value={JSON.stringify({ private: true, type: 'module', scripts: { dev: 'vite --host 0.0.0.0', start: 'vite --host 0.0.0.0' }, dependencies: demoDependencies, devDependencies: { vite: '^6.0.0', typescript: '^5.0.0' } })} />
           <input type="hidden" name="project[files][tsconfig.json]" value={JSON.stringify({ compilerOptions: { jsx: 'react-jsx', target: 'ESNext', module: 'ESNext', moduleResolution: 'Bundler', esModuleInterop: true } })} />
           {demoExportConfig && <input type="hidden" name="project[files][vite.config.mjs]" value={demoExportConfig} />}
           <input type="hidden" name="project[files][index.html]" value={exportHtml} data-demo-export-html />
           <input type="hidden" name={`project[files][${exportFilename}]`} data-demo-export-source />
-          {Object.entries(galleryFiles).map(([name, code]) => <input type="hidden" name={`project[files][${name}]`} value={code} data-demo-export-file={name} disabled={!(name in selectedFiles)} />)}
+          {Object.entries(selectedFiles).map(([name, code]) => <input type="hidden" name={`project[files][${name}]`} value={code} data-demo-export-file={name} />)}
           <button type="submit" class={toolClass} data-tooltip={isZh ? '在 StackBlitz 中打开' : 'Open in StackBlitz'} aria-label={isZh ? '在 StackBlitz 中打开' : 'Open in StackBlitz'} set:html={stackblitzIcon}></button>
         </form>
         <button type="button" class={`${toolClass} group/copy`} data-demo-copy data-copied={isZh ? '已复制' : 'Copied'} data-copy-error={isZh ? '复制失败' : 'Copy failed'} data-tooltip={copyLabel}>
