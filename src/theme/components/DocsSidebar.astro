@@ -138,8 +138,10 @@ const visibleNodes = (entries: Node[]): SidebarMenuNode[] => entries.map((node) 
 ---
 
 <aside data-doc-sidebar={!catalog || undefined} data-doc-catalog={catalog || undefined} data-menu-url={!catalog ? catalogHref : undefined} data-pagefind-ignore class={!catalog ? "sticky top-[var(--header-height)] self-start max-h-[calc(100dvh_-_var(--header-height))] overflow-x-hidden overflow-y-auto pb-12 [border-right:1px_solid_var(--border-soft)] bg-[var(--surface-raised)] [@media(width<=900px)]:static [@media(width<=900px)]:max-h-85 [@media(width<=900px)]:mt-6 [@media(width<=900px)]:mb-8 [@media(width<=900px)]:p-4 [@media(width<=900px)]:overflow-auto [@media(width<=900px)]:[border:1px_solid_var(--border)] [@media(width<=900px)]:rounded-[var(--radius-medium)] [@media(width<=900px)]:bg-[var(--surface-subtle)] pt-2" : undefined}>
-  {!catalog && items.length > 0 && <a href={catalogHref} class="block px-6 py-2 text-sm text-[var(--muted)] hover:text-[var(--brand)] focus-visible:outline-2 focus-visible:outline-[var(--brand)]">{locale === 'zh' ? '完整文档目录' : 'Full documentation index'}</a>}
-  <p data-doc-load-error hidden role="status" class="m-0 px-6 py-2 text-xs text-[var(--muted)] [&[hidden]]:hidden">{locale === 'zh' ? '目录加载失败，请重新展开或访问完整文档目录。' : 'Menu unavailable. Expand again or visit the full documentation index.'}</p>
+  <p data-doc-load-error hidden role="status" class="m-0 px-6 py-2 text-xs text-[var(--muted)] [&[hidden]]:hidden">
+    {locale === 'zh' ? '目录加载失败，请重新展开，或' : 'Menu unavailable. Expand again, or'}{' '}
+    <a href={catalogHref} class="underline hover:text-[var(--brand)] focus-visible:outline-2 focus-visible:outline-[var(--brand)]">{locale === 'zh' ? '查看完整文档目录' : 'view the full documentation index'}</a>
+  </p>
   <nav aria-label={locale === 'zh' ? '文档目录' : 'Documentation'}>
     <SidebarMenu nodes={visibleNodes(nodes)} variant="docs" />
   </nav>
