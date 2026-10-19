@@ -3,7 +3,7 @@ import { createEditor } from './editor';
 import { createFrameDocument } from './frame';
 import { createDemoSplit } from './split';
 import { demoFileLabels } from './file-labels';
-import { compileDemoSource, referencedDemoFiles, referencedDemoPackages } from '../../demo-source.js';
+import { compileDemoSource, referencedDemoFiles, referencedDemoPackages, demoExportEntry } from '../../demo-source.js';
 import { resolutions } from 'virtual:antv-demo-dependencies';
 
 for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo], [data-example-demo]')) {
@@ -104,6 +104,9 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
   let codePanels = [...root.querySelectorAll<HTMLElement>('[data-demo-code-panel]')];
   let files = Object.fromEntries(codePanels.filter((panel) => panel.dataset.demoCodePanel)
     .map((panel) => [panel.dataset.demoCodePanel!, panel.querySelector('code')!.textContent!]));
+  const readEnvironmentFiles = () => Object.fromEntries([...root.querySelectorAll<HTMLInputElement>('[data-demo-export-file][data-demo-setup-file]')]
+    .map((input) => [input.dataset.demoExportFile!, input.value]));
+  let environmentFiles = readEnvironmentFiles();
   let activeFile = '';
   const selectFile = (name: string) => {
     activeFile = name;
@@ -128,7 +131,7 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
     });
     root.querySelector<HTMLElement>('[data-demo-tabs]')!.hidden = !tabs.some((tab) => tab.dataset.demoTab && !tab.hidden);
     root.querySelectorAll<HTMLInputElement>('[data-demo-export-file]').forEach((input) => {
-      input.disabled = !(input.dataset.demoExportFile! in selected);
+      input.disabled = !(input.dataset.demoExportFile! in selected) && !(input.dataset.demoExportFile! in environmentFiles);
     });
     if (tabs.find((tab) => tab.dataset.demoTab === activeFile)?.hidden) selectFile('');
   };
@@ -207,7 +210,7 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
     next.className = `absolute inset-0 block border-0 ${autoHeight ? 'w-full' : 'size-full'}`;
     next.style.visibility = 'hidden';
     if (autoHeight) next.style.height = fallbackHeight;
-    next.srcdoc = createFrameDocument(getSource(), root.dataset.demoPath!, isExample, autoHeight ? parseFloat(fallbackHeight) : undefined);
+    next.srcdoc = createFrameDocument(getSource(), root.dataset.demoPath!, isExample, autoHeight ? parseFloat(fallbackHeight) : undefined, root.dataset.demoSetup);
     preview.append(next);
   };
   root.querySelector('[data-demo-run]')!.addEventListener('click', run);
@@ -246,7 +249,7 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
       const source = getSource();
       const filename = root.dataset.demoPath!.slice(1).replace(/\.[^.]+$/, `.${compileDemoSource(source, root.dataset.demoPath!).sourceExtension}`);
       const form = event.currentTarget as HTMLFormElement;
-      const selected = referencedDemoFiles(source, root.dataset.demoPath!, files, resolutions, true);
+      const selected = { ...referencedDemoFiles(source, root.dataset.demoPath!, files, resolutions, true), ...environmentFiles };
       const dependencies = Object.fromEntries(referencedDemoPackages(source, root.dataset.demoPath!, selected).map((name) => {
         const version = exportDependencies[name];
         if (!version) throw new Error(`Save the ${name} dependency in the example source before exporting.`);
@@ -256,10 +259,10 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
       manifest.value = JSON.stringify({ ...JSON.parse(manifest.value), dependencies });
       syncSharedFiles();
       const input = form.querySelector<HTMLInputElement>('[data-demo-export-source]')!;
-      const html = form.querySelector<HTMLInputElement>('[data-demo-export-html]')!;
+      const entry = form.querySelector<HTMLInputElement>('[data-demo-export-entry]')!;
       input.name = `project[files][${filename}]`;
       input.value = source;
-      html.value = html.value.replace(/<script type="module" src="[^"]*"/, `<script type="module" src="/${filename}"`);
+      entry.value = demoExportEntry(`/${filename}`, root.dataset.demoSetup, root.dataset.demoPath!);
       form.action = `https://stackblitz.com/run?file=${filename}`;
     } catch (error) {
       event.preventDefault();
@@ -327,6 +330,8 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
       discardPending();
       originalSource = next.querySelector<HTMLElement>('[data-demo-source]')!.textContent!;
       root.dataset.demoPath = next.dataset.demoPath;
+      if (next.dataset.demoSetup) root.dataset.demoSetup = next.dataset.demoSetup;
+      else delete root.dataset.demoSetup;
       root.querySelector('#demo-title')!.textContent = next.querySelector('#demo-title')!.textContent;
       const nextPreview = next.querySelector<HTMLElement>('[data-demo-preview]')!;
       preview.setAttribute('aria-label', nextPreview.getAttribute('aria-label')!);
@@ -345,6 +350,7 @@ for (const root of document.querySelectorAll<HTMLElement>('[data-document-demo],
       form.action = nextForm.action;
       form.querySelectorAll('input').forEach((input) => input.remove());
       form.prepend(...nextForm.querySelectorAll('input'));
+      environmentFiles = readEnvironmentFiles();
       exportDependencies = readExportDependencies();
       selectFile('');
       mountEditor();

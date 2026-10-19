@@ -16,9 +16,11 @@ export const defineConfig = <const Config extends AntVSiteConfig>(
 
 export type {
   AnalyticsConfig,
+  DemoSetupContext,
   AntVSiteConfig,
   HomeSlotName,
   LocalizedLink,
+  NavigationItem,
   LocalizedText,
   SiteLocale,
 } from "./compiler/config.js";

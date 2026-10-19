@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { basename, extname, resolve } from "node:path";
 import type { AgentComponent } from "./compiler/config.js";
 import { assertWithin, assertRealpathWithin } from "./util.js";
+import { expandMarkdownIncludes } from './markdown-includes.js';
 
 const processor = createProcessor();
 const markdownProcessor = createProcessor({ format: "md" });
@@ -22,6 +23,7 @@ export function fencedCode(source: string, language = "text"): string {
 
 interface Options {
   filePath: string;
+  docsRoot?: string;
   canonical: string;
   components: Record<string, AgentComponent>;
   renderCode?: (component: { name: string; code: string; src?: string }) => string | Promise<string>;
@@ -43,6 +45,9 @@ export async function serializeAgentMarkdown(
   body: string,
   options: Options
 ): Promise<string> {
+  if (options.docsRoot && options.filePath.endsWith('.md')) {
+    body = await expandMarkdownIncludes(body, options.filePath, options.docsRoot);
+  }
   let tree: Node;
   try {
     tree = (

@@ -3,7 +3,7 @@ import { dirname, extname, relative, resolve } from 'node:path';
 import type { SiteRegistry } from './compiler/content.js';
 import { parseMatter } from './compiler/content.js';
 import { serializeAgentMarkdown } from './agent-markdown.js';
-import { demoImports, demoImportPath } from './demo-source.js';
+import { demoImports, demoImportPath, demoSetupSource } from './demo-source.js';
 import { assertWithin, assertRealpathWithin, pathKey } from './util.js';
 
 export interface DemoFiles {
@@ -55,6 +55,7 @@ export async function collectDemoFiles(registry: SiteRegistry): Promise<DemoFile
       if (/\.[cm]?[jt]sx?$/.test(file)) await visit(files[filename]!, file);
     }
   };
+  if (config.demo.setup) await visit(demoSetupSource(config.demo.setup), resolve(config.root, 'index.ts'));
   for (const demo of registry.demos) await visit(demo.source, demo.sourcePath);
   const walk = async (directory: string): Promise<void> => {
     for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -63,7 +64,7 @@ export async function collectDemoFiles(registry: SiteRegistry): Promise<DemoFile
       else if (/\.mdx?$/.test(file)) {
         const { content } = parseMatter(await readFile(file, 'utf8'), file);
         await serializeAgentMarkdown(content, {
-          filePath: file, canonical: config.site.origin, components: config.content.agentComponents,
+          filePath: file, docsRoot: config.content.docs, canonical: config.site.origin, components: config.content.agentComponents,
           renderCode: async ({ name, code, src }) => {
             if (name !== 'Demo') return '';
             // DocumentDemo resolves src beneath docs; inline code has the document as its base.

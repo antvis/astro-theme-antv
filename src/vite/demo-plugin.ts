@@ -57,6 +57,8 @@ export function createDemoPlugin(registry: SiteRegistry): Plugin {
       const include = [...new Set(Object.entries(packageDependencies).flat())].filter((source) =>
         !source.startsWith('.') && !source.startsWith('/') && !source.includes(':')
         && !excluded.some((name) => source === name || source.startsWith(`${name}/`)));
+      // The editor is loaded from injected routes, outside the consumer's entry scan.
+      if (!excluded.includes('sucrase')) include.push('@antv/astro-theme-antv > sucrase');
       return { optimizeDeps: { include } };
     },
     configResolved(config) {
@@ -75,17 +77,23 @@ export function createDemoPlugin(registry: SiteRegistry): Plugin {
       if (source.startsWith(publicEntryPrefix)) {
         return `${resolvedEntryPrefix}${source.slice(publicEntryPrefix.length)}`;
       }
-      if (importer && demoModules.has(importer.split('?')[0]!) && isStyle(source)) {
-        const resolved = await this.resolve(source, importer, { skipSelf: true });
-        if (resolved) return styleId(resolved.id);
-      }
-      if (!importer?.startsWith(resolvedEntryPrefix)) return;
+      // Browser style modules must never enter Astro's server module graph.
+      if (this.environment.config.consumer !== "client" || !importer) return;
+      let sourceImporter = importer;
+      if (importer.startsWith(resolvedEntryPrefix)) {
+        const key = entryKey(importer, resolvedEntryPrefix);
+        const demo = demos.get(key);
+        if (!demo) throw new Error(`Unknown demo entry: ${key}`);
+        sourceImporter = demo.sourcePath;
+      } else if (!demoModules.has(importer.split('?')[0]!) || isStyle(importer.split('?')[0]!)) return;
 
-      const key = entryKey(importer, resolvedEntryPrefix);
-      const demo = demos.get(key);
-      if (!demo) throw new Error(`Unknown demo entry: ${key}`);
-      const resolved = await this.resolve(source, demo.sourcePath, { skipSelf: true });
-      return resolved && isStyle(source) ? styleId(resolved.id) : resolved;
+      const resolved = await this.resolve(source, sourceImporter, { skipSelf: true });
+      if (!resolved || resolved.external) return resolved;
+      // Package and workspace entries can import their own styles transitively.
+      // Keep those styles attached to the module in native iframe imports too.
+      if (isStyle(source)) return styleId(resolved.id);
+      demoModules.add(resolved.id.split('?')[0]!);
+      return resolved;
     },
     async load(id) {
       if (id.startsWith(resolvedStylePrefix)) {
@@ -115,6 +123,7 @@ export default css;`;
             );
             if (!resolved)
               throw new Error(`Unable to resolve demo dependency: ${name}`);
+            if (!isStyle(source)) demoModules.add(resolved.id.split('?')[0]!);
             if (isStyle(source)) resolved.id = styleId(resolved.id);
             // URL-only entries bypass Vite's import analysis; allow the configured entry file.
             if (!isBuild) {
@@ -160,9 +169,11 @@ export default css;`;
       if (id === resolvedModuleId) {
         const entries = [...demos.values()].map(
           (demo) =>
-            `${JSON.stringify(demo.key)}: () => import(${JSON.stringify(
-              entryId(publicEntryPrefix, demo),
-            )})`,
+            `${JSON.stringify(demo.key)}: async () => {
+              ${registry.config.demo.setup ? `const {default: setup} = await import(${JSON.stringify(resolve(registry.config.root, registry.config.demo.setup))});
+              await setup({container: document.getElementById('container'), path: ${JSON.stringify(`/${demo.relativeSourcePath}`)}});` : ''}
+              return import(${JSON.stringify(entryId(publicEntryPrefix, demo))});
+            }`,
         );
         return `export const demos = {${entries.join(",")}};`;
       }

@@ -7,7 +7,7 @@ import { getDocsCollection } from './docs';
 import { markdownRouteFor, withBase } from './paths';
 import { config } from './site';
 import type { DemoRecord } from '../../compiler/content.js';
-import { filesForDemo } from './demo-dependencies';
+import { filesForDemo, setupPath, setupFiles } from './demo-dependencies';
 import { fencedCode, serializeAgentMarkdown } from '../../agent-markdown.js';
 
 type SiteLocale = 'zh' | 'en';
@@ -127,17 +127,21 @@ export async function serializeAgentDocument(
   ];
   const attached: Record<string, string> = {};
   const body = await serializeAgentMarkdown((document.entry.body ?? '').trim(), {
-    filePath: document.entry.filePath ?? '',
+    filePath: document.entry.filePath ? resolve(config.root, document.entry.filePath) : '',
+    docsRoot: config.content.docs,
     canonical: absoluteSiteUrl(document.route),
     components: config.content.agentComponents,
     renderCode: ({ name, code, src }) => {
       const rule = config.content.agentComponents[name];
+      let environment = '';
       if (name === 'Demo') {
         const file = src ? resolve(config.content.docs, extname(src) ? src : `${src}.ts`)
           : resolve(config.root, document.entry.filePath ?? 'inline-demo.ts');
-        Object.assign(attached, filesForDemo(code, `/${pathKey(relative(config.root, file))}`));
+        const path = `/${pathKey(relative(config.root, file))}`;
+        Object.assign(attached, setupFiles, filesForDemo(code, path));
+        environment = demoEnvironmentMarkdown(path, document.locale);
       }
-      return `\n\n${fencedCode(code, rule?.type === 'code' ? rule.language : 'ts')}\n\n`;
+      return `\n\n${environment}${fencedCode(code, rule?.type === 'code' ? rule.language : 'ts')}\n\n`;
     },
     resolveDocument: (source) => {
       if (!document.entry.filePath) return undefined;
@@ -171,6 +175,14 @@ function agentIndexLink(locale: SiteLocale) {
   return `[${zh ? '资料索引' : 'Resource index'}](${withBase('/llms.txt')})`;
 }
 
+function demoEnvironmentMarkdown(path: string, locale: SiteLocale): string {
+  if (!setupPath) return '';
+  const description = locale === 'zh'
+    ? '运行示例前，先在含有 #container 的页面中等待以下初始化完成。相关文件附于文末。'
+    : 'Before evaluating the example, await this setup in a page containing #container. Supporting files follow below.';
+  return `${description}\n\n${fencedCode(`await (await import(${JSON.stringify(setupPath)})).default({ container: document.getElementById('container'), path: ${JSON.stringify(path)} });`, 'js')}\n\n`;
+}
+
 /** Export the same source and supporting files as the runnable example. */
 export function serializeAgentExample(demo: DemoRecord, locale: SiteLocale): string {
   const title = localize(demo.title, locale, demo.slug);
@@ -196,7 +208,11 @@ export function serializeAgentExample(demo: DemoRecord, locale: SiteLocale): str
     '',
     fencedCode(demo.source, demo.filename.split('.').pop()),
     '',
-    ...Object.entries(filesForDemo(demo.source, `/${demo.relativeSourcePath}`)).flatMap(([name, source]) => [
+    ...(setupPath ? [
+      `## ${isZh ? '运行环境' : 'Runtime environment'}`, '',
+      demoEnvironmentMarkdown(`/${demo.relativeSourcePath}`, locale),
+    ] : []),
+    ...Object.entries({ ...filesForDemo(demo.source, `/${demo.relativeSourcePath}`), ...setupFiles }).flatMap(([name, source]) => [
       `## ${markdownLinkText(name)}`, '', fencedCode(source, name.split('.').pop()), '',
     ]),
   ].join('\n');

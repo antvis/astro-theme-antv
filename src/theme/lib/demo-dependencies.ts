@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { config, registry } from './site';
-import { referencedDemoFiles, referencedDemoPackages } from '../../demo-source.js';
+import { referencedDemoFiles, referencedDemoPackages, demoSetupPath, demoSetupSource } from '../../demo-source.js';
 
 function findVersion(directory: string, name: string): string | undefined {
   while (true) {
@@ -44,6 +44,9 @@ if (Object.keys(demoFiles).some((name) => name.endsWith('.less'))) {
   const version = findVersion(dirname(require.resolve('less')), 'less');
   if (version) packageVersions.less = version;
 }
+
+export const setupPath = demoSetupPath(config.demo.setup);
+export const setupFiles = referencedDemoFiles(demoSetupSource(setupPath), '/index.ts', demoFiles, demoResolutions, true);
 
 export const filesForDemo = (source: string, path: string) =>
   referencedDemoFiles(source, path, demoFiles, demoResolutions);

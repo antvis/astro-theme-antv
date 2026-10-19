@@ -93,3 +93,17 @@ export function referencedDemoPackages(source: string, path: string, files: Reco
   if (Object.keys(files).some((name) => name.endsWith('.less'))) packages.add('less');
   return [...packages];
 }
+/** Shared environment entry is independent of the editable example source. */
+export function demoSetupPath(setup?: string): string | undefined {
+  return setup ? demoImportPath(setup, '/index.ts') : undefined;
+}
+
+export function demoSetupSource(setup?: string): string {
+  return setup ? `import ${JSON.stringify(setup)};` : '';
+}
+
+/** Keep a standalone export's environment sequencing identical to iframe runs. */
+export function demoExportEntry(path: string, setup?: string, sourcePath = path): string {
+  const filename = path.replace(/^\//, '');
+  return `${setup ? `const { default: setup } = await import(${JSON.stringify(`.${setup}`)});\nawait setup({container: document.getElementById('container'), path: ${JSON.stringify(sourcePath)}});\n` : ''}await import(${JSON.stringify(`./${filename}`)});`;
+}
