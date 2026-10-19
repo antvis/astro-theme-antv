@@ -8,6 +8,7 @@ import type {
   SiteLocale,
 } from "./compiler/config.js";
 import { assertRealpathWithin, assertWithin, isWithin, pathKey } from "./util.js";
+import { expandMarkdownIncludes } from './markdown-includes.js';
 
 const escapeHtml = (value: unknown) =>
   String(value)
@@ -254,7 +255,7 @@ async function prepareLegacyContent(
   base: string,
 ): Promise<string> {
   const componentsExpanded = expandConfiguredComponents(
-    markdown,
+    await expandMarkdownIncludes(markdown, markdownPath, config.content.docs),
     config.content.components,
     locale,
     base,

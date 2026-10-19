@@ -2,9 +2,9 @@ import demoBaseCss from './base.css?raw';
 import { compileDemoSource } from '../../demo-source.js';
 import { imports } from 'virtual:antv-demo-dependencies';
 
-export function createFrameDocument(source: string, path: string, fitToFrame = false, viewportHeight?: number) {
+export function createFrameDocument(source: string, path: string, fitToFrame = false, viewportHeight?: number, setup?: string) {
   // JSON stays inside its script element even when example strings contain </script>.
-  const input = JSON.stringify({ source, path }).replaceAll('<', '\\u003c');
+  const input = JSON.stringify({ source, path, setup }).replaceAll('<', '\\u003c');
   const importMap = JSON.stringify({ imports }).replaceAll('<', '\\u003c');
   const base = new URL(
     `${import.meta.env.BASE_URL.replace(/\/$/, '')}${path}`,
@@ -29,7 +29,7 @@ const input = document.querySelector<HTMLScriptElement>(
   'script[data-demo-input]'
 );
 if (input) {
-  const { source, path } = JSON.parse(input.textContent!);
+  const { source, path, setup } = JSON.parse(input.textContent!);
   const showError = (error: unknown) =>
     parent.postMessage(
       { type: 'antv-demo:error', error: error instanceof Error ? error.message : String(error) },
@@ -38,6 +38,10 @@ if (input) {
   addEventListener('error', (event) => showError(event.error || event.message));
   addEventListener('unhandledrejection', (event) => showError(event.reason));
   try {
+    if (setup) {
+      const module = await import(/* @vite-ignore */ setup);
+      await module.default({ container: document.getElementById('container'), path });
+    }
     const { code } = compileDemoSource(source, path);
     const script = document.createElement('script');
     script.type = 'module';

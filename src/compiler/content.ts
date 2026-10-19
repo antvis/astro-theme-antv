@@ -1,7 +1,7 @@
 import { openGraphSchema } from "../open-graph.js";
 import type { OpenGraphOptions } from "../open-graph.js";
 import { readFile, readdir } from "node:fs/promises";
-import { createRequire } from "node:module";
+import matter from "gray-matter";
 import { dirname, relative, resolve, sep } from "node:path";
 import { z } from "zod";
 import { assertRealpathWithin, assertWithin, pathKey } from "../util.js";
@@ -11,9 +11,6 @@ import type {
   ResolvedSiteConfig,
   SiteLocale,
 } from "./config.js";
-
-const require = createRequire(import.meta.url);
-const matter = require("gray-matter") as typeof import("gray-matter");
 
 export interface DemoRecord {
   key: string;

@@ -1,0 +1,22 @@
+---
+import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
+import type { AnalyticsConfig } from '../../compiler/config.js';
+import * as Analytics from 'astro-analytics';
+
+interface Props { services: AnalyticsConfig }
+const { services } = Astro.props;
+---
+
+{import.meta.env.PROD && Object.entries(services).map(([name, props]) => {
+  if (name === 'Baidu') {
+    return <Fragment>
+      <script is:inline>window._hmt = window._hmt || [];</script>
+      <script is:inline async src={`https://hm.baidu.com/hm.js?${props.id}`}></script>
+    </Fragment>;
+  }
+  if (!Object.hasOwn(Analytics, name)) {
+    throw new Error(`Unknown analytics component "${name}". Use Baidu or an export from astro-analytics.`);
+  }
+  const Component = Analytics[name as keyof typeof Analytics] as AstroComponentFactory;
+  return <Component {...props} />;
+})}

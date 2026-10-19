@@ -1,0 +1,93 @@
+---
+import type { LocalizedLink, LocalizedText, SiteLocale } from '../../compiler/config.js';
+import { localize } from '../../compiler/localization.js';
+import chevronDown from '@tabler/icons/outline/chevron-down.svg?raw';
+import linkIcon from '@tabler/icons/outline/link.svg?raw';
+
+interface Props {
+  locale: SiteLocale;
+  text: LocalizedText;
+  links: Array<LocalizedLink & { active: boolean; external: boolean }>;
+  active: boolean;
+  summaryClass: string;
+}
+
+const { locale, text, links, active, summaryClass } = Astro.props;
+---
+
+<antv-navigation-dropdown class="contents">
+  <details class="group/nav relative h-full [&[open]>summary]:text-[var(--brand)] [@media(width<=900px)]:h-auto [@media(width<=900px)]:w-full [.antv-site-header.home-header_&]:[@media(width>=901px)]:flex [.antv-site-header.home-header_&]:[@media(width>=901px)]:items-center">
+    <summary class:list={[summaryClass, 'gap-2 list-none [&::-webkit-details-marker]:hidden data-active:text-[var(--brand-strong)] data-active:shadow-[inset_0_2px_0_var(--brand)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)] [@media(width<=900px)]:justify-between [@media(width<=900px)]:data-active:bg-[var(--brand-soft)] [@media(width<=900px)]:data-active:shadow-none']} data-active={active || undefined}>
+      {localize(text, locale)}
+      <span class="size-3.5 text-[var(--muted-light)] transition-transform group-open/nav:rotate-180 motion-reduce:transition-none [&_svg]:size-full" aria-hidden="true" set:html={chevronDown}></span>
+    </summary>
+    <ul class="absolute top-full right-0 z-1 m-0 w-max max-w-[min(320px,calc(100vw_-_32px))] list-none rounded-[var(--radius-small)] bg-[var(--surface-raised)] p-2 shadow-[0_6px_24px_rgb(0_0_0/14%)] [@media(width<=900px)]:static [@media(width<=900px)]:w-full [@media(width<=900px)]:max-w-none [@media(width<=900px)]:rounded-none [@media(width<=900px)]:border-y [@media(width<=900px)]:border-[var(--border-soft)] [@media(width<=900px)]:px-4 [@media(width<=900px)]:shadow-none">
+      {links.map((link) => <li>
+        <a href={link.href} aria-current={link.active ? 'page' : undefined} class="flex min-h-10 items-center gap-1 rounded-[var(--radius-small)] px-3 py-2 text-sm leading-6 whitespace-normal text-[var(--text-strong)] no-underline hover:bg-[var(--brand-soft)] hover:text-[var(--brand-strong)] aria-[current=page]:bg-[var(--brand-soft)] aria-[current=page]:text-[var(--brand-strong)] focus-visible:outline-2 focus-visible:outline-[var(--brand)] [@media(width<=900px)]:min-h-11">
+          <span>{localize(link.text, locale)}</span>
+          {link.external && <span class="size-3.5 shrink-0 [&_svg]:size-full" aria-hidden="true" set:html={linkIcon}></span>}
+        </a>
+      </li>)}
+    </ul>
+  </details>
+</antv-navigation-dropdown>
+
+<script>
+  class AntvNavigationDropdown extends HTMLElement {
+    private dispose?: () => void;
+
+    connectedCallback() {
+      this.dispose?.();
+      const details = this.querySelector('details')!;
+      const summary = details.querySelector('summary')!;
+      const links = [...details.querySelectorAll('a')];
+      const controller = new AbortController();
+      const options = { signal: controller.signal };
+      const hover = matchMedia('(min-width: 901px) and (hover: hover) and (pointer: fine)');
+      let closeTimer: number | undefined;
+      const cancelClose = () => window.clearTimeout(closeTimer);
+      const close = () => { cancelClose(); details.open = false; };
+      const open = () => { cancelClose(); details.open = true; };
+      const scheduleClose = () => {
+        cancelClose();
+        closeTimer = window.setTimeout(close, 140);
+      };
+
+      details.addEventListener('pointerenter', () => {
+        if (hover.matches) open();
+      }, options);
+      details.addEventListener('pointerleave', () => {
+        if (hover.matches && !details.contains(document.activeElement)) scheduleClose();
+      }, options);
+      details.addEventListener('focusin', cancelClose, options);
+      details.addEventListener('focusout', (event) => {
+        if (!(event.relatedTarget instanceof Node) || !details.contains(event.relatedTarget)) scheduleClose();
+      }, options);
+      details.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && details.open) {
+          event.preventDefault();
+          event.stopPropagation();
+          close();
+          summary.focus();
+        } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+          event.preventDefault();
+          open();
+          const index = links.indexOf(document.activeElement as HTMLAnchorElement);
+          const next = index < 0 ? (event.key === 'ArrowDown' ? 0 : links.length - 1)
+            : (index + (event.key === 'ArrowDown' ? 1 : -1) + links.length) % links.length;
+          links[next]?.focus();
+        }
+      }, options);
+      document.addEventListener('pointerdown', (event) => {
+        if (event.target instanceof Node && !details.contains(event.target)) close();
+      }, options);
+      hover.addEventListener('change', close, options);
+      this.dispose = () => { controller.abort(); cancelClose(); };
+    }
+
+    disconnectedCallback() { this.dispose?.(); }
+  }
+  if (!customElements.get('antv-navigation-dropdown')) {
+    customElements.define('antv-navigation-dropdown', AntvNavigationDropdown);
+  }
+</script>

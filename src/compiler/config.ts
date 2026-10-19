@@ -22,6 +22,17 @@ export interface LocalizedLink {
   href: string;
 }
 
+export interface DemoSetupContext {
+  /** Site-relative source path, beginning with a slash. */
+  path: string;
+  container: HTMLElement;
+}
+
+export type NavigationItem = LocalizedLink | {
+  text: LocalizedText;
+  children: LocalizedLink[];
+};
+
 export type ContentComponent = string | { type: "link-card" };
 
 export type AgentComponent =
@@ -33,7 +44,9 @@ export type AgentComponent =
     }
   | { type: "link-card" };
 
-export type AnalyticsConfig = Record<string, Record<string, unknown>>;
+export type AnalyticsConfig = Record<string, Record<string, unknown>> & {
+  Baidu?: { id: string };
+};
 
 export const homeSlotNames = [
   "beforeHero",
@@ -78,7 +91,7 @@ export interface AntVSiteConfig {
     agentComponents?: Record<string, AgentComponent>;
     sidebar?: Record<string, LocalizedText & { order?: number }>;
   };
-  navigation?: LocalizedLink[];
+  navigation?: NavigationItem[];
   versions?: Record<string, string>;
   analytics?: AnalyticsConfig;
   llms?: {
@@ -135,6 +148,8 @@ export interface AntVSiteConfig {
     /** Demo import names mapped to installed packages or consumer-relative modules, emitted as native ESM entries. */
     dependencies?: Record<string, string>;
     height?: number;
+    /** Consumer-relative module exporting an async setup(context) function. */
+    setup?: string;
   };
   /** @deprecated Configure Astro's standard `outDir` instead. */
   output?: never;
@@ -175,7 +190,7 @@ export interface ResolvedSiteConfig {
     agentComponents: Record<string, AgentComponent>;
     sidebar: Record<string, LocalizedText & { order?: number }>;
   };
-  navigation: LocalizedLink[];
+  navigation: NavigationItem[];
   versions: Record<string, string>;
   analytics: AnalyticsConfig;
   llms: {
@@ -222,6 +237,7 @@ export interface ResolvedSiteConfig {
   demo: {
     dependencies: Record<string, string>;
     height: number;
+    setup?: string;
   };
 }
 
@@ -377,10 +393,27 @@ const configSchema = z
         .default({}),
       sidebar: z.record(z.string(), sidebarItemSchema).default({}),
     }),
-    navigation: z.array(linkSchema).default([]),
+    navigation: z.array(z.union([
+      linkSchema,
+      z.strictObject({
+        text: localizedTextSchema,
+        children: z.array(linkSchema).min(1),
+      }),
+    ])).default([]),
     versions: z.record(z.string(), safeHrefSchema).default({}),
     analytics: z
       .record(z.string().min(1), z.record(z.string(), z.unknown()))
+      .superRefine((services, context) => {
+        if (!Object.hasOwn(services, "Baidu")) return;
+        const result = z.strictObject({
+          id: z.string().regex(/^[a-f0-9]{32}$/i, "Expected a 32-character Baidu site ID."),
+        }).safeParse(services.Baidu);
+        if (!result.success) {
+          for (const issue of result.error.issues) {
+            context.addIssue({ ...issue, path: ["Baidu", ...issue.path] });
+          }
+        }
+      })
       .default({}),
     llms: z
       .strictObject({
@@ -466,6 +499,8 @@ const configSchema = z
       .strictObject({
         dependencies: z.record(z.string().min(1), z.string().min(1)).default({}),
         height: z.number().int().min(240).max(1200).default(480),
+        setup: z.string().regex(/^\.\/[^?#]+\.(?:ts|tsx|js|jsx|mjs|mts)$/, "demo.setup must be a site-relative JS/TS module beginning with ./.")
+          .refine((value) => !value.split('/').includes('..'), "demo.setup must stay inside the site root.").optional(),
       })
       .default({
         height: 480,

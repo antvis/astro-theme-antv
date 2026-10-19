@@ -93,15 +93,35 @@ site: {
 
 The theme renders these tags in the shared page `<head>`, including static output. Omit this option to emit no verification tags; consumer middleware is unnecessary.
 
-Configure analytics using component names exported by [astro-analytics](https://github.com/Destiner/astro-analytics). Each value is passed directly as that component's props. Include only the services you use:
+Top navigation supports links and two-level dropdown groups. Existing `{ text, href }` entries remain unchanged; use `{ text, children }` for a group. `children` must contain at least one link and cannot contain further groups or coexist with a parent `href`:
+
+```js
+navigation: [
+  { text: { zh: "文档", en: "Docs" }, href: "/manual/" },
+  {
+    text: { zh: "工具", en: "Tools" },
+    children: [
+      { text: { zh: "数据", en: "Data" }, href: "/tools/" },
+      { text: { zh: "编辑器", en: "Editor" }, href: "https://editor.example.com/" },
+    ],
+  },
+],
+```
+
+All dropdown links are present in the initial HTML. Internal links receive the locale and Astro `base`; external links retain their URL and show a link icon. The matching child and its parent group are highlighted. Dropdowns open on desktop hover or summary activation, use inline disclosure on mobile, and support Tab, Enter/Space, arrow keys, Escape and outside-click dismissal. Only one header dropdown stays open at a time. Native disclosure remains usable without JavaScript; flat navigation, home actions and footer links keep their existing schema.
+
+Configure analytics using the built-in `Baidu` adapter or component names exported by [astro-analytics](https://github.com/Destiner/astro-analytics). Each value is passed directly as that component's props. Include only the services you use:
 
 ```js
 analytics: {
+  Baidu: { id: "0123456789abcdef0123456789abcdef" },
   GoogleAnalytics: { id: "G-XXXXXXXXXX" },
   SimpleAnalytics: {},
   Matomo: { id: "1", url: "https://analytics.example.com/" },
 },
 ```
+
+`Baidu.id` is the 32-character hexadecimal site ID from the Baidu tracking script URL (`hm.js?<id>`). The theme initializes `window._hmt` before asynchronously loading that script.
 
 Configured components render at the end of the body on all theme pages in production builds, including any `noscript` fallback they provide. Omit `analytics` to disable tracking; development builds never enable it. Unknown component names fail the build.
 
@@ -166,6 +186,8 @@ import { Demo } from '@antv/astro-theme-antv/components';
 ```
 
 Provide either static `code` or a `src` path to a JavaScript or TypeScript file relative to `content.docs`.
+Plain Markdown pages can reuse fragments with a standalone `<!-- include: ./shared/options.md -->` line. Paths are relative to the including file and must remain inside `content.docs`; nested includes are supported, fragment frontmatter is omitted, and cycles are rejected. HTML rendering and Markdown exports expand the same content. Use root-relative links and assets in shared fragments. Exclude fragment-only directories from `antvDocsLoader` with a negative glob, for example `pattern: ['**/*.{zh,en}.{md,mdx}', '!shared/**']`, so they do not create duplicate pages. Include directives inside code fences remain literal; MDX uses its normal component imports.
+
 Demos run in an iframe using `srcdoc`, without a separate preview route; the parent page retains the complete source in build-time `<pre><code>` HTML and page-level Markdown, readable without JavaScript.
 
 Demos use Sucrase to compile TypeScript and JSX in both the initial preview and editor runs, with the automatic JSX runtime by default (classic JSX pragmas are supported). They use native ES modules to load dependencies. Install packages used by your demos in the site. The theme discovers their imports automatically; use `demo.dependencies` only when overriding module resolution, for example:
@@ -188,7 +210,17 @@ Use normal relative imports for local JavaScript, TypeScript, JSX and JSON modul
 
 Each example page contains only its own referenced local files in read-only source tabs, Markdown and export fields. Gallery navigation replaces these panels with those from the destination page; unrelated examples are not embedded in hidden HTML. StackBlitz exports preserve the entry's site-relative path and its transitive supporting files, so relative imports work unchanged; unrelated files and npm dependencies are excluded. The source tab remains editable, copying uses the selected file, and running/exporting uses the current entry source. Save new dependencies in the example source so they can be collected before using them in the browser editor or export. Computed dynamic import paths and non-module assets are not automatically collected.
 
-Existing demos can also import standalone CSS or Less files (`import './index.less'`). Install `less` in the consuming site for Less compilation. Vite compiles these styles for both initial previews and editor reruns, including static builds; source tabs, Markdown and StackBlitz retain the original style files, and exported projects include the Less compiler when needed. Stylesheet-internal `@import` and `url()` resources are not automatically collected for export; keep these demo styles self-contained. This does not change the theme UI's Tailwind styling.
+Existing demos can also import standalone CSS or Less files (`import './index.less'`). Install `less` in the consuming site for Less compilation. Vite compiles these styles for both initial previews and editor reruns, including static builds; source tabs, Markdown and StackBlitz retain the original style files, and exported projects include the Less compiler when needed. Stylesheet-internal `@import` and `url()` resources are not automatically collected for export; keep these demo styles self-contained. Styles imported transitively by demo package or workspace modules also stay attached to those modules when running native iframe previews. This does not change the theme UI's Tailwind styling.
+
+Common iframe initialization belongs in `demo.setup`, not in every example source:
+
+```js
+demo: { setup: './src/demo/setup.ts' },
+```
+
+The local module must export a default function (which may be async) accepting `DemoSetupContext` (`container: HTMLElement`, `path: string`). `path` is the original site-relative source path with a leading slash. Each fresh gallery preview or inline Demo iframe awaits setup before loading the example; setup failures appear in the existing error panel. Use the path when some demos already own their layout. Without `setup`, existing behavior is unchanged.
+
+The setup module and its transitive JS/TS/CSS dependencies are collected separately from example source tabs. Their complete source is included in Markdown without adding a separate runtime environment section to the source panel. StackBlitz projects retain these files and use a generated `demo-entry.js` to await setup before importing the editable example. Setup runs inside the iframe or exported project, never in the documentation page. Consumer-specific SDK registration and DOM belong in that module, not in the theme.
 
 Keep `demo.dependencies` for deliberate module overrides or dependencies that cannot be inferred from source. The theme pre-optimizes discovered and configured package imports for iframe execution, respecting `optimizeDeps.exclude`; additional compatibility exceptions can still be configured through Vite. Existing explicit root-relative local mappings remain supported (with the corresponding Vite alias for initial gallery previews). Exports retain their physical source directories and include a Vite alias configuration when these mappings are used, so relative imports inside aliased modules keep working.
 
