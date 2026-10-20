@@ -1,4 +1,5 @@
 import { access } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
@@ -33,6 +34,7 @@ const themeRoutes = [
 
 interface ThemeIntegrationOptions {
   config: ResolvedSiteConfig;
+  publicDir: URL;
   markdownProcessor: MarkdownProcessor;
   getBase: () => string;
 }
@@ -65,6 +67,7 @@ async function validateHomeSlots(config: ResolvedSiteConfig): Promise<void> {
 
 export async function prepareThemeIntegration({
   config,
+  publicDir,
   markdownProcessor,
   getBase,
 }: ThemeIntegrationOptions): Promise<ThemeIntegrationContribution> {
@@ -79,13 +82,22 @@ export async function prepareThemeIntegration({
   const sharedSources = Object.entries(config.demo.dependencies)
     .filter(([name, source]) => name.startsWith("/") && source.startsWith("."))
     .map(([, source]) => resolve(config.root, source));
-  const watchFiles = [config.content.docs, ...examplePaths, ...slotPaths, ...sharedSources,
+  const robotsFile = fileURLToPath(new URL("robots.txt", publicDir));
+  const watchFiles = [robotsFile, config.content.docs, ...examplePaths, ...slotPaths, ...sharedSources,
     ...Object.keys(registry.demoFiles.files).map((file) => resolve(config.root, file))];
   const routes: InjectedRoute[] = themeRoutes.map(([pattern, entrypoint]) => ({
     pattern,
     entrypoint: pathToFileURL(resolve(themeRoot, entrypoint)),
     prerender: true,
   }));
+  // Consumer crawl policies take precedence over the theme's public-site default.
+  if (!existsSync(robotsFile)) {
+    routes.push({
+      pattern: "/robots.txt",
+      entrypoint: pathToFileURL(resolve(themeRoot, "pages/robots.txt.ts")),
+      prerender: true,
+    });
+  }
   if (config.qa) {
     routes.unshift({
       pattern: `/[locale]/${config.qa.path}`,

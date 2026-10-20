@@ -323,6 +323,28 @@ The package's `defineConfig` defaults Markdown and MDX syntax highlighting to Sh
 
 See [the basic site](./demos/basic-site) for a complete example.
 
+## robots.txt
+
+The theme provides a prerendered `/robots.txt` endpoint by default:
+
+```text
+User-agent: *
+Allow: /
+
+Sitemap: https://your-site.example.com/sitemap-index.xml
+```
+
+To customize crawl rules or sitemap locations, create `robots.txt` in Astro's
+`publicDir` (`public/` by default). The theme then skips its endpoint and Astro
+copies your file unchanged. Custom `publicDir` paths are supported.
+
+For a site deployed under a base such as `/project/`, the generated Sitemap URL
+is `https://your-site.example.com/project/sitemap-index.xml`, and Astro serves
+the endpoint under `/project/robots.txt`. Crawlers only discover robots rules at
+the origin root `/robots.txt`: the domain owner must add this Sitemap declaration
+to that root file. A subpath deployment cannot configure other sites on the same
+domain.
+
 ## Open Graph sharing metadata
 
 The theme renders Open Graph tags directly in the HTML `<head>` for home,

@@ -67,6 +67,7 @@ const documentItems = page.type === 'document'
   : [];
 const renderedDocument = page.type === 'document' ? await render(page.entry) : undefined;
 const DocumentContent = renderedDocument?.Content;
+const hasToc = renderedDocument?.headings.some(({ depth }) => depth >= 2 && depth <= 3) ?? false;
 const category = page.type === 'example-category'
   ? categoriesBySlug.get(page.categorySlug)
   : undefined;
@@ -124,7 +125,10 @@ if (page.type === 'document') {
       <a href={withBase('/llms.txt')} type="text/plain" class="sr-only focus:not-sr-only focus:block focus:mx-auto focus:max-w-4xl focus:px-6 focus:py-4 text-sm focus-visible:outline-2 focus-visible:outline-offset-4" data-pagefind-ignore>{isZh ? '资料索引' : 'Resource index'}</a>
     </main>
   ) : (
-    <div class="grid grid-cols-[var(--docs-sidebar-width)_minmax(0,1fr)_var(--toc-width)] w-[var(--content-width)] mx-auto pt-6 pb-16 bg-[var(--surface-raised)] [@media(900px<width<=1320px)]:grid-cols-[240px_minmax(0,1fr)] [@media(width<=900px)]:block [@media(width<=900px)]:w-[min(100%_-_36px,820px)]">
+    <div class:list={[
+      'grid grid-cols-[var(--docs-sidebar-width)_minmax(0,1fr)] w-[var(--content-width)] mx-auto pt-6 pb-16 bg-[var(--surface-raised)] [@media(900px<width<=1320px)]:grid-cols-[240px_minmax(0,1fr)] [@media(width<=900px)]:block [@media(width<=900px)]:w-[min(100%_-_36px,820px)]',
+      hasToc && '[@media(width>1320px)]:grid-cols-[var(--docs-sidebar-width)_minmax(0,1fr)_var(--toc-width)]',
+    ]}>
       <DocsSidebar items={documentItems} currentRoute={page.route} locale={locale} labels={config.content.sidebar} />
       <main id="main-content" data-pagefind-body class="min-w-0">
         <article class="markdown-body">

@@ -41,6 +41,7 @@ export function antvSite(input: AntVSiteConfig): AstroIntegration {
 
         const theme = await prepareThemeIntegration({
           config,
+          publicDir: astroConfig.publicDir,
           markdownProcessor: astroConfig.markdown.processor,
           getBase: () => astroConfig.base,
         });
