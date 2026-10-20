@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import type { InjectedRoute } from "astro";
 import type { MarkdownProcessor } from "astro/markdown";
-import type { Connect, Plugin, ViteDevServer } from "vite";
+import type { Plugin, ViteDevServer } from "vite";
 import type { ResolvedSiteConfig } from "../compiler/config.js";
 import { collectDemoFiles } from "../demo-files.js";
 import { scanSite } from "../compiler/content.js";
@@ -113,7 +113,6 @@ export async function prepareThemeIntegration({
     ),
     plugins: [
       ...tailwindcss(),
-      ...(config.qa ? [createQaRoutingPlugin(config, getBase)] : []),
       createSlotsPlugin(() => config),
       createDemoPlugin(registry),
     ],
@@ -126,37 +125,6 @@ export async function prepareThemeIntegration({
     restartRoots: watchFiles,
     routes,
     watchFiles,
-  };
-}
-
-function createQaRoutingPlugin(
-  config: ResolvedSiteConfig,
-  getBase: () => string,
-): Plugin {
-  const rewrite: Connect.NextHandleFunction = (req, _res, next) => {
-    if (req.url && (req.method === "GET" || req.method === "HEAD")) {
-      const url = new URL(req.url, "http://localhost");
-      for (const locale of config.site.locales) {
-        const entry = `${getBase()}/${locale}/${config.qa!.path}/`.replace(/\/+/g, "/");
-        if (!url.pathname.startsWith(entry)) continue;
-        const sessionId = url.pathname.slice(entry.length);
-        if (/^[\w-]+\/?$/.test(sessionId)) {
-          req.url = entry + url.search;
-        }
-        break;
-      }
-    }
-    next();
-  };
-  return {
-    name: "antv-site-qa-routing",
-    enforce: "post",
-    configureServer(server) {
-      // Astro installs its trailing-slash guard in a post hook. Rewrite before it.
-      return () => {
-        server.middlewares.stack.unshift({ route: "", handle: rewrite });
-      };
-    },
   };
 }
 

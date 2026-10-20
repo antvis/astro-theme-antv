@@ -315,7 +315,7 @@ The custom `hero` slot disables the default page-wide decorative background.
 
 `Updates` supports optional `card` and `skeleton` slots for product-owned announcement styling while retaining the shared feed loading, retry and carousel behavior. The `card` slot must contain a single `<a>` with `<strong>` (title), `[data-update-description]` (summary) and an `<img>` placeholder (populated or removed by the loader). The `skeleton` slot supplies the loading placeholders. Custom cards should hide images with the `hidden` attribute. The optional `style` prop sets the wrapper's minimum height and existing Carousel variables such as `--carousel-gap` and `--carousel-pagination-margin`; the default appearance is unchanged.
 
-Optional components `QaEntry`, `Updates`, `Carousel`, and `Loading` are available from `@antv/astro-theme-antv/components`. QA requires `qa.enabled: true` and access to Sive's QA service and authentication.
+Optional components `QaEntry`, `Updates`, `Carousel`, and `Loading` are available from `@antv/astro-theme-antv/components`. QA requires `qa.enabled: true` and access to Sive's QA service and authentication. Session links use the static QA entry with an `sessionId` query parameter, such as `/zh/qa/?sessionId=<sessionId>` (including any configured `base` and `qa.path`). Use a Sive QA SDK release that supports this query format. No session-subpath rewrites are required; the previous `/zh/qa/<sessionId>` format is no longer supported.
 
 For Astro options such as `base` or additional integrations, use Astro's `defineConfig` with `antvSite(siteConfig)` in `integrations`. Install and add `@astrojs/mdx` and `@astrojs/sitemap` if needed; the package's `defineConfig` includes both by default.
 
