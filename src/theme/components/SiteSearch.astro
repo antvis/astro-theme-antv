@@ -146,6 +146,8 @@ const developmentSearch = import.meta.env.ANTV_SITE_DEVELOPMENT === 'true';
       );
       const searchMode = dialog.dataset.searchMode || 'pagefind';
       const searchModuleUrl = dialog.dataset.searchModuleUrl || '/pagefind/pagefind.js';
+      // The script may be hosted on a CDN, while Pagefind assets live on the site origin.
+      const pagefindModuleUrl = new URL(searchModuleUrl, location.origin).href;
       const pagefindBasePath = dialog.dataset.pagefindBasePath || '/pagefind/';
       const siteBasePath = dialog.dataset.siteBasePath || '/';
       const siteBasePrefix = siteBasePath === '/' ? '' : siteBasePath.replace(/\/$/, '');
@@ -338,7 +340,7 @@ const developmentSearch = import.meta.env.ANTV_SITE_DEVELOPMENT === 'true';
         if (!searchPromise) {
           searchPromise = (searchMode === 'development'
             ? createDevelopmentSearch()
-            : import(/* @vite-ignore */ searchModuleUrl).then(async (pagefind: unknown) => {
+            : import(/* @vite-ignore */ pagefindModuleUrl).then(async (pagefind: unknown) => {
               const instance = (pagefind as PagefindModule).createInstance({
                 basePath: pagefindBasePath,
                 language: document.documentElement.lang,
